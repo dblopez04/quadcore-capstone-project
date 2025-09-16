@@ -1,0 +1,58 @@
+# I'll put the passwords in a .env file later
+services:
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      OSRM_URL: http://osrm:5000
+    depends_on:
+      - db
+      - osrm
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports: 
+     - "3000:3000"
+    depends_on:
+      - backend
+  
+  db:
+    image: postgis/postgis:16-3.4
+    platform: linux/amd64 # won't work on my mac otherwise
+    container_name: db
+    ports:
+     - "5433:5432" # i was having issues with port 5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} 
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+     - db-data:/var/lib/postgresql/data
+
+  osrm:
+    image: osrm/osrm-backend
+    platform: linux/amd64 # won't work on my mac otherwise
+    container_name: osrm
+    volumes: 
+     - ./osrm-data:/data
+    ports:
+     - "5001:5000" # i was also having issues with this port
+    command: >
+      sh -c "
+      if [ ! -f /data/map.osrm ]; then
+      osrm-extract -p /opt/foot.lua /data/map.osm &&
+      osrm-partition /data/map.osrm &&
+      osrm-customize /data/map.osrm;
+      fi;
+      osrm-routed --algorithm mld /data/map.osrm
+      "
+    depends_on:
+      - db
+
+
+volumes:
+  db-data:
