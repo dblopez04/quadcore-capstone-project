@@ -32,6 +32,5 @@ CREATE TABLE faculty(
 
 CREATE TABLE visitors(
     visitor_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    first_name VARCHAR(100),
-    last_name VARCHAR(100)
+    user_id UUID UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE, -- If user is deleted, removes record
 );
