@@ -1,25 +1,90 @@
 import { NavLink } from "react-router-dom";
 
-const linkBase =
-    "px-3 py-2 rounded-md text-sm font-medium";
-const active =
-    "bg-gray-200 text-black";
-const inactive =
-    "text-white hover:bg-gray-700 hover:text-white";
-
 export default function Navbar() {
     return (
-        <nav style={{ background: "#111", padding: "0.5rem 1rem" }}>
-            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                <span style={{ color: "white", fontWeight: 700, marginRight: "1rem" }}>
-                    QuadCore
+        <header className="nav">
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <img
+                    src="https://upload.wikimedia.org/wikipedia/en/7/7f/University_of_North_Texas_logo.svg"
+                    alt="UNT"
+                    style={{ height: 28 }}
+                />
+                <span style={{ fontWeight: 800, letterSpacing: 0.2 }}>
+                    Getting Around UNT
                 </span>
-                <NavLink to="/" end className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Home</NavLink>
-                <NavLink to="/map" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Map</NavLink>
-                <NavLink to="/about" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>About</NavLink>
-                <NavLink to="/help" className={({ isActive }) => `${linkBase} ${isActive ? active : inactive}`}>Help</NavLink>
-                {/* add more tabs that match your Figma later */}
             </div>
-        </nav>
+
+            <nav className="nav-menu">
+                <NavLink
+                    to="/home"
+                    style={({ isActive }) => ({
+                        color: "#fff",
+                        textDecoration: "none",
+                        padding: "6px 10px",
+                        borderRadius: 8,
+                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
+                        fontWeight: 600,
+                    })}
+                >
+                    Home
+                </NavLink>
+
+                <NavLink
+                    to="/map"
+                    style={({ isActive }) => ({
+                        color: "#fff",
+                        textDecoration: "none",
+                        padding: "6px 10px",
+                        borderRadius: 8,
+                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
+                        fontWeight: 600,
+                    })}
+                >
+                    Map
+                </NavLink>
+
+                <NavLink
+                    to="/search"
+                    style={({ isActive }) => ({
+                        color: "#fff",
+                        textDecoration: "none",
+                        padding: "6px 10px",
+                        borderRadius: 8,
+                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
+                        fontWeight: 600,
+                    })}
+                >
+                    Search
+                </NavLink>
+
+                <NavLink
+                    to="/about"
+                    style={({ isActive }) => ({
+                        color: "#fff",
+                        textDecoration: "none",
+                        padding: "6px 10px",
+                        borderRadius: 8,
+                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
+                        fontWeight: 600,
+                    })}
+                >
+                    About
+                </NavLink>
+
+                <NavLink
+                    to="/help"
+                    style={({ isActive }) => ({
+                        color: "#fff",
+                        textDecoration: "none",
+                        padding: "6px 10px",
+                        borderRadius: 8,
+                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
+                        fontWeight: 600,
+                    })}
+                >
+                    Help
+                </NavLink>
+            </nav>
+        </header>
     );
 }

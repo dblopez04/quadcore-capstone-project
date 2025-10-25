@@ -10,6 +10,8 @@ import Home from './pages/Home.jsx'
 import MapPage from './pages/MapPage.jsx'
 import About from './pages/About.jsx'
 import Help from './pages/Help.jsx'
+import Search from './pages/Search.jsx'
+
 
 
 const router = createBrowserRouter([
@@ -22,6 +24,14 @@ const router = createBrowserRouter([
         element: (
             <Layout>
                 <Home />
+            </Layout>
+        ),
+    },
+    {
+        path: '/search',
+        element: (
+            <Layout>
+                <Search />
             </Layout>
         ),
     },
