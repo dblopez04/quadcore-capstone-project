@@ -1,68 +1,212 @@
+﻿/* =========================================================
+    Base Theme Variables (Sprint 2)
+   ========================================================= */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    --unt-green: #006A31;
+    --unt-green-600: #0a7a3e;
+    --text: #111;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
 }
 
+/* =========================================================
+   Layout Utilities
+   ========================================================= */
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: light dark;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.page {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+/* Mobile-first: single column */
+.map-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+/* Desktop ≥1024px: 3-column layout */
+@media (min-width: 1024px) {
+    .map-grid {
+        grid-template-columns: 320px minmax(0, 1fr) 340px;
+        align-items: stretch;
+    }
+}
+
+/* Panels (sidebars, boxes) */
+.panel {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    padding: 1rem;
+}
+
+/* Headings */
+.h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #f3f4f6;
+    color: #111;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+    .btn:hover {
+        background: #e5e7eb;
+        transform: scale(1.02);
+    }
+
+.btn-primary {
+    background: var(--unt-green);
+    color: #fff;
+    border-color: var(--unt-green);
+}
+
+    .btn-primary:hover {
+        background: var(--unt-green-600);
+    }
+
+.btn-outline {
+    background: #fff;
+    color: var(--unt-green);
+    border-color: var(--unt-green);
+}
+
+/* Map wrapper */
+.map-wrap {
+    height: 60vh; /* mobile default */
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+@media (min-width: 1024px) {
+    .map-wrap {
+        height: calc(100vh - 140px);
+    }
+}
+
+/* Pills (icons, filters, badges) */
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #ecfdf5;
+    color: var(--unt-green);
+    font-size: 0.9rem;
+}
+
+/* =========================================================
+    Navigation
+   ========================================================= */
+.nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: #111;
+    color: #fff;
+}
+
+    .nav a {
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+        .nav a:hover {
+            text-decoration: underline;
+        }
+
+.nav-menu {
+    display: flex;
+    gap: 12px;
+}
+
+/* =========================================================
+    Original Vite Defaults (kept for fallback styling)
+   ========================================================= */
 a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+    font-weight: 500;
+    color: #646cff;
+    text-decoration: inherit;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
+    a:hover {
+        color: #535bf2;
+    }
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+    font-size: 3.2em;
+    line-height: 1.1;
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #1a1a1a;
+    cursor: pointer;
+    transition: border-color 0.25s;
 }
 
+    button:hover {
+        border-color: #646cff;
+    }
+
+    button:focus,
+    button:focus-visible {
+        outline: 4px auto -webkit-focus-ring-color;
+    }
+
 @media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+    :root {
+        color: #213547;
+        background-color: #ffffff;
+    }
+
+    a:hover {
+        color: #747bff;
+    }
+
+    button {
+        background-color: #f9f9f9;
+    }
 }
