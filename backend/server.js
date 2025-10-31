@@ -2,12 +2,14 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./app/models/index");
 const app = express();
+const { swaggerUi, swaggerSpec } = require("./app/config/swagger.config");
 
 const authRoutes = require('./app/routes/auth.routes');
 
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/auth', authRoutes);
 
 app.get("/", (req, res) => {

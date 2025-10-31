@@ -4,7 +4,7 @@ const Student = db.Student;
 const Faculty = db.Faculty;
 const Visitor = db.Visitor;
 
-var bcrypt = require("bcryptjs");
+var bcrypt = require("bcrypt");
 
 exports.register = (req, res) => {
     User.create({
