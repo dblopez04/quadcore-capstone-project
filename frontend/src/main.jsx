@@ -24,7 +24,7 @@ const router = createBrowserRouter([
     {
         path: '/home',
         element: (
-            <Layout>
+            <Layout narrow>
                 <Home />
             </Layout>
         ),
@@ -32,7 +32,7 @@ const router = createBrowserRouter([
     {
         path: '/search',
         element: (
-            <Layout>
+            <Layout narrow>
                 <Search />
             </Layout>
         ),
@@ -40,7 +40,7 @@ const router = createBrowserRouter([
     {
         path: '/bookmarks',
         element: (
-            <Layout>
+            <Layout narrow>
                 <Bookmarks />
             </Layout>
         ),
@@ -56,7 +56,7 @@ const router = createBrowserRouter([
     {
         path: '/about',
         element: (
-            <Layout>
+            <Layout narrow>
                 <About />
             </Layout>
         ),
@@ -64,7 +64,7 @@ const router = createBrowserRouter([
     {
         path: '/help',
         element: (
-            <Layout>
+            <Layout narrow>
                 <Help />
             </Layout>
         ),
