@@ -5,7 +5,10 @@
   "type": "commonjs",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +16,7 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
@@ -24,6 +28,9 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.4"
   }
 }

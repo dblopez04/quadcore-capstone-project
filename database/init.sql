@@ -1,5 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS postgis; -- enabling PostGIS extension for geospatial data and queries.
 
+CREATE TYPE role AS ENUM ('student', 'faculty', 'visitor'); -- Placeholder, will be changed once the tables are complete
+
 CREATE TABLE users(
     user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -8,7 +10,8 @@ CREATE TABLE users(
     last_name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(20),
     role user_role NOT NULL, -- enum for user role (student, faculty, visitor)
-    CONSTRAINT email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') -- email following a regex user@mail.com
+    CONSTRAINT email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'), -- email following a regex user@mail.com
+    refresh_token VARCHAR(255) -- Please keep this when you're merging the DB changes @ Luis
 );
 
 CREATE TABLE students(
