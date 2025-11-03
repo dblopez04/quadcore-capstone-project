@@ -43,7 +43,7 @@ exports.register = async (req, res) => {
         first_name: req.body.first_name,
         last_name: req.body.last_name,
         phone_number: req.body.phone_number,
-        user_user_role: req.body.user_user_role
+        user_role: req.body.user_role
     });
 
     
