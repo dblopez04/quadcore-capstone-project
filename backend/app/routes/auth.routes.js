@@ -1,19 +1,12 @@
 const express = require('express');
 const router = new express.Router();
 const controller = require("../controllers/auth.controller");
+const middleware = require("../middleware/auth.middleware");
 
 
 router.post("/register", controller.register);
-
-/** 
- * @swagger
- * /api/auth/login:
- *   get:
- *     description: Login functionality
- *     responses:
- *          200:
- *              description: Just testing to see how swagger works, I'll  this in after work
-*/
 router.post("/login", controller.login);
+router.post("/logout", middleware.verifyToken, controller.login);
+router.post("/refresh", controller.refreshToken);
 
 module.exports = router;
