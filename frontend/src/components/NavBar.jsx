@@ -56,6 +56,20 @@ export default function Navbar() {
                 >
                     Search
                 </NavLink>
+                <NavLink
+                    to="/bookmarks"
+                    style={({ isActive }) => ({
+                        color: "#fff",
+                        textDecoration: "none",
+                        padding: "6px 10px",
+                        borderRadius: 8,
+                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
+                        fontWeight: 600,
+                    })}
+                >
+                    Bookmarks
+                </NavLink>
+
 
                 <NavLink
                     to="/about"

@@ -10,6 +10,21 @@
     --bg: #ffffff;
 }
 
+/* Force a mobile-width frame for desktop demos */
+.phone-demo {
+    width: 100%;
+    max-width: 430px; /* typical phone width */
+    margin: 0 auto; /* centered on desktop */
+}
+
+.phone-card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    background: #fff;
+}
+
 /* =========================================================
    Layout Utilities
    ========================================================= */

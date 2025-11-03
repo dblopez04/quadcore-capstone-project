@@ -11,6 +11,8 @@ import MapPage from './pages/MapPage.jsx'
 import About from './pages/About.jsx'
 import Help from './pages/Help.jsx'
 import Search from './pages/Search.jsx'
+import Bookmarks from './pages/Bookmarks.jsx'
+
 
 
 
@@ -22,7 +24,7 @@ const router = createBrowserRouter([
     {
         path: '/home',
         element: (
-            <Layout>
+            <Layout narrow>
                 <Home />
             </Layout>
         ),
@@ -30,8 +32,16 @@ const router = createBrowserRouter([
     {
         path: '/search',
         element: (
-            <Layout>
+            <Layout narrow>
                 <Search />
+            </Layout>
+        ),
+    },
+    {
+        path: '/bookmarks',
+        element: (
+            <Layout narrow>
+                <Bookmarks />
             </Layout>
         ),
     },
@@ -46,7 +56,7 @@ const router = createBrowserRouter([
     {
         path: '/about',
         element: (
-            <Layout>
+            <Layout narrow>
                 <About />
             </Layout>
         ),
@@ -54,7 +64,7 @@ const router = createBrowserRouter([
     {
         path: '/help',
         element: (
-            <Layout>
+            <Layout narrow>
                 <Help />
             </Layout>
         ),
