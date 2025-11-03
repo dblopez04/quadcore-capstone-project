@@ -43,7 +43,7 @@ exports.register = async (req, res) => {
         first_name: req.body.first_name,
         last_name: req.body.last_name,
         phone_number: req.body.phone_number,
-        role: req.body.role
+        user_user_role: req.body.user_user_role
     });
 
     
@@ -65,7 +65,7 @@ exports.register = async (req, res) => {
             email: user.email,
             first_name: user.first_name,
             last_name: user.last_name,
-            role: user.role
+            user_role: user.user_role
         }
     });
 }
@@ -110,7 +110,7 @@ exports.login = async (req, res) => {
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
-        role: user.role
+        user_role: user.user_role
       }
     });
   } catch (err) {
