@@ -37,7 +37,6 @@ const generateRefreshToken = (user) => {
 
 exports.register = async (req, res) => {
     const user = await User.create({
-        user_id: req.body.user_id,
         email: req.body.email,
         password_hash: bcrypt.hashSync(req.body.password, 10),
         first_name: req.body.first_name,

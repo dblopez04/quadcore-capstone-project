@@ -1,7 +1,7 @@
 -- By Luis Pena
 CREATE EXTENSION IF NOT EXISTS postgis; -- enabling PostGIS extension for geospatial data and queries.
 
-CREATE TYPE user_role AS ENUM('STUDENT','FACULTY','ADMIN','VISITOR');
+CREATE TYPE role AS ENUM('STUDENT','FACULTY','ADMIN','VISITOR');
 CREATE TYPE poi_category AS ENUM(
     'ACADEMIC BUILDING',
     'LIBRARY',
@@ -62,7 +62,10 @@ CREATE TABLE users(
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     phone_number VARCHAR(20),
-    role user_role NOT NULL, -- enum for user role (student, faculty, visitor, admin)
+    user_role role NOT NULL, -- enum for user role (student, faculty, visitor, admin)
+    refresh_token TEXT,
+    "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') -- email following a regex user@mail.com
 );
 
