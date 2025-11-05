@@ -14,7 +14,7 @@ export default function AuthHeader() {
         }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <img
-                    src="https://upload.wikimedia.org/wikipedia/en/7/7f/University_of_North_Texas_logo.svg"
+                    src="UNT-logo2.png"
                     alt="UNT"
                     style={{ height: 28 }}
                 />

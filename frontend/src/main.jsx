@@ -12,15 +12,11 @@ import About from './pages/About.jsx'
 import Help from './pages/Help.jsx'
 import Search from './pages/Search.jsx'
 import Bookmarks from './pages/Bookmarks.jsx'
-
-
-
+import Settings from './pages/Settings.jsx'
 
 const router = createBrowserRouter([
-    //  Show Login by default
     { path: '/', element: <Login /> },
 
-    // Home moved to /home so Navbar/Layout don't show on Login
     {
         path: '/home',
         element: (
@@ -69,8 +65,15 @@ const router = createBrowserRouter([
             </Layout>
         ),
     },
+    {
+        path: '/settings',
+        element: (
+            <Layout narrow>
+                <Settings />
+            </Layout>
+        ),
+    },
 ])
-
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
