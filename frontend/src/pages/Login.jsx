@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import AuthHeader from "../components/AuthHeader";
 
 export default function Login() {
     const navigate = useNavigate();
@@ -14,10 +13,29 @@ export default function Login() {
                 fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
             }}
         >
-            {/* Top Bar */}
-            <AuthHeader />
+            {/* Top Strip */}
+            <div
+                className="nav"
+                style={{
+                    paddingTop: 8,
+                    paddingBottom: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <img src="/UNT-logo2.png" alt="UNT" style={{ height: 28 }} />
+                    <span style={{ fontWeight: 800 }}>Getting Around UNT</span>
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                    <a href="/help" style={{ color: "#fff", textDecoration: "none" }}>
+                        Help
+                    </a>
+                </div>
+            </div>
 
-            {/* Login Card */}
+            {/* Center Card */}
             <div
                 style={{
                     flex: 1,
@@ -34,37 +52,34 @@ export default function Login() {
                         textAlign: "center",
                         background: "#fff",
                         padding: 24,
-                        borderRadius: 10,
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                        borderRadius: 12,
+                        boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
                     }}
                 >
-                    {/* UNT Logo */}
                     <img
-                        src="https://upload.wikimedia.org/wikipedia/en/7/7f/University_of_North_Texas_logo.svg"
-                        alt="UNT Logo"
-                        style={{ width: 140, margin: "0 auto 16px" }}
+                        src="unt-logo.png"
+                        //alt="UNT Logo"
+                        style={{ width: 120, margin: "0 auto 12px" }}
                     />
 
-                    <h2 style={{ color: "#006A31", marginBottom: 24 }}>
+                    <h2 style={{ color: "#006A31", marginBottom: 20 }}>
                         Getting Around UNT
                     </h2>
 
-                    {/* Email Input */}
                     <input
                         type="email"
-                        placeholder="Email"
+                        placeholder="UNT Email"
                         style={{
                             width: "100%",
                             padding: 12,
                             marginBottom: 12,
                             border: "1px solid #d9d9d9",
-                            borderRadius: 6,
+                            borderRadius: 8,
                             fontSize: 16,
                             backgroundColor: "#f9faff",
                         }}
                     />
 
-                    {/* Password Input */}
                     <input
                         type="password"
                         placeholder="Password"
@@ -73,24 +88,18 @@ export default function Login() {
                             padding: 12,
                             marginBottom: 16,
                             border: "1px solid #d9d9d9",
-                            borderRadius: 6,
+                            borderRadius: 8,
                             fontSize: 16,
                             backgroundColor: "#f9faff",
                         }}
                     />
 
-                    {/* Login Button */}
                     <button
-                        onClick={() => navigate("/home")} 
+                        onClick={() => navigate("/home")}
+                        className="btn-primary btn"
                         style={{
                             width: "100%",
-                            padding: 12,
-                            marginBottom: 16,
-                            backgroundColor: "#555",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 6,
-                            cursor: "pointer",
+                            marginBottom: 12,
                             fontSize: 16,
                             fontWeight: 600,
                         }}
@@ -98,43 +107,32 @@ export default function Login() {
                         Login
                     </button>
 
-                    {/* Links */}
-                    <div style={{ marginBottom: 16 }}>
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            marginBottom: 12,
+                        }}
+                    >
                         <a
-                            href="#"
-                            style={{
-                                fontWeight: 600,
-                                color: "#111",
-                                textDecoration: "none",
-                                display: "block",
-                                marginBottom: 6,
-                            }}
+                            href="/register"
+                            style={{ textDecoration: "none", fontWeight: 600, color: "#111" }}
                         >
                             Register
                         </a>
                         <a
-                            href="#"
-                            style={{
-                                fontSize: 14,
-                                color: "#666",
-                                textDecoration: "none",
-                            }}
+                            href="/forgot"
+                            style={{ textDecoration: "none", color: "#666" }}
                         >
                             Forgot Password
                         </a>
                     </div>
 
-                    {/* Continue as Guest */}
                     <button
                         onClick={() => navigate("/map")}
+                        className="btn btn-outline"
                         style={{
                             width: "100%",
-                            padding: 12,
-                            backgroundColor: "#eee",
-                            color: "#666",
-                            border: "none",
-                            borderRadius: 6,
-                            cursor: "pointer",
                             fontSize: 16,
                             fontWeight: 500,
                         }}

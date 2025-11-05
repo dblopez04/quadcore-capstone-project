@@ -1,124 +1,77 @@
-﻿export default function Search() {
-    const filters = [
-        "Dining",
-        "Parking",
-        "Accessibility Routes",
-        "Well-Lit Paths",
-    ];
+﻿import { useState } from "react";
+
+export default function Search() {
+    const [tab, setTab] = useState("search");
+    const filters = ["Dining", "Parking", "Accessibility Routes", "Well-Lit Paths"];
 
     return (
-        <div className="page" style={{ padding: "16px", fontFamily: "system-ui" }}>
-            <header style={{ textAlign: "center", marginBottom: 20 }}>
-                <img
-                    src="https://upload.wikimedia.org/wikipedia/en/7/7f/University_of_North_Texas_logo.svg"
-                    alt="UNT"
-                    style={{ height: 40 }}
-                />
-                <nav
-                    style={{
-                        display: "flex",
-                        justifyContent: "center",
-                        gap: 24,
-                        marginTop: 12,
-                        flexWrap: "wrap",
-                    }}
-                >
-                    {["Home", "Map", "Search", "Bookmarks", "Settings", "Log Out"].map(
-                        (item) => (
-                            <a
-                                key={item}
-                                href="#"
-                                style={{
-                                    color: item === "Search" ? "#006A31" : "#666",
-                                    fontWeight: item === "Search" ? "700" : "500",
-                                    textDecoration: "none",
-                                }}
-                            >
-                                {item}
-                            </a>
-                        )
-                    )}
-                </nav>
+        <div className="page" style={{ padding: 16, fontFamily: "system-ui" }}>
+            <header style={{ textAlign: "center", marginBottom: 12 }}>
+                <img src="/UNT-logo.png" alt="UNT" style={{ height: 40 }} />
             </header>
 
-            <main style={{ maxWidth: 600, margin: "0 auto" }}>
-                <div style={{ display: "flex", justifyContent: "center", gap: 40, marginBottom: 20 }}>
-                    <h2>Search</h2>
-                    <h2 style={{ color: "#555" }}>Routes</h2>
-                </div>
-
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        border: "1px solid #ccc",
-                        borderRadius: 8,
-                        padding: "8px 12px",
-                        marginBottom: 16,
-                    }}
+            {/* Real tabs */}
+            <div className="tabs" role="tablist" aria-label="Search tabs">
+                <button
+                    className={`tab ${tab === "search" ? "active" : ""}`}
+                    role="tab"
+                    aria-selected={tab === "search"}
+                    onClick={() => setTab("search")}
                 >
-                    <span style={{ fontSize: 18, marginRight: 8 }}>🔍</span>
-                    <input
-                        type="text"
-                        placeholder="Search for building or location"
-                        style={{
-                            flex: 1,
-                            border: "none",
-                            outline: "none",
-                            fontSize: 16,
-                        }}
-                    />
-                </div>
+                    Search
+                </button>
+                <button
+                    className={`tab ${tab === "routes" ? "active" : ""}`}
+                    role="tab"
+                    aria-selected={tab === "routes"}
+                    onClick={() => setTab("routes")}
+                >
+                    Routes
+                </button>
+            </div>
 
-                <ul style={{ listStyle: "none", padding: 0, marginBottom: 24 }}>
-                    {["Willis Library", "Union", "Eagles Landing"].map((loc) => (
-                        <li
-                            key={loc}
-                            style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                padding: "10px 0",
-                                borderBottom: "1px solid #eee",
-                            }}
-                        >
-                            <span>{loc}</span>
-                            <span style={{ color: "#555", fontSize: 20 }}>›</span>
-                        </li>
-                    ))}
-                </ul>
+            <main style={{ maxWidth: 600, margin: "0 auto" }}>
+                {tab === "search" && (
+                    <>
+                        <div style={{ display: "flex", alignItems: "center", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 12px", marginBottom: 16 }}>
+                            <span style={{ fontSize: 18, marginRight: 8 }}>🔍</span>
+                            <input type="text" className="search-input" placeholder="Search for building or location"
+                                style={{ flex: 1, border: "none", outline: "none", fontSize: 16 }} />
+                        </div>
 
-                <h3 style={{ color: "#888", marginBottom: 10 }}>Filters</h3>
-                <ul style={{ listStyle: "none", padding: 0 }}>
-                    {filters.map((f) => (
-                        <li
-                            key={f}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 10,
-                                marginBottom: 8,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    background: "#ecfdf5",
-                                    color: "#006A31",
-                                    borderRadius: "50%",
-                                    width: 22,
-                                    height: 22,
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontWeight: 600,
-                                }}
-                            >
-                                ✓
-                            </span>
-                            <span>{f}</span>
-                        </li>
-                    ))}
-                </ul>
+                        <ul style={{ listStyle: "none", padding: 0, marginBottom: 24 }}>
+                            {["Willis Library", "Union", "Eagles Landing"].map((loc) => (
+                                <li key={loc} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #eee" }}>
+                                    <span>{loc}</span>
+                                    <span style={{ color: "#555", fontSize: 20 }}>›</span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <h3 style={{ color: "#888", marginBottom: 10 }}>Filters</h3>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            {filters.map((f) => (
+                                <span key={f} className="pill">✓ {f}</span>
+                            ))}
+                        </div>
+                    </>
+                )}
+
+                {tab === "routes" && (
+                    <div className="panel">
+                        <h3 style={{ marginTop: 0 }}>Plan a route</h3>
+                        <div style={{ display: "grid", gap: 8 }}>
+                            <input className="search-input" placeholder="From…" />
+                            <input className="search-input" placeholder="To…" />
+                        </div>
+                        <button className="btn-primary btn" style={{ marginTop: 12, width: "auto" }}>
+                            Find Route
+                        </button>
+                        <div style={{ color: "#777", marginTop: 8, fontSize: 14 }}>
+                            Accessibility & well-lit options supported.
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     );

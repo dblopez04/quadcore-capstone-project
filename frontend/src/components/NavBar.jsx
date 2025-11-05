@@ -1,11 +1,17 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        navigate("/");
+    };
+
     return (
         <header className="nav">
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <img
-                    src="https://upload.wikimedia.org/wikipedia/en/7/7f/University_of_North_Texas_logo.svg"
+                    src="/UNT-logo2.png"
                     alt="UNT"
                     style={{ height: 28 }}
                 />
@@ -56,6 +62,7 @@ export default function Navbar() {
                 >
                     Search
                 </NavLink>
+
                 <NavLink
                     to="/bookmarks"
                     style={({ isActive }) => ({
@@ -69,7 +76,6 @@ export default function Navbar() {
                 >
                     Bookmarks
                 </NavLink>
-
 
                 <NavLink
                     to="/about"
@@ -98,6 +104,28 @@ export default function Navbar() {
                 >
                     Help
                 </NavLink>
+
+                <NavLink
+                    to="/settings"
+                    style={({ isActive }) => ({
+                        color: "#fff",
+                        textDecoration: "none",
+                        padding: "6px 10px",
+                        borderRadius: 8,
+                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
+                        fontWeight: 600,
+                    })}
+                >
+                    Settings
+                </NavLink>
+
+                <button
+                    className="btn btn-outline"
+                    style={{ width: "auto" }}
+                    onClick={handleLogout}
+                >
+                    Log Out
+                </button>
             </nav>
         </header>
     );

@@ -1,9 +1,10 @@
 ﻿/* =========================================================
-    Base Theme Variables (Sprint 2)
+    Base Theme Variables
    ========================================================= */
 :root {
     --unt-green: #006A31;
     --unt-green-600: #0a7a3e;
+    --unt-green-50: #E6F4EC;
     --text: #111;
     --muted: #6b7280;
     --border: #e5e7eb;
@@ -25,9 +26,7 @@
     background: #fff;
 }
 
-/* =========================================================
-   Layout Utilities
-   ========================================================= */
+/* Layout Utilities */
 html, body, #root {
     height: 100%;
     margin: 0;
@@ -102,6 +101,10 @@ html, body, #root {
         transform: scale(1.02);
     }
 
+.btn:active {
+    transform: scale(0.99);
+}
+
 .btn-primary {
     background: var(--unt-green);
     color: #fff;
@@ -144,16 +147,14 @@ html, body, #root {
     font-size: 0.9rem;
 }
 
-/* =========================================================
-    Navigation
-   ========================================================= */
+/* Navigation */
 .nav {
     display: flex;
     gap: 10px;
     align-items: center;
     justify-content: space-between;
     padding: 10px 16px;
-    background: #111;
+    background: var(--unt-green);
     color: #fff;
 }
 
@@ -172,56 +173,103 @@ html, body, #root {
     gap: 12px;
 }
 
-/* =========================================================
-    Original Vite Defaults (kept for fallback styling)
-   ========================================================= */
+.nav-left, .nav-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+}
+
+    .nav-brand img {
+        height: 28px;
+        width: auto;
+    }
+
+/* Tabs (Search page) */
+.tabs {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin: 12px 0 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tab {
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 700;
+    color: #555;
+}
+
+    .tab.active {
+        color: var(--unt-green);
+        border-color: var(--border);
+        background: #fff;
+    }
+
+/* Inputs */
+.search-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--unt-green);
+        box-shadow: 0 0 0 .2rem rgba(0,106,49,.15);
+    }
+
+/* Small helpers */
+.text-unt {
+    color: var(--unt-green) !important;
+}
+
+.bg-unt {
+    background: var(--unt-green) !important;
+    color: #fff !important;
+}
+
+
+
 a {
-    font-weight: 500;
-    color: #646cff;
-    text-decoration: inherit;
+    color: inherit;
+    text-decoration: none;
 }
 
     a:hover {
-        color: #535bf2;
+        text-decoration: underline;
     }
 
-h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
-}
 
 button {
-    border-radius: 8px;
-    border: 1px solid transparent;
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 500;
     font-family: inherit;
-    background-color: #1a1a1a;
+    background: transparent;
+    border: none;
+    padding: 0;
     cursor: pointer;
-    transition: border-color 0.25s;
 }
-
-    button:hover {
-        border-color: #646cff;
-    }
 
     button:focus,
     button:focus-visible {
-        outline: 4px auto -webkit-focus-ring-color;
+        outline: none;
     }
 
 @media (prefers-color-scheme: light) {
     :root {
-        color: #213547;
-        background-color: #ffffff;
-    }
-
-    a:hover {
-        color: #747bff;
-    }
-
-    button {
-        background-color: #f9f9f9;
+        color: var(--text);
+        background-color: var(--bg);
     }
 }
