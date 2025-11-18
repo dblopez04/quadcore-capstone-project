@@ -5,7 +5,13 @@ const cookieParser = require("cookie-parser");
 const db = require("./app/models/index");
 const { swaggerUi, swaggerSpec } = require("./app/config/swagger.config");
 
-app.use(cors()); // Access controls for cross-origin requests, prevents XSS
+app.use(
+    cors({
+        origin: "http://localhost:5173", // your Vite dev server
+        credentials: true,              // allow cookies / auth headers
+    })
+);
+// Access controls for cross-origin requests, prevents XSS
 app.use(express.json()); // Parses JSON requests
 app.use(express.urlencoded({ extended:true })); // Parses HTTP forms
 app.use(cookieParser()); // I'll let you guess what this one does

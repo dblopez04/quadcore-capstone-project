@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import './index.css'
 
 import Login from './pages/Login.jsx'
+import Register from "./pages/Register";
 import Layout from './components/Layout.jsx'
 import Home from './pages/Home.jsx'
 import MapPage from './pages/MapPage.jsx'
@@ -16,6 +17,7 @@ import Settings from './pages/Settings.jsx'
 
 const router = createBrowserRouter([
     { path: '/', element: <Login /> },
+    { path: '/register', element: <Register /> },
 
     {
         path: '/home',

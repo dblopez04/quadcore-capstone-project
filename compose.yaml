@@ -4,6 +4,8 @@ services:
     container_name: backend
     ports:
       - "4000:4000"
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       OSRM_URL: http://osrm:5000

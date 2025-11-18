@@ -1,26 +1,39 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginRequest } from "../api/auth";
+import { registerRequest } from "../api/auth";
 
-export default function Login() {
+export default function Register() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
+    const [userRole, setUserRole] = useState("STUDENT"); // default
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
 
-    const handleLogin = async (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
         setError("");
         setLoading(true);
 
         try {
-            const result = await loginRequest(email, password);
-            console.log("Login success:", result);
+            const payload = {
+                email,
+                password,
+                first_name: firstName,
+                last_name: lastName,
+                phone_number: phoneNumber,
+                user_role: userRole,
+            };
 
-            // redirect after successful login
-            navigate("/home");
+            const result = await registerRequest(payload);
+            console.log("Registration success:", result);
+
+            // After successful registration, go to login page
+            navigate("/");
         } catch (err) {
             setError(err.message);
         } finally {
@@ -38,7 +51,7 @@ export default function Login() {
                 fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
             }}
         >
-            {/* Top Strip */}
+            {/* Top Strip (same as Login) */}
             <div
                 className="nav"
                 style={{
@@ -71,10 +84,10 @@ export default function Login() {
                 }}
             >
                 <form
-                    onSubmit={handleLogin}
+                    onSubmit={handleRegister}
                     style={{
                         width: "100%",
-                        maxWidth: 420,
+                        maxWidth: 480,
                         textAlign: "center",
                         background: "#fff",
                         padding: 24,
@@ -88,10 +101,46 @@ export default function Login() {
                     />
 
                     <h2 style={{ color: "#006A31", marginBottom: 20 }}>
-                        Getting Around UNT
+                        Create Your UNT Account
                     </h2>
 
-                    {/* EMAIL INPUT */}
+                    {/* First Name */}
+                    <input
+                        type="text"
+                        placeholder="First Name"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                        style={{
+                            width: "100%",
+                            padding: 12,
+                            marginBottom: 12,
+                            border: "1px solid #d9d9d9",
+                            borderRadius: 8,
+                            fontSize: 16,
+                            backgroundColor: "#f9faff",
+                        }}
+                    />
+
+                    {/* Last Name */}
+                    <input
+                        type="text"
+                        placeholder="Last Name"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                        style={{
+                            width: "100%",
+                            padding: 12,
+                            marginBottom: 12,
+                            border: "1px solid #d9d9d9",
+                            borderRadius: 8,
+                            fontSize: 16,
+                            backgroundColor: "#f9faff",
+                        }}
+                    />
+
+                    {/* Email */}
                     <input
                         type="email"
                         placeholder="UNT Email"
@@ -109,7 +158,43 @@ export default function Login() {
                         }}
                     />
 
-                    {/* PASSWORD INPUT */}
+                    {/* Phone Number */}
+                    <input
+                        type="tel"
+                        placeholder="Phone Number"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        style={{
+                            width: "100%",
+                            padding: 12,
+                            marginBottom: 12,
+                            border: "1px solid #d9d9d9",
+                            borderRadius: 8,
+                            fontSize: 16,
+                            backgroundColor: "#f9faff",
+                        }}
+                    />
+
+                    {/* Role */}
+                    <select
+                        value={userRole}
+                        onChange={(e) => setUserRole(e.target.value)}
+                        style={{
+                            width: "100%",
+                            padding: 12,
+                            marginBottom: 12,
+                            border: "1px solid #d9d9d9",
+                            borderRadius: 8,
+                            fontSize: 16,
+                            backgroundColor: "#f9faff",
+                        }}
+                    >
+                        <option value="STUDENT">Student</option>
+                        <option value="FACULTY">Faculty</option>
+                        <option value="VISITOR">Visitor</option>
+                    </select>
+
+                    {/* Password */}
                     <input
                         type="password"
                         placeholder="Password"
@@ -127,7 +212,7 @@ export default function Login() {
                         }}
                     />
 
-                    {/* LOGIN BUTTON */}
+                    {/* Submit */}
                     <button
                         type="submit"
                         disabled={loading}
@@ -139,37 +224,16 @@ export default function Login() {
                             fontWeight: 600,
                         }}
                     >
-                        {loading ? "Logging in..." : "Login"}
+                        {loading ? "Registering..." : "Register"}
                     </button>
 
                     {error && (
                         <p style={{ color: "red", marginBottom: 12 }}>{error}</p>
                     )}
 
-                    <div
-                        style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            marginBottom: 12,
-                        }}
-                    >
-                        <a
-                            href="/register"
-                            style={{ textDecoration: "none", fontWeight: 600, color: "#111" }}
-                        >
-                            Register
-                        </a>
-                        <a
-                            href="/forgot"
-                            style={{ textDecoration: "none", color: "#666" }}
-                        >
-                            Forgot Password
-                        </a>
-                    </div>
-
                     <button
                         type="button"
-                        onClick={() => navigate("/map")}
+                        onClick={() => navigate("/")}
                         className="btn btn-outline"
                         style={{
                             width: "100%",
@@ -177,7 +241,7 @@ export default function Login() {
                             fontWeight: 500,
                         }}
                     >
-                        Continue as Guest
+                        Back to Login
                     </button>
                 </form>
             </div>
