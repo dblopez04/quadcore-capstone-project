@@ -145,6 +145,18 @@ describe('User Controller', () => {
             expect(res.status).toHaveBeenCalledWith(403);
             expect(res.json).toHaveBeenCalledWith({ message: "Could not get search history" });
         });
+
+        it('should return 403 when refresh token is missing', async () => {
+            req.cookies = {
+                accessToken: 'valid-access-token'
+                // no refreshToken
+            };
+
+            await getSearchHistory(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(403);
+            expect(res.json).toHaveBeenCalledWith({ message: "Refresh token not found" });
+        });
     });
 
     describe('addSearchToSearchHistory', () => {
@@ -233,6 +245,19 @@ describe('User Controller', () => {
             expect(res.status).toHaveBeenCalledWith(403);
             expect(res.json).toHaveBeenCalledWith({ message: "Could not add to search history" });
         });
+
+        it('should return 403 when refresh token is missing', async () => {
+            req.cookies = {
+                accessToken: 'valid-access-token'
+                // no refreshToken
+            };
+            req.body = { search: 'test search' };
+
+            await addSearchToSearchHistory(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(403);
+            expect(res.json).toHaveBeenCalledWith({ message: "Refresh token not found" });
+        });
     });
 
     describe('clearSearchHistory', () => {
@@ -296,6 +321,18 @@ describe('User Controller', () => {
 
             expect(res.status).toHaveBeenCalledWith(500);
             expect(res.json).toHaveBeenCalledWith({ message: error.message });
+        });
+
+        it('should return 403 when refresh token is missing', async () => {
+            req.cookies = {
+                accessToken: 'valid-access-token'
+                // no refreshToken
+            };
+
+            await clearSearchHistory(req, res);
+
+            expect(res.status).toHaveBeenCalledWith(403);
+            expect(res.json).toHaveBeenCalledWith({ message: "Refresh token not found" });
         });
     });
 });

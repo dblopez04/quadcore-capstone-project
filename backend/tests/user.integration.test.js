@@ -40,11 +40,6 @@ describe('User Integration Tests', () => {
         await db.sequelize.authenticate();
     });
 
-    afterAll(async () => {
-        // Clean up and close database connection
-        await db.sequelize.close();
-    });
-
     beforeEach(async () => {
         // Clear the users table before each test
         await db.User.destroy({ where: {}, truncate: true, cascade: true });

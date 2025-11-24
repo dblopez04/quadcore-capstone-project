@@ -64,6 +64,7 @@ exports.register = async (req, res) => {
             email: user.email,
             first_name: user.first_name,
             last_name: user.last_name,
+            phone_number: user.phone_number,
             user_role: user.user_role
         }
     });
@@ -109,6 +110,7 @@ exports.login = async (req, res) => {
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
+        phone_number: user.phone_number,
         user_role: user.user_role
       }
     });

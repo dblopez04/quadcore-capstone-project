@@ -9,5 +9,6 @@ module.exports = {
     '!app/models/index.js'
   ],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
-  testTimeout: 10000
+  testTimeout: 10000,
+  maxWorkers: 1  // Run tests sequentially to avoid database conflicts
 };

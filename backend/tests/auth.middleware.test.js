@@ -175,5 +175,24 @@ describe('Auth Middleware', () => {
             });
             expect(next).not.toHaveBeenCalled();
         });
+
+        it('should call next() when user found but neither email nor phone match', async () => {
+            req.body = {
+                email: 'new@example.com',
+                phone_number: '1111111111'
+            };
+
+            const mockUser = {
+                email: 'different@example.com',
+                phone_number: '2222222222'
+            };
+
+            db.User.findOne = jest.fn().mockResolvedValue(mockUser);
+
+            await duplicateRegistration(req, res, next);
+
+            expect(next).toHaveBeenCalled();
+            expect(res.status).not.toHaveBeenCalled();
+        });
     });
 });
