@@ -1,3 +1,5 @@
+# Full transparency: I had Claude generate all of the tests
+
 # Backend Test Summary
 
 ## Overview
