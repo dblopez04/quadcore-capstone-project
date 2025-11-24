@@ -27,7 +27,13 @@ app.get("/", (req, res) => {
     res.json({ message: "Hello!" })
 });
 
-db.sequelize.authenticate();
-app.listen(4000, () => {
-    console.log(`server is running on port 4000.`);
-});
+db.sequelize.authenticate()
+    .then(() => {
+        console.log("Database connection has been established successfully.");
+        app.listen(4000, () => {
+            console.log(`server is running on port 4000.`);
+        });
+    })
+    .catch((err) => {
+        console.error("Unable to connect to the database:", err);
+    });
