@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\backend",
+    "\\backend\\app",
+    "\\backend\\app\\controllers",
+    "\\backend\\app\\middleware",
+    "\\backend\\app\\models",
+    "\\backend\\app\\routes",
+    "\\database",
+    "\\frontend",
+    "\\frontend\\public"
+  ],
+  "SelectedNode": "\\.env.example",
+  "PreviewInSolutionExplorer": false
+}

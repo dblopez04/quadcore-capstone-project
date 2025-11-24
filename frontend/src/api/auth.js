@@ -1,5 +1,21 @@
 ﻿// frontend/src/api/auth.js
-export const API_BASE_URL = "http://localhost:4000";
+
+export const API_BASE_URL = "http://localhost:4000"; // adjust if your backend uses a different port or prefix
+
+async function handleResponse(response, defaultErrorMessage) {
+    let data = {};
+    try {
+        data = await response.json();
+    } catch {
+        // ignore JSON errors, will fall back to default message
+    }
+
+    if (!response.ok) {
+        throw new Error(data.message || defaultErrorMessage);
+    }
+
+    return data;
+}
 
 export async function loginRequest(email, password) {
     const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
@@ -7,19 +23,12 @@ export async function loginRequest(email, password) {
         headers: {
             "Content-Type": "application/json",
         },
-        credentials: "include",
+        credentials: "include", // send/receive cookies
         body: JSON.stringify({ email, password }),
     });
 
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-    }
-
-    return data;
+    return handleResponse(response, "Login failed");
 }
-
 
 export async function registerRequest(payload) {
     const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
@@ -31,11 +40,5 @@ export async function registerRequest(payload) {
         body: JSON.stringify(payload),
     });
 
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
-    }
-
-    return data;
+    return handleResponse(response, "Registration failed");
 }

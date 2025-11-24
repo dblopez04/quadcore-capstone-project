@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerRequest } from "../api/auth";
 
@@ -20,6 +20,7 @@ export default function Register() {
         setLoading(true);
 
         try {
+            //  If backend expects different field names, adjust here.
             const payload = {
                 email,
                 password,
@@ -35,7 +36,7 @@ export default function Register() {
             // After successful registration, go to login page
             navigate("/");
         } catch (err) {
-            setError(err.message);
+            setError(err.message || "Registration failed");
         } finally {
             setLoading(false);
         }
@@ -60,9 +61,13 @@ export default function Register() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
+                    paddingInline: 16,
+                    backgroundColor: "#006A31", // UNT green
+                    color: "#fff",
                 }}
             >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {/* logo lives in /public, so use absolute path */}
                     <img src="/UNT-logo2.png" alt="UNT" style={{ height: 28 }} />
                     <span style={{ fontWeight: 800 }}>Getting Around UNT</span>
                 </div>
@@ -96,7 +101,9 @@ export default function Register() {
                     }}
                 >
                     <img
-                        src="unt-logo.png"
+                        // use the actual filename from /public
+                        src="/UNT-logo.png"
+                        alt="UNT"
                         style={{ width: 120, margin: "0 auto 12px" }}
                     />
 

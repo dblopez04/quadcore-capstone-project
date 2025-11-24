@@ -22,7 +22,7 @@ export default function Login() {
             // redirect after successful login
             navigate("/home");
         } catch (err) {
-            setError(err.message);
+            setError(err.message || "Login failed");
         } finally {
             setLoading(false);
         }
@@ -47,6 +47,9 @@ export default function Login() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
+                    paddingInline: 16,
+                    backgroundColor: "#006A31",
+                    color: "#fff",
                 }}
             >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -83,7 +86,8 @@ export default function Login() {
                     }}
                 >
                     <img
-                        src="unt-logo.png"
+                        src="/UNT-logo.png"
+                        alt="UNT"
                         style={{ width: 120, margin: "0 auto 12px" }}
                     />
 
@@ -155,7 +159,11 @@ export default function Login() {
                     >
                         <a
                             href="/register"
-                            style={{ textDecoration: "none", fontWeight: 600, color: "#111" }}
+                            style={{
+                                textDecoration: "none",
+                                fontWeight: 600,
+                                color: "#111",
+                            }}
                         >
                             Register
                         </a>
