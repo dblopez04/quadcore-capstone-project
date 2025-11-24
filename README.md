@@ -6,7 +6,7 @@
 The only prerequisite you need to run this program is [Docker](https://www.docker.com/ "docker").
 
 To build and run all services at the same time, clone the repository in your terminal, cd into it, and then run
-`docker compose up --build.`
+`docker compose up --build`
 
 Once you've built the containers, you can run the containers without rebuilding them by using
 `docker compose up`
