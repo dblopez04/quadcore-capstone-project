@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         phone_number: { type: DataTypes.STRING(20), allowNull: true },
         user_role: { type: DataTypes.ENUM('STUDENT','FACULTY','ADMIN','VISITOR'), allowNull: false },
         refresh_token: { type: DataTypes.TEXT, allowNull: true },
+        search_history: { type: DataTypes.ARRAY(DataTypes.STRING(255)), allowNull: true },
     }, {
         timestamps: true
     });

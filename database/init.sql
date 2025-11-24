@@ -64,6 +64,7 @@ CREATE TABLE users(
     phone_number VARCHAR(20),
     user_role role NOT NULL, -- enum for user role (student, faculty, visitor, admin)
     refresh_token TEXT,
+    search_history VARCHAR(255) ARRAY,
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$') -- email following a regex user@mail.com
