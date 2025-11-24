@@ -11,6 +11,41 @@
     --bg: #ffffff;
 }
 
+/* THEME SYSTEM (Light, Dark, System) */
+
+/* Light theme (default) */
+.theme-light {
+    --unt-green: #006A31;
+    --unt-green-600: #0a7a3e;
+    --unt-green-50: #E6F4EC;
+    --text: #111;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --bg: #ffffff;
+    --input-bg: #ffffff;
+    --input-text: #111111;
+    --input-border: #cfcfcf;
+}
+
+/* Dark theme */
+.theme-dark {
+    --unt-green: #0f7f45;
+    --unt-green-600: #0a6e3b;
+    --unt-green-50: #0b2a1c;
+    --text: #f4f4f4;
+    --muted: #9ca3af;
+    --border: #3a3a3a;
+    --bg: #121212;
+    --input-bg: #1f1f1f;
+    --input-text: #f4f4f4;
+    --input-border: #444444;
+}
+
+/* Prevent browser from auto-darkening form controls */
+body {
+    color-scheme: light dark;
+}
+
 /* Force a mobile-width frame for desktop demos */
 .phone-demo {
     width: 100%;
@@ -26,7 +61,6 @@
     background: #fff;
 }
 
-/* Layout Utilities */
 html, body, #root {
     height: 100%;
     margin: 0;
@@ -34,11 +68,18 @@ html, body, #root {
     font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
     line-height: 1.5;
     font-weight: 400;
-    color-scheme: light dark;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
+
+/* Keep the app in light mode for now, even if system is dark */
+body {
+    background: var(--bg);
+    color: var(--text);
+    color-scheme: light;
+}
+
 
 .page {
     min-height: 100vh;
@@ -218,6 +259,29 @@ html, body, #root {
         background: #fff;
     }
 
+
+input,
+textarea,
+select {
+    background: var(--input-bg) !important;
+    color: var(--input-text) !important;
+    border: 1px solid var(--input-border) !important;
+}
+
+    /* Autofill Fix (Chrome, Edge, Safari) */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    textarea:-webkit-autofill,
+    textarea:-webkit-autofill:hover,
+    textarea:-webkit-autofill:focus,
+    select:-webkit-autofill,
+    select:-webkit-autofill:hover,
+    select:-webkit-autofill:focus {
+        -webkit-text-fill-color: var(--input-text) !important;
+        box-shadow: 0 0 0px 1000px var(--input-bg) inset !important;
+        border: 1px solid var(--input-border) !important;
+    }
 /* Inputs */
 .search-input {
     width: 100%;
