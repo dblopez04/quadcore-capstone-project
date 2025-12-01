@@ -53,6 +53,9 @@ CREATE TYPE report_status AS ENUM('PENDING', 'IN PROGRESS', 'RESOLVED', 'REJECTE
 CREATE TYPE search_type AS ENUM('POI','EVENT','ROUTE','LOCATION');
 
 
+CREATE TYPE priority_level AS ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
+
+
 
 
 CREATE TABLE users(
@@ -120,4 +123,63 @@ CREATE TABLE points_of_interest(
     contact_info TEXT,
     is_active BOOLEAN DEFAULT true    
 
+);
+
+CREATE TABLE events (
+    event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    location_id UUID NOT NULL REFERENCES locations(location_id),
+    start_date_time TIMESTAMP NOT NULL,
+    end_date_time TIMESTAMP NOT NULL,
+    event_type event_type NOT NULL,
+    organizer_id UUID NOT NULL REFERENCES users(user_id),
+    capacity INTEGER CHECK (capacity > 0),
+    registered_count INTEGER DEFAULT 0 CHECK (registered_count >= 0),
+    is_public BOOLEAN DEFAULT true,
+    status event_status DEFAULT 'SCHEDULED',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT end_after_start CHECK (end_date_time > start_date_time),
+    CONSTRAINT capacity_check CHECK (registered_count <= capacity)
+);
+
+CREATE TABLE event_registrations (
+    registration_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    registration_status VARCHAR(50) DEFAULT 'REGISTERED',
+    UNIQUE(event_id, user_id)
+);
+
+CREATE TABLE bookmarks (
+    bookmark_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    poi_id UUID NOT NULL REFERENCES points_of_interest(poi_id) ON DELETE CASCADE,
+    custom_name VARCHAR(255),
+    notes TEXT,
+    category VARCHAR(100),
+    is_favorite BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_visited TIMESTAMP,
+    UNIQUE(user_id, poi_id)
+);
+
+CREATE TABLE reports (
+    report_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    reporter_id UUID NOT NULL REFERENCES users(user_id),
+    report_type report_type NOT NULL,
+    target_type VARCHAR(50) NOT NULL,
+    target_id UUID NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    location_id UUID REFERENCES locations(location_id),
+    priority priority_level DEFAULT 'MEDIUM',
+    status report_status DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    assigned_to UUID REFERENCES admin(admin_id),
+    resolved_at TIMESTAMP,
+    resolved_by UUID REFERENCES admin(admin_id),
+    resolution_notes TEXT
 );
