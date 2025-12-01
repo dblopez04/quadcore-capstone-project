@@ -18,14 +18,14 @@ In a testing environment, the example environment file is just fine to use.
 If you would like to use different credentials for the Postgres database, all you need to do is modify the .env files, and then run the build container again.
 
 ## Environment Variables
-| **Name**             | **Description**                                                                  |
-|----------------------|----------------------------------------------------------------------------------|
-| `POSTGRES_USER`      | Username of the Postgres user in the container.                                  |
-| `POSTGRES_PASSWORD`  | Password of the Postgres user in the container.                                  |
-| `POSTGRES_DB`        | Name of the database used in Postgres.                                           |
+| **Name**             | **Description**                                                                    |
+|----------------------|------------------------------------------------------------------------------------|
+| `POSTGRES_USER`      | Username of the Postgres user in the container.                                    |
+| `POSTGRES_PASSWORD`  | Password of the Postgres user in the container.                                    |
+| `POSTGRES_DB`        | Name of the database used in Postgres.                                             |
 | `DATABASE_URL`       | URL of the Postgres database. postgres://\<username>:\<password>@db:5433/<db_name> |
-| `JWT_SECRET`         | Secret key used for JWT (specifically access tokens)                             |
-| `JWT_REFRESH_SECRET` | Secret key used for JWT (specifically refresh tokens)                            |
+| `JWT_SECRET`         | Secret key used for JWT (specifically access tokens)                               |
+| `JWT_REFRESH_SECRET` | Secret key used for JWT (specifically refresh tokens)                              |
 
 ## Dev/Testing URLs
 | **Component**       | **URL**                    |
