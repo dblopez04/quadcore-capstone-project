@@ -76,17 +76,19 @@ exports.addSearchToSearchHistory = async (req, res) => {
         }
 
         const search = req.body.search;
-        let historyArray = user.search_history;
 
         if (!search) {
             return res.status(403).json({ message: "No search found" })
         }
 
+        let historyArray = user.search_history || [];
         historyArray.unshift(search);
+
+        await user.update({ search_history: historyArray });
 
         res.status(200).send({
             message: "Added new search to history",
-            search_history: user.search_history
+            search_history: historyArray
         })
 
     } catch (err) {
