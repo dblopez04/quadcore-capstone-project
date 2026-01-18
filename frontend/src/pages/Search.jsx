@@ -6,14 +6,14 @@ export default function Search() {
     const [tab, setTab] = useState("search");
     const filters = ["Dining", "Parking", "Accessibility Routes", "Well-Lit Paths"];
 
-    // ✅ Location search state
+    // Location search state
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
 
-    // ✅ Search as user types (debounced)
+    // Search as user types 
     useEffect(() => {
         if (!query.trim()) {
             setResults([]);
@@ -137,7 +137,7 @@ export default function Search() {
                             ))}
                         </ul>
 
-                        {/* Filters (kept as-is) */}
+                        {/* Filters */}
                         <h3 style={{ color: "#888", marginBottom: 10 }}>Filters</h3>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                             {filters.map((f) => (
