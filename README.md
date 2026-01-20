@@ -34,3 +34,14 @@ If you would like to use different credentials for the Postgres database, all yo
 | Backend (Express)   | http://localhost:4000      |
 | API Docs (Swagger)  | http://localhost:4000/docs |
 | Database (Postgres) | http://localhost:5433      |
+
+## Dev Workflow with AI Agents
+You can use AI agents (Codex, Claude, etc.) to accelerate work. They are best at:
+- Scaffolding routes, components, and API stubs.
+- Summarizing changes and writing docs/handoffs.
+- Drafting tests and API documentation.
+
+When you use agents:
+- Start with `AGENTS.md` for rules and doc update expectations.
+- Check `docs/README.md` for the documentation index.
+- Update `docs/REQUIREMENTS.md` when implementing or scoping features.
