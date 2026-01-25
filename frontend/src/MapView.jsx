@@ -1,4 +1,6 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import UserLocationMarker from "./components/UserLocationMarker";
+
 
 export default function MapView() {
     // UNT-ish coords; any valid [lat, lng] works
@@ -16,6 +18,7 @@ export default function MapView() {
                     attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                <UserLocationMarker autoCenter={false} />
                 <Marker position={position}>
                     <Popup>University of North Texas</Popup>
                 </Marker>
