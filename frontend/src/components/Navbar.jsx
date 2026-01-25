@@ -1,8 +1,9 @@
+﻿import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
     const navigate = useNavigate();
-
+    const [isOpen, setIsOpen] = useState(false);
     const handleLogout = () => {
         navigate("/");
     };
@@ -18,9 +19,17 @@ export default function Navbar() {
                 <span style={{ fontWeight: 800, letterSpacing: 0.2 }}>
                     Getting Around UNT
                 </span>
+                <button
+                    className="hamburger"
+                    aria-label="Open menu"
+                    aria-expanded={isOpen}
+                    onClick={() => setIsOpen((v) => !v)}
+                >
+                    ☰
+                </button>
             </div>
 
-            <nav className="nav-menu">
+            <nav className={`nav-menu ${isOpen ? "open" : ""}`}>
                 <NavLink
                     to="/home"
                     style={({ isActive }) => ({

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
 import './index.css'
+import "./App.css";
 
 import Login from './pages/Login.jsx'
 import Register from "./pages/Register";
