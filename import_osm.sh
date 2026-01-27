@@ -8,7 +8,7 @@ fi
 
 OSM_DIR="osrm-data"
 OSM_FILE="$OSM_DIR/map.osm.pbf"
-OSM_DOWNLOAD_URL=
+OSM_DOWNLOAD_URL="https://download.geofabrik.de/north-america/us/texas-latest.osm.pbf"
 NETWORK="quadcore-capstone-project-default"
 DB_CONTAINER="db"
 DB_HOST="db"
