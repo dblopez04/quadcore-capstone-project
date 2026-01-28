@@ -53,19 +53,18 @@ docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" <<'SQL'
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-INSERT INTO locations (name, description, coordinates, is_indoor)
+INSERT INTO locations (name, description, coordinates)
 SELECT 
     name,
     'Imported from OpenStreetMap',
-    ST_Transform(way, 4326),
-    FALSE
+    ST_Transform(way, 4326)
 FROM planet_osm_point
 WHERE name IS NOT NULL
 AND ST_IsValid(way)
 LIMIT 500;
 
-INSERT INTO points_of_interest (location_id, name, description, category)
-SELECT l.location_id, l.name, l.description, 'OTHER'
+INSERT INTO points_of_interest (location_id, name, description, category, is_indoor)
+SELECT l.location_id, l.name, l.description, 'OTHER', FALSE
 FROM locations l
 WHERE NOT EXISTS (
   SELECT 1 FROM points_of_interest p WHERE p.location_id = l.location_id

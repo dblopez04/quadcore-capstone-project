@@ -47,7 +47,7 @@ CREATE TYPE report_type AS ENUM(
     'OTHER'
 );
 
-CREATE TYPE report_status AS ENUM('PENDING', 'IN PROGRESS', 'RESOLVED', 'REJECTED');
+CREATE TYPE report_status AS ENUM('PENDING', 'CONFIRMED', 'IN_PROGRESS', 'RESOLVED', 'REJECTED');
 
 
 CREATE TYPE search_type AS ENUM('POI','EVENT','ROUTE','LOCATION');
@@ -106,11 +106,7 @@ CREATE TABLE locations(
     location_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    coordinates GEOMETRY(Point, 4326) NOT NULL, -- POSTGIS POINT for (Latitude, Longitude)
-    building_name VARCHAR(255),
-    floor_number INTEGER,
-    room_number VARCHAR(50),
-    is_indoor BOOLEAN DEFAULT FALSE
+    coordinates GEOMETRY(Point, 4326) NOT NULL -- POSTGIS POINT for (Latitude, Longitude)
 );
 
 CREATE TABLE points_of_interest(
@@ -119,6 +115,10 @@ CREATE TABLE points_of_interest(
     name VARCHAR(255) NOT NULL,
     description TEXT,
     category poi_category NOT NULL,
+    building_name VARCHAR(255),
+    floor_number INTEGER,
+    room_number VARCHAR(50),
+    is_indoor BOOLEAN DEFAULT FALSE,
     operating_hours VARCHAR(255),
     contact_info TEXT,
     is_active BOOLEAN DEFAULT true    

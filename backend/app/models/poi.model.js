@@ -20,11 +20,16 @@ module.exports = (sequelize, DataTypes) => {
             ),
             allowNull: false
         },
+        building_name: { type: DataTypes.STRING(255), allowNull: true },
+        floor_number: { type: DataTypes.INTEGER, allowNull: true },
+        room_number: { type: DataTypes.STRING(50), allowNull: true },
+        is_indoor: { type: DataTypes.BOOLEAN, defaultValue: false },
         operating_hours: { type: DataTypes.STRING(255), allowNull: true },
         contact_info: { type: DataTypes.TEXT, allowNull: true },
         is_active: { type: DataTypes.BOOLEAN, defaultValue: true }
     }, {
-        timestamps: false
+        timestamps: false,
+        tableName: 'points_of_interest'
     });
     return PointOfInterest;
 }

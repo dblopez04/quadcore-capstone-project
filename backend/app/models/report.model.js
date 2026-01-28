@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: 'MEDIUM'
         },
         status: {
-            type: DataTypes.ENUM('PENDING', 'IN PROGRESS', 'RESOLVED', 'REJECTED'),
+            type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'IN_PROGRESS', 'RESOLVED', 'REJECTED'),
             defaultValue: 'PENDING'
         },
         created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },

@@ -41,7 +41,27 @@ You can use AI agents (Codex, Claude, etc.) to accelerate work. They are best at
 - Summarizing changes and writing docs/handoffs.
 - Drafting tests and API documentation.
 
-When you use agents:
-- Start with `AGENTS.md` for rules and doc update expectations.
-- Check `docs/README.md` for the documentation index.
-- Update `docs/REQUIREMENTS.md` when implementing or scoping features.
+### Takeaways from Antigravity usage
+
+Attached [here](example_transcript_antigravity.md) is a transcript of a conversation I had in Antigravity, and I think it could be a useful read for understanding the tools. Here are some of the biggest takeaways:
+
+- Firstly, open your Agent Manager and use Opus 4.5 for planning
+- In this stage, you're outlining the architecture and flows for everything that will be implemented
+- Coding agents can't come up with sound logic and ideas on it's own, that's your responsibility. All the agent does is write code.
+- However, plan mode will steer you in the right direction, which is why I recommend it so much
+- If there's something that's not 100% clear to you make sure to talk it out with Opus
+- Most of your time and energy should be spent in plan mode. It will make everything much easier for you, trust me
+- Once the plan is done, save it to the docs/feature-plan folder and have a Gemini 3 Pro High agent take care of the implementation
+- Make sure you're using a new conversation, more messages means more context and that makes the agent perform worse
+- Gemini is really not that good at following directions. Keep an eye on how it's thinking (which it does a very weird amount of) and don't hesitate to stop and steer it.
+- After Gemini is done, go back to Opus and have it review the code, write tests, and update documentation. Gemini just doesn't wanna do that for some reason
+- If Gemini gets something wrong or causes issues, just let Opus take over. Don't bother wasting your tokens on Gemini
+- I have literally no idea how to find out your usage/token limits in this, which is why you should probably only use Opus for planning, review, and testing (or any issue Gemini can't figure out)
+- Overall, Antigravity isn't that good compared to Claude Code
+- Gemini may give you some issues but if you steer it in the right direction it's alright
+- However, it's definitely worth using Antigravity with this workflow if you don't wanna pay for Claude Code or Codex
+
+### Resources
+- `AGENTS.md` - Rules and doc update expectations
+- `docs/README.md` - Documentation index
+- `docs/feature-plan/` - Implementation plans for new features
