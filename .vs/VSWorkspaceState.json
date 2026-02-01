@@ -1,16 +1,10 @@
 {
   "ExpandedNodes": [
     "",
-    "\\backend",
-    "\\backend\\app",
-    "\\backend\\app\\controllers",
-    "\\backend\\app\\middleware",
-    "\\backend\\app\\models",
-    "\\backend\\app\\routes",
-    "\\database",
     "\\frontend",
-    "\\frontend\\public"
+    "\\frontend\\src",
+    "\\frontend\\src\\pages"
   ],
-  "SelectedNode": "\\.env.example",
+  "SelectedNode": "\\frontend\\src\\pages\\Settings.jsx",
   "PreviewInSolutionExplorer": false
 }

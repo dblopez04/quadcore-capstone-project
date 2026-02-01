@@ -1,9 +1,28 @@
+import { useEffect, useState } from "react";
+import { getBookmarks, removeBookmark, addBookmark } from "../utils/bookmarks";
+import { useNavigate } from "react-router-dom";
+
 export default function Bookmarks() {
-    const bookmarks = [
-        { name: "Willis Library", note: "Quiet floors 4–5" },
-        { name: "Union", note: "Food court & study space" },
-        { name: "Discovery Park", note: "ECE building entrance" },
-    ];
+    const [bookmarks, setBookmarks] = useState([]);
+
+    useEffect(() => {
+        setBookmarks(getBookmarks());
+    }, []);
+
+    function handleRemove(id) {
+        removeBookmark(id);
+        setBookmarks(getBookmarks());
+    }
+
+    function handleAddFromHistory(name) {
+        addBookmark({
+            id: name.toLowerCase().replace(/\s+/g, "-"),
+            name,
+            description: "Added from history"
+        });
+        setBookmarks(getBookmarks());
+    }
+    const navigate = useNavigate();
 
     const recent = [
         "BUS Stop – Highland St",
@@ -28,9 +47,15 @@ export default function Bookmarks() {
                         </div>
 
                         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                            {bookmarks.map((b, i) => (
+                            {bookmarks.length === 0 && (
+                                <li style={{ padding: "10px 0", color: "var(--muted)" }}>
+                                    No bookmarks saved yet.
+                                </li>
+                            )}
+
+                            {bookmarks.map((b) => (
                                 <li
-                                    key={i}
+                                    key={b.id}
                                     style={{
                                         display: "flex",
                                         justifyContent: "space-between",
@@ -42,16 +67,33 @@ export default function Bookmarks() {
                                     <div>
                                         <div style={{ fontWeight: 600 }}>{b.name}</div>
                                         <div style={{ color: "var(--muted)", fontSize: 14 }}>
-                                            {b.note}
+                                            {b.description}
                                         </div>
                                     </div>
                                     <div style={{ display: "flex", gap: 8 }}>
-                                        <button className="btn" style={{ width: "auto" }}>
+                                        <button
+                                            className="btn"
+                                            style={{ width: "auto" }}
+                                            onClick={() =>
+                                                navigate("/map", {
+                                                    state: {
+                                                        lat: b.lat,
+                                                        lon: b.lon,
+                                                        name: b.name,
+                                                    },
+                                                })
+                                            }
+                                        >
                                             Open
                                         </button>
-                                        <button className="btn" style={{ width: "auto" }}>
+                                        <button
+                                            className="btn"
+                                            style={{ width: "auto" }}
+                                            onClick={() => handleRemove(b.id)}
+                                        >
                                             Remove
                                         </button>
+
                                     </div>
                                 </li>
                             ))}
@@ -75,7 +117,11 @@ export default function Bookmarks() {
                                     }}
                                 >
                                     <span>{r}</span>
-                                    <button className="btn" style={{ width: "auto" }}>
+                                    <button
+                                        className="btn"
+                                        style={{ width: "auto" }}
+                                        onClick={() => handleAddFromHistory(r)}
+                                    >
                                         Bookmark
                                     </button>
                                 </li>

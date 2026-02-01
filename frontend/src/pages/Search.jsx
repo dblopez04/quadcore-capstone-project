@@ -1,6 +1,8 @@
 ﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { searchLocations } from "../api/locationService";
+import { addBookmark, isBookmarked } from "../utils/bookmarks";
+
 
 export default function Search() {
     const [tab, setTab] = useState("search");
@@ -114,26 +116,50 @@ export default function Search() {
                             )}
 
                             {results.map((loc) => (
-                                <li key={loc.id}>
+                                <li
+                                    key={loc.id}
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                        padding: "10px 0",
+                                        borderBottom: "1px solid #eee",
+                                    }}
+                                >
+                                    {/* Select location */}
                                     <button
                                         onClick={() => handleSelect(loc)}
                                         style={{
-                                            width: "100%",
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                            padding: "10px 0",
+                                            flex: 1,
                                             border: "none",
                                             background: "transparent",
-                                            borderBottom: "1px solid #eee",
                                             cursor: "pointer",
                                             textAlign: "left",
+                                            padding: 0,
                                         }}
                                     >
-                                        <span>{loc.name}</span>
-                                        <span style={{ color: "#555", fontSize: 20 }}>›</span>
+                                        {loc.name}
+                                    </button>
+
+                                    {/* Bookmark */}
+                                    <button
+                                        className="btn"
+                                        style={{ width: "auto", marginLeft: 8 }}
+                                        disabled={isBookmarked(loc.id)}
+                                        onClick={() =>
+                                            addBookmark({
+                                                id: loc.id,
+                                                name: loc.name,
+                                                description: "Added from search",
+                                                lat: loc.lat,
+                                                lon: loc.lon,
+                                            })
+                                        }
+                                    >
+                                        {isBookmarked(loc.id) ? "Saved" : "Bookmark"}
                                     </button>
                                 </li>
+
                             ))}
                         </ul>
 

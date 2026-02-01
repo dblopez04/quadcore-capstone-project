@@ -2,9 +2,12 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import UserLocationMarker from "./components/UserLocationMarker";
 
 
-export default function MapView() {
+export default function MapView({ target }) {
     // UNT-ish coords; any valid [lat, lng] works
-    const position = [33.2106, -97.1528]
+    const defaultPosition = [33.2106, -97.1528]; // UNT
+    const position = target?.lat && target?.lon
+        ? [target.lat, target.lon]
+        : defaultPosition;
 
     // Full viewport so it’s visible
     return (
@@ -20,7 +23,7 @@ export default function MapView() {
                 />
                 <UserLocationMarker autoCenter={false} />
                 <Marker position={position}>
-                    <Popup>University of North Texas</Popup>
+                    <Popup>{target?.name || "University of North Texas"}</Popup>
                 </Marker>
             </MapContainer>
         </div>
