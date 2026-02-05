@@ -4,6 +4,7 @@ import { Marker, Popup, useMap } from "react-leaflet";
 export default function UserLocationMarker({
     autoCenter = true,
     zoom = 16,
+    onLocationFound,
 }) {
     const map = useMap();
     const [pos, setPos] = useState(null); // {lat, lng}
@@ -18,6 +19,9 @@ export default function UserLocationMarker({
         const onSuccess = (p) => {
             const next = { lat: p.coords.latitude, lng: p.coords.longitude };
             setPos(next);
+            if (onLocationFound) {
+                onLocationFound(next);
+            }
 
             if (autoCenter) {
                 map.setView([next.lat, next.lng], zoom, { animate: true });

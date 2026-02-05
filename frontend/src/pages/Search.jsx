@@ -41,10 +41,16 @@ export default function Search() {
     }, [query]);
 
     function handleSelect(loc) {
-        navigate(
-            `/map?lat=${loc.lat}&lng=${loc.lng}&name=${encodeURIComponent(loc.name)}`
-        );
+        navigate("/map", {
+            state: {
+                lat: loc.lat,
+                lng: loc.lng,
+                name: loc.name,
+                id: loc.id,
+            },
+        });
     }
+
 
     return (
         <div className="page" style={{ padding: 16, fontFamily: "system-ui" }}>

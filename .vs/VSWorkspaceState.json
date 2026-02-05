@@ -3,8 +3,9 @@
     "",
     "\\frontend",
     "\\frontend\\src",
-    "\\frontend\\src\\pages"
+    "\\frontend\\src\\api",
+    "\\frontend\\src\\pages",
+    "\\frontend\\src\\utils"
   ],
-  "SelectedNode": "\\frontend\\src\\pages\\Settings.jsx",
   "PreviewInSolutionExplorer": false
 }

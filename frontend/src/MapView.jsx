@@ -1,13 +1,23 @@
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
 import UserLocationMarker from "./components/UserLocationMarker";
 
 
-export default function MapView({ target }) {
+export default function MapView({ target, route, onUserLocation }) {
+
     // UNT-ish coords; any valid [lat, lng] works
     const defaultPosition = [33.2106, -97.1528]; // UNT
-    const position = target?.lat && target?.lon
-        ? [target.lat, target.lon]
+    const position = target?.lat && target?.lng
+        ? [target.lat, target.lng]
         : defaultPosition;
+
+    const routePositions =
+        route && route.start && route.end
+            ? [
+                [route.start.lat, route.start.lng],
+                [route.end.lat, route.end.lng]
+            ]
+            : null;
+
 
     // Full viewport so it’s visible
     return (
@@ -21,7 +31,16 @@ export default function MapView({ target }) {
                     attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                <UserLocationMarker autoCenter={false} />
+                {routePositions && <Polyline positions={routePositions} />}
+
+
+                <UserLocationMarker
+                    autoCenter={false}
+                    onLocationFound={(latlng) => {
+                        onUserLocation(latlng);
+                    }}
+                />
+
                 <Marker position={position}>
                     <Popup>{target?.name || "University of North Texas"}</Popup>
                 </Marker>
