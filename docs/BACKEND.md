@@ -46,6 +46,14 @@ Token timing (current):
 
 All user routes expect cookie auth (`accessToken` and `refreshToken`).
 
+## Event Bookmark Routes
+All event bookmark routes are prefixed with `/api/events` and require `verifyToken`.
+
+- `GET /api/events/bookmarks` - list the current user's bookmarked events
+  (supports `?start=`, `?end=`, `?status=`, `?event_type=` filters).
+- `POST /api/events/:eventId/bookmark` - bookmark an event.
+- `DELETE /api/events/:eventId/bookmark` - remove an event bookmark.
+
 ## Admin Routes
 All admin routes are prefixed with `/api/admin` and protected by `requireAdmin` middleware.
 
@@ -117,6 +125,7 @@ The API allows `http://localhost:5173` with credentials. Update `backend/server.
 if the frontend origin changes.
 
 ## Known Gaps
-- No public endpoints for locations, POIs, or bookmarks yet (admin-only versions exist).
+- No public endpoints for locations or POIs yet (admin-only versions exist).
+- POI bookmarks remain UI-only with no public API.
 - `duplicateRegistration` middleware exists but is not wired to `/api/auth/register`.
 - Role-based access checks for non-admin routes are not enforced in middleware yet.

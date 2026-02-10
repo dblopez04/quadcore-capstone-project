@@ -23,7 +23,7 @@ Status legend:
 | 11 | POI filtering | R2 | Partial (UI) | Frontend/Backend | Filter pills only |
 | 12 | User reporting | R2 | Not started | Backend/DB/Frontend | Enums exist, no tables |
 | 13 | Temporary closures | R3 | Not started | Backend/DB/Map | No data model yet |
-| 14 | Calendar | R3 | Not started | Backend/DB/Frontend | No events API/UI |
+| 14 | Calendar | R3 | Partial (API) | Backend/DB/Frontend | Event bookmark endpoints added; no UI yet |
 | 15 | Administrator access | R3 | Partial (API) | Backend/Frontend | Admin role exists, no UI |
 | 16 | Accessibility | R3 | Not started | Map/Frontend | No data or filters |
 | 17 | Safety | R3 | Not started | Map/Frontend | No well-lit routing data |

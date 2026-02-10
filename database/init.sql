@@ -153,6 +153,14 @@ CREATE TABLE event_registrations (
     UNIQUE(event_id, user_id)
 );
 
+CREATE TABLE event_bookmarks (
+    event_bookmark_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, event_id)
+);
+
 CREATE TABLE bookmarks (
     bookmark_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
