@@ -1,0 +1,327 @@
+const db = require("../models");
+const Location = db.Location;
+const PointOfInterest = db.PointOfInterest;
+const Event = db.Event;
+const Report = db.Report;
+const User = db.User;
+const Admin = db.Admin;
+const { Op } = require("sequelize");
+
+// --- LOCATIONS ---
+
+exports.getAllLocations = async (req, res) => {
+    try {
+        const { search } = req.query;
+        let whereClause = {};
+
+        if (search) {
+            whereClause = {
+                name: { [Op.iLike]: `%${search}%` }
+            };
+        }
+
+        const locations = await Location.findAll({ where: whereClause });
+        res.send(locations);
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error retrieving locations." });
+    }
+};
+
+exports.createLocation = async (req, res) => {
+    if (!req.body.name || !req.body.coordinates) {
+        return res.status(400).send({ message: "Content can not be empty!" });
+    }
+
+    try {
+        const location = {
+            name: req.body.name,
+            description: req.body.description,
+            coordinates: req.body.coordinates
+        };
+
+        const data = await Location.create(location);
+        res.send(data);
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error creating location." });
+    }
+};
+
+exports.updateLocation = async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        const [num] = await Location.update(req.body, { where: { location_id: id } });
+        if (num == 1) {
+            res.send({ message: "Location updated successfully." });
+        } else {
+            res.send({ message: `Cannot update Location with id=${id}. Maybe Location was not found or req.body is empty!` });
+        }
+    } catch (err) {
+        res.status(500).send({ message: "Error updating Location with id=" + id });
+    }
+};
+
+exports.deleteLocation = async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        const num = await Location.destroy({ where: { location_id: id } });
+        if (num == 1) {
+            res.send({ message: "Location was deleted successfully!" });
+        } else {
+            res.send({ message: `Cannot delete Location with id=${id}. Maybe Location was not found!` });
+        }
+    } catch (err) {
+        res.status(500).send({ message: "Could not delete Location with id=" + id });
+    }
+};
+
+// --- POINTS OF INTEREST ---
+
+exports.getAllPois = async (req, res) => {
+    try {
+        const { category } = req.query;
+        let whereClause = {};
+
+        if (category) {
+            whereClause.category = category;
+        }
+
+        const pois = await PointOfInterest.findAll({ where: whereClause });
+        res.send(pois);
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error retrieving POIs." });
+    }
+};
+
+exports.createPoi = async (req, res) => {
+    if (!req.body.name || !req.body.location_id || !req.body.category) {
+        return res.status(400).send({ message: "Name, location_id, and category are required!" });
+    }
+
+    try {
+        const poi = {
+            location_id: req.body.location_id,
+            name: req.body.name,
+            description: req.body.description,
+            category: req.body.category,
+            building_name: req.body.building_name,
+            floor_number: req.body.floor_number,
+            room_number: req.body.room_number,
+            is_indoor: req.body.is_indoor,
+            operating_hours: req.body.operating_hours,
+            contact_info: req.body.contact_info,
+            is_active: req.body.is_active
+        };
+
+        const data = await PointOfInterest.create(poi);
+        res.send(data);
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error creating POI." });
+    }
+};
+
+exports.updatePoi = async (req, res) => {
+    const id = req.params.id;
+    try {
+        const [num] = await PointOfInterest.update(req.body, { where: { poi_id: id } });
+        if (num == 1) {
+            res.send({ message: "POI updated successfully." });
+        } else {
+            res.send({ message: `Cannot update POI with id=${id}. Maybe POI was not found or req.body is empty!` });
+        }
+    } catch (err) {
+        res.status(500).send({ message: "Error updating POI with id=" + id });
+    }
+};
+
+exports.deletePoi = async (req, res) => {
+    const id = req.params.id;
+    try {
+        const num = await PointOfInterest.destroy({ where: { poi_id: id } });
+        if (num == 1) {
+            res.send({ message: "POI was deleted successfully!" });
+        } else {
+            res.send({ message: `Cannot delete POI with id=${id}. Maybe POI was not found!` });
+        }
+    } catch (err) {
+        res.status(500).send({ message: "Could not delete POI with id=" + id });
+    }
+};
+
+// --- EVENTS ---
+
+exports.getAllEvents = async (req, res) => {
+    try {
+        const { status } = req.query;
+        let whereClause = {};
+        if (status) whereClause.status = status;
+
+        const events = await Event.findAll({ where: whereClause });
+        res.send(events);
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error retrieving events." });
+    }
+};
+
+exports.createEvent = async (req, res) => {
+    try {
+        const eventData = {
+            ...req.body,
+            organizer_id: req.user_id // Organizer is the admin creating it
+        };
+        const event = await Event.create(eventData);
+        res.send(event);
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error creating event." });
+    }
+};
+
+exports.updateEvent = async (req, res) => {
+    const id = req.params.id;
+    try {
+        const [num] = await Event.update(req.body, { where: { event_id: id } });
+        if (num == 1) {
+            res.send({ message: "Event updated successfully." });
+        } else {
+            res.send({ message: `Cannot update Event with id=${id}. Maybe Event was not found or req.body is empty!` });
+        }
+    } catch (err) {
+        res.status(500).send({ message: "Error updating Event with id=" + id });
+    }
+};
+
+exports.deleteEvent = async (req, res) => {
+    const id = req.params.id;
+    try {
+        const num = await Event.destroy({ where: { event_id: id } });
+        if (num == 1) {
+            res.send({ message: "Event was deleted successfully!" });
+        } else {
+            res.send({ message: `Cannot delete Event with id=${id}. Maybe Event was not found!` });
+        }
+    } catch (err) {
+        res.status(500).send({ message: "Could not delete Event with id=" + id });
+    }
+};
+
+// --- REPORTS ---
+
+exports.getAllReports = async (req, res) => {
+    try {
+        const { status, priority, type } = req.query;
+        let whereClause = {};
+        if (status) whereClause.status = status;
+        if (priority) whereClause.priority = priority;
+        if (type) whereClause.report_type = type;
+
+        const reports = await Report.findAll({ where: whereClause });
+        res.send(reports);
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error retrieving reports." });
+    }
+};
+
+exports.updateReport = async (req, res) => {
+    const id = req.params.id;
+    try {
+        let updateData = { ...req.body };
+
+        // Auto-set resolution fields if status is RESOLVED
+        if (updateData.status === 'RESOLVED') {
+            updateData.resolved_at = new Date();
+            updateData.resolved_by = req.admin_id;
+        }
+
+        const [num] = await Report.update(updateData, { where: { report_id: id } });
+        if (num == 1) {
+            res.send({ message: "Report updated successfully." });
+        } else {
+            res.send({ message: `Cannot update Report with id=${id}. Maybe Report was not found or req.body is empty!` });
+        }
+    } catch (err) {
+        res.status(500).send({ message: "Error updating Report with id=" + id });
+    }
+};
+
+exports.deleteReport = async (req, res) => {
+    const id = req.params.id;
+    try {
+        const num = await Report.destroy({ where: { report_id: id } });
+        if (num == 1) {
+            res.send({ message: "Report was deleted successfully!" });
+        } else {
+            res.send({ message: `Cannot delete Report with id=${id}. Maybe Report was not found!` });
+        }
+    } catch (err) {
+        res.status(500).send({ message: "Could not delete Report with id=" + id });
+    }
+};
+
+// --- USERS ---
+
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.findAll({
+            attributes: { exclude: ['password_hash', 'refresh_token'] }
+        });
+        res.send(users);
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error retrieving users." });
+    }
+};
+
+exports.grantAdmin = async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).send({ message: "User not found." });
+        }
+
+        // Check if already admin
+        const existingAdmin = await Admin.findOne({ where: { user_id: userId } });
+        if (existingAdmin) {
+            return res.status(400).send({ message: "User is already an admin." });
+        }
+
+        // Create admin entry
+        await Admin.create({ user_id: userId });
+
+        // Update user role
+        await user.update({ user_role: 'ADMIN' });
+
+        res.send({ message: "Admin privileges granted successfully." });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error granting admin privileges." });
+    }
+};
+
+exports.revokeAdmin = async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).send({ message: "User not found." });
+        }
+
+        // Remove from admin table
+        const num = await Admin.destroy({ where: { user_id: userId } });
+
+        if (num == 1) {
+            // Revert user role to STUDENT (default fallback, or maybe could be VISITOR/FACULTY? 
+            // Ideally we'd know their original role, but for now we'll default to STUDENT or just leave it?
+            // User requirement didn't specify fallback. I'll set it to STUDENT for safety or keep as is?
+            // Current User model has user_role ENUM. 
+            // Let's set it to STUDENT as a safe default, OR ask user. 
+            // For now, I'll set to STUDENT.
+            await user.update({ user_role: 'STUDENT' });
+
+            res.send({ message: "Admin privileges revoked successfully." });
+        } else {
+            res.send({ message: "User is not an admin." });
+        }
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error revoking admin privileges." });
+    }
+};

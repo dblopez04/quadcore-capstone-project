@@ -7,50 +7,36 @@ if [ -f ".env" ]; then
 fi
 
 OSM_DIR="osrm-data"
-OSM_FILE_TEXAS="$OSM_DIR/texas-latest.osm.pbf"
-OSM_FILE="$OSM_DIR/denton-map.osm.pbf"
+OSM_FILE="$OSM_DIR/map.osm.pbf"
 OSM_DOWNLOAD_URL="https://download.geofabrik.de/north-america/us/texas-latest.osm.pbf"
-NETWORK="quadcore-capstone-project-default"
+NETWORK="quadcore-capstone-project_default"
 DB_CONTAINER="db"
 DB_HOST="db"
 DB_USER="$POSTGRES_USER"
 DB_NAME="$POSTGRES_DB"
 DB_PASS="$POSTGRES_PASSWORD"
 
-#denton coordinate box
-DENTON_COBOX="-97.2,33.1,-97.0,33.3"
 echo "Begin import..."
 echo "----------------"
 
 mkdir -p "$OSM_DIR"
 
-if [ ! -f "OSM_FILE_TEXAS" ]; then
-    echo "Downloading Texas data from Geofabrik"
-    wget -o "$OSM_FILE_TEXAS" "$OSM_DOWNLOAD_URL"
-else
-    echo "$OSM_FILE_TEXAS already exists"
-fi
-
-if [ ! -f "OSM_FILE" ]; then
-    echo "Extracting Denton data from Texas File"
-    if command -v osmium >/dev/null 2>&1; then
-        osmium extract -b "$DENTON_COBOX" "$OSM_FILE_FULL" -o "$OSM_FILE"
-    else
-        echo "Using docker for osmium"
-        docker run --rm -v "$(pwd)/$OSM_DIR":/data \
-            ghcr.io/osmcode/osmium-tool:latest \
-            extract -b "$DENTON_COBOX" /data/texas-latest.osm.pbf -o /data/denton-map.osm.pbf
-    fi
-    echo "Denton area map extracted"
+if [ ! -f "$OSM_FILE" ]; then
+    echo "Downloading data from Geofabrik"
+    wget -O "$OSM_FILE" "$OSM_DOWNLOAD_URL"
 else
     echo "$OSM_FILE already exists"
 fi
 
+echo "Setting up database extensions..."
+docker exec -i "$DB_CONTAINER" psql -U "$DB_USER" -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS hstore;"
+
 echo "Importing into PostGIS db..."
-docker run -it --rm \
+docker run --rm \
     --network "$NETWORK" \
+    -e PGPASSWORD="$DB_PASS" \
     -v "$(pwd)/$OSM_DIR":/data \
-    openstreetmap/osm2pgsql \
+    iboates/osm2pgsql \
     -H "$DB_HOST" \
     -U "$DB_USER" \
     -d "$DB_NAME" \
@@ -58,9 +44,7 @@ docker run -it --rm \
     -G --hstore \
     --latlong \
     --cache 2000 \
-    /data/map.osm.pbf <<EOF
-$DB_PASS
-EOF
+    /data/map.osm.pbf
 echo "OSM data imported into PostGIS db"
 
 echo "Integrating map data locations and POIs"

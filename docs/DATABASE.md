@@ -26,6 +26,11 @@ container starts.
 - `students`, `faculty`, `visitors`, `admin` - role-specific tables.
 - `locations` - named points with PostGIS `geometry(Point, 4326)`.
 - `points_of_interest` - POIs linked to `locations`.
+- `events` - campus events with timing, status, and organizer.
+- `event_registrations` - user registrations for events.
+- `event_bookmarks` - user bookmarks for events.
+- `bookmarks` - user saved POIs with optional notes.
+- `reports` - user-submitted reports.
 
 ## Geospatial Notes
 - `locations.coordinates` uses SRID 4326 (lat/lng).
@@ -36,14 +41,11 @@ container starts.
   for randomized IDs.
 
 ## Planned Tables (from requirements)
-- `bookmarks` - user saved locations with optional notes.
-- `events` - campus events with location and time metadata.
-- `reports` - user reports for incorrect data, closures, or safety issues.
 - `closures` - temporary closures tied to routes or locations.
 - `routes` (optional) - cached routes and metadata for ETA and steps.
 
 ## Notes
-- Only the `users`, `students`, `faculty`, and `visitors` tables currently have
-  Sequelize models in `backend/app/models/`.
+- Sequelize models exist for users, roles, locations, POIs, events, event registrations,
+  event bookmarks, POI bookmarks, and reports in `backend/app/models/`.
 - There is no migration tool yet; update `database/init.sql` directly and document
   decisions in `docs/DECISIONS.md`.

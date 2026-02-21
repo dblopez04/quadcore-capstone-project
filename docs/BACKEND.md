@@ -46,6 +46,45 @@ Token timing (current):
 
 All user routes expect cookie auth (`accessToken` and `refreshToken`).
 
+## Event Bookmark Routes
+All event bookmark routes are prefixed with `/api/events` and require `verifyToken`.
+
+- `GET /api/events/bookmarks` - list the current user's bookmarked events
+  (supports `?start=`, `?end=`, `?status=`, `?event_type=` filters).
+- `POST /api/events/:eventId/bookmark` - bookmark an event.
+- `DELETE /api/events/:eventId/bookmark` - remove an event bookmark.
+
+## Admin Routes
+All admin routes are prefixed with `/api/admin` and protected by `requireAdmin` middleware.
+
+**Locations:**
+- `GET /api/admin/locations` - list all locations (optional `?search=` filter)
+- `POST /api/admin/locations` - create a location
+- `PUT /api/admin/locations/:id` - update a location
+- `DELETE /api/admin/locations/:id` - delete a location
+
+**POIs:**
+- `GET /api/admin/pois` - list all POIs (optional `?category=` filter)
+- `POST /api/admin/pois` - create a POI
+- `PUT /api/admin/pois/:id` - update a POI
+- `DELETE /api/admin/pois/:id` - delete a POI
+
+**Events:**
+- `GET /api/admin/events` - list all events (optional `?status=` filter)
+- `POST /api/admin/events` - create an event
+- `PUT /api/admin/events/:id` - update an event
+- `DELETE /api/admin/events/:id` - delete an event
+
+**Reports:**
+- `GET /api/admin/reports` - list reports (optional `?status=`, `?priority=`, `?type=` filters)
+- `PUT /api/admin/reports/:id` - update report status/assignment
+- `DELETE /api/admin/reports/:id` - delete a report
+
+**User Management:**
+- `GET /api/admin/users` - list all users (excludes password_hash, refresh_token)
+- `POST /api/admin/users/:id/grant-admin` - grant admin privileges
+- `POST /api/admin/users/:id/revoke-admin` - revoke admin privileges
+
 ## Models
 - `User` - main auth table with roles and `search_history`.
 - `Student`, `Faculty`, `Visitor` - role-specific tables (DB has `admin` too).
@@ -68,8 +107,16 @@ npm run dev
 ## Tests
 ```bash
 cd backend
-npm test
+npm test              # run all tests
+npm run test:watch    # run tests in watch mode
+npm run test:coverage # run tests with coverage report
 ```
+
+### Test Files
+- `backend/tests/admin.test.js` - Admin API tests covering:
+  - Middleware authentication (token and admin verification)
+  - CRUD operations for locations, POIs, events, and reports
+  - User admin management (grant/revoke privileges)
 
 See `backend/tests/TEST_SUMMARY.md` for coverage notes and test breakdowns.
 
@@ -78,6 +125,7 @@ The API allows `http://localhost:5173` with credentials. Update `backend/server.
 if the frontend origin changes.
 
 ## Known Gaps
-- No endpoints for locations, POIs, bookmarks, reports, events, or admin actions yet.
+- No public endpoints for locations or POIs yet (admin-only versions exist).
+- POI bookmarks remain UI-only with no public API.
 - `duplicateRegistration` middleware exists but is not wired to `/api/auth/register`.
-- Role-based access checks are not enforced in middleware yet.
+- Role-based access checks for non-admin routes are not enforced in middleware yet.

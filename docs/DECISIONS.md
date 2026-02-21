@@ -17,3 +17,19 @@ Context:
 Decision:
 
 Consequences:
+
+## 2026-02-09 - Event Bookmarks Join Table and API
+Status: accepted
+
+Context:
+Users need to save events and fetch their saved events for calendar views. Existing
+bookmarks are POI-only, and event registrations are for attendance rather than
+saved items.
+
+Decision:
+Add an `event_bookmarks` join table linking users to events and expose user-facing
+bookmark endpoints under `/api/events` for create/remove and date-range retrieval.
+
+Consequences:
+Schema initialization now includes `event_bookmarks`, and the backend gains new
+authenticated routes for event bookmark operations.
