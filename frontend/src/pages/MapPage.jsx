@@ -1,11 +1,26 @@
 import MapView from "../MapView";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 
 
 export default function MapPage() {
     const location = useLocation();
-    const rawTarget = location.state ?? null;
+    const [searchParams] = useSearchParams();
+
+    const qLat = searchParams.get("lat");
+    const qLng = searchParams.get("lng");
+    const qName = searchParams.get("name");
+
+    const queryTarget =
+        qLat && qLng
+            ? {
+                lat: Number(qLat),
+                lng: Number(qLng),
+                name: qName || "Event",
+            }
+            : null;
+
+    const rawTarget = queryTarget ?? location.state ?? null;
     const [userLocation, setUserLocation] = useState(null);
 
     const target = rawTarget && rawTarget.lat != null

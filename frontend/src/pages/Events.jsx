@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getEvents, searchEvents } from "../api/eventService";
+import { useNavigate } from "react-router-dom";
 
 function pad2(n) {
     return String(n).padStart(2, "0");
@@ -42,6 +43,7 @@ export default function Events() {
     const [allEvents, setAllEvents] = useState([]);
     const [selectedDate, setSelectedDate] = useState(""); // YYYY-MM-DD
     const [viewDate, setViewDate] = useState(() => new Date());
+    const navigate = useNavigate();
 
     const eventDays = new Set(
         allEvents.map((e) => e.start.slice(0, 10)) // "YYYY-MM-DD"
@@ -209,6 +211,28 @@ export default function Events() {
                             <p style={{ margin: "6px 0", fontSize: "14px", color: "#666" }}>
                                 {new Date(ev.start).toLocaleString()} – {new Date(ev.end).toLocaleString()}
                             </p>
+                            <button
+                                onClick={() => {
+                                    const params = new URLSearchParams({
+                                        lat: String(ev.lat),
+                                        lng: String(ev.lng),
+                                        name: ev.title,
+                                    });
+                                    navigate(`/map?${params.toString()}`);
+                                }}
+                                style={{
+                                    marginTop: 10,
+                                    padding: "8px 10px",
+                                    borderRadius: 8,
+                                    background: "#0a5",
+                                    color: "white",
+                                    border: "none",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                View on Map
+                            </button>
+
                         </div>
                     ))}
                 </div>
