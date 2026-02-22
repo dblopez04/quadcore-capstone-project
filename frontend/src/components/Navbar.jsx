@@ -101,6 +101,20 @@ export default function Navbar() {
                 </NavLink>
 
                 <NavLink
+                    to="/events"
+                    style={({ isActive }) => ({
+                        color: "#fff",
+                        textDecoration: "none",
+                        padding: "6px 10px",
+                        borderRadius: 8,
+                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
+                        fontWeight: 600,
+                    })}
+                >
+                    Events
+                </NavLink>
+
+                <NavLink
                     to="/help"
                     style={({ isActive }) => ({
                         color: "#fff",

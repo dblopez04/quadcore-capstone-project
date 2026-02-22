@@ -15,6 +15,8 @@ import Help from './pages/Help.jsx'
 import Search from './pages/Search.jsx'
 import Bookmarks from './pages/Bookmarks.jsx'
 import Settings from './pages/Settings.jsx'
+import Events from './pages/Events.jsx'
+
 
 const router = createBrowserRouter([
     { path: '/', element: <Login /> },
@@ -52,6 +54,15 @@ const router = createBrowserRouter([
             </Layout>
         ),
     },
+    {
+        path: '/events',
+        element: (
+            <Layout narrow>
+                <Events />
+            </Layout>
+        ),
+    },
+
     {
         path: '/about',
         element: (
