@@ -7,6 +7,7 @@ import "./App.css";
 
 import Login from './pages/Login.jsx'
 import Register from "./pages/Register";
+import ForgotPassword from './pages/ForgotPassword';
 import Layout from './components/Layout.jsx'
 import Home from './pages/Home.jsx'
 import MapPage from './pages/MapPage.jsx'
@@ -21,6 +22,8 @@ import Events from './pages/Events.jsx'
 const router = createBrowserRouter([
     { path: '/', element: <Login /> },
     { path: '/register', element: <Register /> },
+    { path: '/forgot-password', element: <ForgotPassword /> },
+
 
     {
         path: '/home',

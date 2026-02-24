@@ -42,3 +42,11 @@ export async function registerRequest(payload) {
 
     return handleResponse(response, "Registration failed");
 }
+export async function requestPasswordReset(email) {
+    console.log("Password reset requested for:", email);
+
+    await new Promise((res) => setTimeout(res, 600));
+
+    return { message: "Reset email sent (mock)." };
+}
+

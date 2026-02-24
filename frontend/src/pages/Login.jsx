@@ -10,6 +10,12 @@ export default function Login() {
 
     const navigate = useNavigate();
 
+    const handleGuest = () => {
+        localStorage.setItem("authMode", "guest");
+        localStorage.removeItem("token"); 
+        navigate("/map");
+    };
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setError("");
@@ -167,12 +173,13 @@ export default function Login() {
                         >
                             Register
                         </a>
-                        <a
-                            href="/forgot"
-                            style={{ textDecoration: "none", color: "#666" }}
+                        <span
+                            onClick={() => navigate("/forgot-password")}
+                            style={{ textDecoration: "none", color: "#666", cursor: "pointer" }}
                         >
                             Forgot Password
-                        </a>
+                        </span>
+
                     </div>
 
                     <button
