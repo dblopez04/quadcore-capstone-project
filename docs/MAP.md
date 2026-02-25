@@ -6,7 +6,8 @@
 - Requirements include walking ETA, turn-by-turn steps, and route safety/accessibility.
 
 ## Data Location
-- OSM extract: `osrm-data/map.osm`
+- Source download: `osrm-data/texas-latest.osm.pbf`
+- OSM extract (used by OSRM): `osrm-data/map.osm`
 - OSRM artifacts: `osrm-data/map.osrm*`
 
 ## OSRM Service (Docker)
@@ -17,10 +18,19 @@ The `osrm` service in `compose.yaml`:
 
 Backend uses `OSRM_URL=http://osrm:5000` inside Docker.
 
+## Osmium Tooling (Docker Compose)
+- The `osmium` service in `compose.yaml` is profile-scoped to `tools` and is not
+  started with normal app boot.
+- Run osmium commands with:
+  `docker compose --profile tools run --rm osmium <args>`
+- `import_osm.sh` uses this service to extract the Denton bounding box from the
+  Texas download into `osrm-data/map.osm`.
 
 ## Updating the Campus Map
-1. Replace `osrm-data/map.osm` with a new campus extract.
-2. Delete `osrm-data/map.osrm*` so OSRM regenerates the graph.
+1. Run `./import_osm.sh` to refresh source data, extract `map.osm`, import
+   PostGIS data, and restart OSRM.
+2. If you manually replace `osrm-data/map.osm`, delete `osrm-data/map.osrm*`
+   so OSRM regenerates the graph.
 3. Run `docker compose up --build osrm`.
 
 Warning: deleting `map.osrm*` is destructive and can take time to rebuild.

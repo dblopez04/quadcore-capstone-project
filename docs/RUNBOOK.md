@@ -27,6 +27,15 @@ docker compose up backend
 docker compose logs -f backend
 ```
 
+## Refresh map data (OSM + PostGIS + OSRM)
+```bash
+./import_osm.sh
+```
+This script uses the compose `tools` profile (`osmium`) to extract map data,
+imports it into PostGIS, and restarts OSRM.
+If your environment needs a different `osm2pgsql` image, override it:
+`OSM2PGSQL_IMAGE=<image> ./import_osm.sh`
+
 ## Frontend (local)
 ```bash
 cd frontend
@@ -72,4 +81,5 @@ Use this only if you need a clean slate; it removes volumes and data.
 ## Common Gotchas
 - Frontend API base URL is hard-coded in `frontend/src/api/auth.js`; update it if running inside Docker.
 - OSRM rebuilds only when `osrm-data/map.osrm` is missing; see `docs/MAP.md` before deleting files.
+- Tooling services behind compose profiles are not started by default; use `docker compose --profile tools ...` when running `osmium`.
 - Docker uses `linux/amd64` for DB and OSRM images; Apple Silicon may run under emulation.

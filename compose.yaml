@@ -65,6 +65,14 @@ services:
     depends_on:
       - db
 
+  osmium:
+    image: ghcr.io/osmcode/osmium-tool:latest
+    profiles:
+      - tools
+    volumes:
+      - ./osrm-data:/data
+    entrypoint: ["osmium"]
+
 
 volumes:
   db-data:
