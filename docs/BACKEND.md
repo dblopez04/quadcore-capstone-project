@@ -54,6 +54,20 @@ All event bookmark routes are prefixed with `/api/events` and require `verifyTok
 - `POST /api/events/:eventId/bookmark` - bookmark an event.
 - `DELETE /api/events/:eventId/bookmark` - remove an event bookmark.
 
+## Location and Location Bookmark Routes
+All location routes are prefixed with `/api/locations`.
+
+- `GET /api/locations` - list locations from Postgres (optional `?search=` filter).
+- `GET /api/locations/:locationId` - get a single location.
+
+Location bookmark routes require `verifyToken`:
+- `GET /api/locations/bookmarks` - list current user's bookmarked locations
+  (supports `?favorite=true|false` and `?search=` filters).
+- `POST /api/locations/:locationId/bookmark` - bookmark a location (idempotent).
+- `PATCH /api/locations/:locationId/bookmark` - update bookmark metadata (`custom_name`,
+  `notes`, `is_favorite`, `last_visited`).
+- `DELETE /api/locations/:locationId/bookmark` - remove a location bookmark.
+
 ## Admin Routes
 All admin routes are prefixed with `/api/admin` and protected by `requireAdmin` middleware.
 
@@ -125,7 +139,7 @@ The API allows `http://localhost:5173` with credentials. Update `backend/server.
 if the frontend origin changes.
 
 ## Known Gaps
-- No public endpoints for locations or POIs yet (admin-only versions exist).
-- POI bookmarks remain UI-only with no public API.
+- No public endpoints for POIs yet (admin-only versions exist).
+- POI bookmark functionality is not implemented.
 - `duplicateRegistration` middleware exists but is not wired to `/api/auth/register`.
 - Role-based access checks for non-admin routes are not enforced in middleware yet.

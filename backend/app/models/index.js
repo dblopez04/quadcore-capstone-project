@@ -9,7 +9,7 @@ const definePointOfInterest = require('./poi.model');
 const defineEvent = require('./event.model');
 const defineEventRegistration = require('./eventRegistration.model');
 const defineEventBookmark = require('./eventBookmark.model');
-const defineBookmark = require('./bookmark.model');
+const defineLocationBookmark = require('./locationBookmark.model');
 const defineReport = require('./report.model');
 
 const db = {};
@@ -26,7 +26,7 @@ db.PointOfInterest = definePointOfInterest(sequelize, Sequelize.DataTypes);
 db.Event = defineEvent(sequelize, Sequelize.DataTypes);
 db.EventRegistration = defineEventRegistration(sequelize, Sequelize.DataTypes);
 db.EventBookmark = defineEventBookmark(sequelize, Sequelize.DataTypes);
-db.Bookmark = defineBookmark(sequelize, Sequelize.DataTypes);
+db.LocationBookmark = defineLocationBookmark(sequelize, Sequelize.DataTypes);
 db.Report = defineReport(sequelize, Sequelize.DataTypes);
 
 // User associations
@@ -61,11 +61,11 @@ db.EventBookmark.belongsTo(db.User, { foreignKey: 'user_id' });
 db.Event.hasMany(db.EventBookmark, { foreignKey: 'event_id', onDelete: 'CASCADE' });
 db.EventBookmark.belongsTo(db.Event, { foreignKey: 'event_id' });
 
-// Bookmark associations
-db.User.hasMany(db.Bookmark, { foreignKey: 'user_id', onDelete: 'CASCADE' });
-db.Bookmark.belongsTo(db.User, { foreignKey: 'user_id' });
-db.PointOfInterest.hasMany(db.Bookmark, { foreignKey: 'poi_id', onDelete: 'CASCADE' });
-db.Bookmark.belongsTo(db.PointOfInterest, { foreignKey: 'poi_id' });
+// Location bookmark associations
+db.User.hasMany(db.LocationBookmark, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+db.LocationBookmark.belongsTo(db.User, { foreignKey: 'user_id' });
+db.Location.hasMany(db.LocationBookmark, { foreignKey: 'location_id', onDelete: 'CASCADE' });
+db.LocationBookmark.belongsTo(db.Location, { foreignKey: 'location_id' });
 
 // Report associations
 db.User.hasMany(db.Report, { as: 'reports', foreignKey: 'reporter_id' });

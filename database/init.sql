@@ -161,17 +161,16 @@ CREATE TABLE event_bookmarks (
     UNIQUE(user_id, event_id)
 );
 
-CREATE TABLE bookmarks (
-    bookmark_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+CREATE TABLE location_bookmarks (
+    location_bookmark_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    poi_id UUID NOT NULL REFERENCES points_of_interest(poi_id) ON DELETE CASCADE,
+    location_id UUID NOT NULL REFERENCES locations(location_id) ON DELETE CASCADE,
     custom_name VARCHAR(255),
     notes TEXT,
-    category VARCHAR(100),
     is_favorite BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_visited TIMESTAMP,
-    UNIQUE(user_id, poi_id)
+    UNIQUE(user_id, location_id)
 );
 
 CREATE TABLE reports (

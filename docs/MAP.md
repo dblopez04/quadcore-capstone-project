@@ -44,4 +44,4 @@ Warning: deleting `map.osrm*` is destructive and can take time to rebuild.
 
 ## Known Gaps
 - The backend does not yet call OSRM endpoints.
-- There are no API endpoints for `locations` or `points_of_interest` yet.
+- There are no public API endpoints for `points_of_interest` yet.

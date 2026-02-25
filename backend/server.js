@@ -20,12 +20,14 @@ const authRoutes = require('./app/routes/auth.routes');
 const userRoutes = require("./app/routes/user.routes");
 const adminRoutes = require("./app/routes/admin.routes");
 const eventRoutes = require("./app/routes/event.routes");
+const locationRoutes = require("./app/routes/location.routes");
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/locations', locationRoutes);
 
 app.get("/", (req, res) => {
     res.json({ message: "Hello!" })

@@ -18,7 +18,7 @@ Status legend:
 | 6 | Login | R1 | Implemented | Frontend/Backend | Login UI + API |
 | 7 | Routing | R2 | Not started | Backend/Map | OSRM not wired |
 | 8 | Turn-by-turn navigation | R2 | Not started | Backend/Frontend | Needs OSRM steps |
-| 9 | Bookmarks | R2 | Partial (UI) | Frontend/Backend/DB | UI only |
+| 9 | Bookmarks | R2 | Partial (API) | Frontend/Backend/DB | Location bookmark API implemented; bookmarks page still static |
 | 10 | Search history | R2 | Partial (API) | Backend/Frontend | API exists, UI not wired |
 | 11 | POI filtering | R2 | Partial (UI) | Frontend/Backend | Filter pills only |
 | 12 | User reporting | R2 | Not started | Backend/DB/Frontend | Enums exist, no tables |

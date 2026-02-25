@@ -29,7 +29,7 @@ container starts.
 - `events` - campus events with timing, status, and organizer.
 - `event_registrations` - user registrations for events.
 - `event_bookmarks` - user bookmarks for events.
-- `bookmarks` - user saved POIs with optional notes.
+- `location_bookmarks` - user saved locations with optional notes/favorites.
 - `reports` - user-submitted reports.
 
 ## Geospatial Notes
@@ -46,6 +46,6 @@ container starts.
 
 ## Notes
 - Sequelize models exist for users, roles, locations, POIs, events, event registrations,
-  event bookmarks, POI bookmarks, and reports in `backend/app/models/`.
+  event bookmarks, location bookmarks, and reports in `backend/app/models/`.
 - There is no migration tool yet; update `database/init.sql` directly and document
   decisions in `docs/DECISIONS.md`.
