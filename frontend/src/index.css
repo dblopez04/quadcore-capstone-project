@@ -337,3 +337,145 @@ button {
         background-color: var(--bg);
     }
 }
+
+
+body {
+    background: radial-gradient(1200px 700px at 20% -10%, rgba(46, 229, 157, 0.18), transparent 60%), radial-gradient(900px 600px at 90% 0%, rgba(0, 106, 49, 0.14), transparent 55%), linear-gradient(180deg, #f6f7f9, var(--bg) 70%);
+}
+
+.page {
+    background: transparent;
+}
+
+
+.container {
+    padding: 24px 16px;
+}
+
+
+.panel {
+    background: var(--bg) !important;
+    border: 1px solid rgba(17, 24, 39, 0.10);
+    border-radius: 18px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+}
+
+
+.btn {
+    border-radius: 12px;
+    padding: 11px 14px;
+    font-weight: 700;
+    transition: transform .05s ease, box-shadow .15s ease, background .15s ease;
+}
+
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+
+    .btn:active {
+        transform: translateY(0px);
+    }
+
+.btn-primary {
+    background: linear-gradient(180deg, var(--unt-green-600), var(--unt-green));
+    box-shadow: 0 10px 20px rgba(0,106,49,0.22);
+}
+
+
+.search-input,
+input,
+textarea,
+select {
+    border-radius: 12px !important;
+}
+
+    .search-input:focus,
+    input:focus,
+    textarea:focus,
+    select:focus {
+        border-color: rgba(0,106,49,0.35) !important;
+        box-shadow: 0 0 0 4px rgba(46, 229, 157, 0.18) !important;
+    }
+
+
+.tabs {
+    border-bottom: 1px solid rgba(17, 24, 39, 0.10);
+    padding-top: 8px;
+}
+
+    .tabs img {
+        display: block;
+        margin: 0 auto 10px;
+        height: 34px;
+        width: auto;
+        opacity: 0.95;
+    }
+
+.tab {
+    border-radius: 999px;
+    padding: 8px 14px;
+}
+
+    .tab.active {
+        background: rgba(0,106,49,0.08);
+        border-color: transparent;
+    }
+
+
+.nav {
+    border-bottom: 1px solid rgba(255,255,255,0.18);
+}
+
+.container {
+    max-width: 980px;
+}
+
+.page {
+    padding-bottom: 28px;
+}
+
+.panel .panel {
+    box-shadow: none;
+    border: 1px solid rgba(17, 24, 39, 0.08);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.95) !important;
+}
+
+.panel h1, .panel h2, .panel h3 {
+    margin-top: 0;
+}
+.panel {
+    min-height: auto;
+}
+
+.page-shell {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 32px;
+}
+
+.page-shell > .page-inner {
+    width: 100%;
+    max-width: 1200px; 
+}
+
+.map-page {
+    padding: 0;
+}
+
+.map-page .map-host {
+    width: 100%;
+    margin: 0;
+}
+
+/* Full-bleed map page (no max-width constraints) */
+.map-page {
+    width: 100vw;
+    margin-left: calc(50% - 50vw); /* breaks out of centered layouts */
+    margin-right: calc(50% - 50vw);
+    padding: 0;
+}
+html, body {
+    overflow-x: hidden;
+}

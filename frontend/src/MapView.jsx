@@ -21,7 +21,7 @@ export default function MapView({ target, route, onUserLocation }) {
 
     // Full viewport so it’s visible
     return (
-        <div style={{ height: '100vh', width: '100vw' }}>
+        <div style={{ height: "calc(100vh - 60px)", width: "100%", display: "block"}}>
             <MapContainer
                 center={position}
                 zoom={15}

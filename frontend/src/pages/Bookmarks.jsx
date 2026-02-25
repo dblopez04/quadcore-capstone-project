@@ -33,12 +33,11 @@ export default function Bookmarks() {
     return (
         // PAGE STARTS HERE
         <div className="page">
-            {/*  This wrapper centers and constrains to phone size */}
-            <div className="container phone-demo">
-                <div className="phone-card" style={{ padding: 16 }}>
+            <div className="container">
+                <div className="panel" style={{ padding: 18 }}>
                     <h2 className="h2" style={{ marginBottom: 12 }}>Bookmarks</h2>
 
-                    <div className="panel" style={{ marginBottom: 16 }}>
+                    <div style={{ marginTop: 14, marginBottom: 16 }}>
                         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
                             <button className="btn-primary btn" style={{ width: "auto" }}>
                                 + New Bookmark

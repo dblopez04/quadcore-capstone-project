@@ -35,34 +35,37 @@ export default function MapPage() {
 
     const [route, setRoute] = useState(null);
 
-    // Static map only (no interactions needed yet)
     return (
-        <>
-            <button
-                onClick={() => {
-                    if (!target || !userLocation) {
-                        alert("Please make sure your location and a destination are selected.");
-                        return;
-                    }
+        <div className="map-page">
+            <div style={{ position: "relative" }}>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                        if (!target || !userLocation) {
+                            alert("Please make sure your location and a destination are selected.");
+                            return;
+                        }
 
-                    setRoute({
-                        start: userLocation,
-                        end: { lat: target.lat, lng: target.lng },
-                    });
-                }}
-                style={{ margin: "10px" }}
-            >
-                Route to selected location
-            </button>
+                        setRoute({
+                            start: userLocation,
+                            end: { lat: target.lat, lng: target.lng },
+                        });
+                    }}
+                    style={{
+                        position: "absolute",
+                        top: 16,
+                        left: 16,
+                        zIndex: 1000,
+                        width: "auto",
+                        padding: "10px 14px",
+                        borderRadius: 10,
+                    }}
+                >
+                    Route to selected location
+                </button>
 
-
-            <MapView
-                target={target}
-                route={route}
-                onUserLocation={setUserLocation}
-            />
-
-        </>
+                <MapView target={target} route={route} onUserLocation={setUserLocation} />
+            </div>
+        </div>
     );
-
 }
