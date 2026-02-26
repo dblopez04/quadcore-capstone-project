@@ -88,9 +88,17 @@ body {
 }
 
 .container {
+    width: 100%;
     max-width: 1200px;
     margin: 0 auto;
     padding: 16px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 12px;
+    }
 }
 
 /* Mobile-first: single column */
@@ -478,4 +486,99 @@ select {
 }
 html, body {
     overflow-x: hidden;
+}
+
+/* ---------- Responsive Navbar + Left Drawer ---------- */
+
+/* Desktop menu on by default */
+.desktop-menu {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Hamburger hidden on desktop */
+.hamburger {
+    display: none;
+    margin-left: auto;
+    font-size: 22px;
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 10px;
+}
+
+    .hamburger:hover {
+        background: rgba(255,255,255,0.12);
+    }
+
+/* Drawer hidden by default */
+.mobile-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(320px, 84vw);
+    background: var(--unt-green);
+    color: #fff;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transform: translateX(-110%);
+    transition: transform 0.2s ease;
+    z-index: 2000;
+}
+
+    /* Drawer open */
+    .mobile-drawer.open {
+        transform: translateX(0);
+    }
+
+    /* Drawer links */
+    .mobile-drawer a {
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        padding: 10px 12px;
+        border-radius: 10px;
+    }
+
+        .mobile-drawer a:hover {
+            background: rgba(255,255,255,0.12);
+        }
+
+        .mobile-drawer a.active {
+            background: rgba(255,255,255,0.16);
+        }
+
+/* Drawer logout */
+.drawer-logout {
+    margin-top: auto;
+    background: #fff;
+    color: #111;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-weight: 800;
+    border: none;
+}
+
+/* Backdrop */
+.drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 1999;
+}
+
+/* MOBILE breakpoint: hide desktop menu, show hamburger */
+@media (max-width: 1023px) {
+    .desktop-menu {
+        display: none;
+    }
+
+    .hamburger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
 }
