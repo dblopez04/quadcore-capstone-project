@@ -18,6 +18,60 @@ Decision:
 
 Consequences:
 
+## 2026-02-27 - Consolidate User Search to `/api/search`
+Status: accepted
+
+Context:
+Both `/api/locations?search=` and `/api/search` offered overlapping search behavior,
+which split search logic across endpoints and made ranking consistency harder.
+
+Decision:
+Treat `/api/search` as the single user-facing search endpoint for location and POI
+discovery, and remove legacy text-filter behavior from `GET /api/locations`.
+
+Consequences:
+Search ranking and query validation now live in one place. `/api/locations` remains
+a deterministic alphabetical listing endpoint, while all user search use cases should
+call `/api/search`.
+
+## 2026-02-27 - Federated Search API Across Locations and POIs
+Status: accepted
+
+Context:
+Searching only locations does not match expected map behavior. Users should find
+POIs such as cafes and services with mixed queries that also include campus
+location names.
+
+Decision:
+Add `GET /api/search` as a public federated endpoint that queries both
+`locations` and `points_of_interest`, ranks mixed results, and returns a unified
+payload with `result_type`, ids, map coordinates, and `share_url`.
+
+Consequences:
+The frontend can use one endpoint for map search/autocomplete while keeping
+location-based deep linking and personalization behavior.
+
+## 2026-02-27 - Location QoL APIs for Lists, Notes, Recency, and Share Links
+Status: accepted
+
+Context:
+Users need map-style quality-of-life features for saved places without depending on
+route calculations: custom collections, personal notes, recently viewed places, and
+shareable deep links.
+
+Decision:
+Extend the location domain with three schema additions:
+`location_lists`, `location_list_items`, and `recently_viewed_locations`. Add
+authenticated location routes for list CRUD, list item management, and recently
+viewed upserts/reads. Add location deep-link generation via
+`GET /api/locations/:locationId/share-link` and include `share_url` in location
+summary payloads.
+
+Consequences:
+Backend now supports location organization and recency tracking for each user while
+keeping bookmark notes in `location_bookmarks.notes`. Frontend wiring can consume
+the new APIs incrementally without further schema changes.
+
 ## 2026-02-27 - Owner-Gated Admin Delegation
 Status: accepted
 

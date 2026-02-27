@@ -4,6 +4,8 @@
 - Copy `.env.example` to `.env` and update secrets and credentials.
 - The backend reads `DATABASE_URL` from env; Docker sets it to use the `db` service.
 - Database schema is initialized from `database/init.sql` on first container start.
+- For existing databases, apply incremental SQL migrations manually (for example:
+  `database/migration_location_qol.sql` for custom lists/recently viewed tables).
 
 ## Service Ports (local)
 - Frontend: `http://localhost:5173`

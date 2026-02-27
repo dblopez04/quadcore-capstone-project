@@ -22,6 +22,8 @@
 - `JWT_SECRET` - access token secret.
 - `JWT_REFRESH_SECRET` - refresh token secret.
 - `OSRM_URL` - OSRM base URL (defined in `compose.yaml`).
+- `FRONTEND_URL` - optional base URL used to generate shareable location deep links
+  (defaults to `http://localhost:5173`).
 
 ## Auth Flow
 - `POST /api/auth/register` - creates a user (`STUDENT`/`FACULTY`/`VISITOR` only) and sets `accessToken` and `refreshToken` cookies.
@@ -53,11 +55,27 @@ All event bookmark routes are prefixed with `/api/events` and require `verifyTok
 - `POST /api/events/:eventId/bookmark` - bookmark an event.
 - `DELETE /api/events/:eventId/bookmark` - remove an event bookmark.
 
+## Federated Search Route
+- `GET /api/search` - federated search across locations and POIs.
+- Parameters:
+  - `q` (required) - query text.
+  - `types` (optional) - comma-separated `location,poi` (defaults to both).
+  - `limit` (optional) - max result count (default 20, max 50).
+- Returns a ranked mixed result list with normalized fields (`result_type`,
+  ids, title/subtitle, coordinates, and `share_url`).
+
 ## Location and Location Bookmark Routes
 All location routes are prefixed with `/api/locations`.
 
-- `GET /api/locations` - list locations from Postgres (optional `?search=` filter).
+- `GET /api/locations` - list locations from Postgres (full list, alphabetical).
 - `GET /api/locations/:locationId` - get a single location.
+- `GET /api/locations/:locationId/share-link` - get a canonical deep link for a
+  location (`/map?place=<locationId>`).
+
+Recently viewed routes require `verifyToken`:
+- `GET /api/locations/recently-viewed` - list recently viewed locations
+  (supports `?limit=`).
+- `POST /api/locations/:locationId/recently-viewed` - upsert recently viewed timestamp.
 
 Location bookmark routes require `verifyToken`:
 - `GET /api/locations/bookmarks` - list current user's bookmarked locations
@@ -66,6 +84,15 @@ Location bookmark routes require `verifyToken`:
 - `PATCH /api/locations/:locationId/bookmark` - update bookmark metadata (`custom_name`,
   `notes`, `is_favorite`, `last_visited`).
 - `DELETE /api/locations/:locationId/bookmark` - remove a location bookmark.
+
+Custom list routes require `verifyToken`:
+- `GET /api/locations/lists` - list custom location lists with items.
+- `POST /api/locations/lists` - create a custom list.
+- `PATCH /api/locations/lists/:listId` - rename a custom list.
+- `DELETE /api/locations/lists/:listId` - delete a custom list.
+- `POST /api/locations/lists/:listId/items` - add a location to a custom list.
+- `DELETE /api/locations/lists/:listId/items/:locationId` - remove a location from a
+  custom list.
 
 ## Admin Routes
 All admin routes are prefixed with `/api/admin` and protected by `requireAdmin` middleware.
@@ -133,13 +160,19 @@ npm run test:coverage # run tests with coverage report
 - `backend/tests/admin.rbac.test.js` - owner/admin delegation safety and prior-role restoration tests.
 - `backend/tests/auth.register-rbac.test.js` - self-registration role restriction tests.
 - `backend/tests/auth.middleware.owner.test.js` - `requireOwner` middleware behavior, including bootstrap mode.
+- `backend/tests/location.qol.test.js` - location share-link, recently viewed, and custom list controller behavior.
+- `backend/tests/search.federated.test.js` - mixed POI/location ranking and query validation for `/api/search`.
+- `backend/tests/search.validation.test.js` - limit/type/token validation and POI-only behavior for `/api/search`.
+- `backend/tests/location.listing.test.js` - verifies `/api/locations` list behavior (non-search).
 
 ## CORS
 The API allows `http://localhost:5173` with credentials. Update `backend/server.js`
 if the frontend origin changes.
 
 ## Known Gaps
-- No public endpoints for POIs yet (admin-only versions exist).
+- There is no standalone public POI list/details endpoint yet; POI discovery is currently exposed via `/api/search`.
 - POI bookmark functionality is not implemented.
+- Legacy location text search via `/api/locations?search=` was removed in favor of `/api/search`.
+- There is no frontend wiring yet for location custom lists/recently viewed/share links.
 - There is no frontend admin management UI yet for owner/admin assignment.
 - Role-based access checks for non-admin routes (student/faculty/visitor-specific behavior) are still limited.

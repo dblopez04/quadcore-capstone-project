@@ -19,6 +19,9 @@ const { verifyToken } = require("../middleware/auth.middleware");
  *           type: string
  *         coordinates:
  *           type: object
+ *         share_url:
+ *           type: string
+ *           description: Shareable deep link to the map view for this location
  *     LocationBookmark:
  *       type: object
  *       properties:
@@ -69,15 +72,9 @@ const { verifyToken } = require("../middleware/auth.middleware");
  * /api/locations:
  *   get:
  *     summary: Get locations
- *     description: Returns location records from Postgres with optional text search.
+ *     description: Returns location records from Postgres.
  *     tags:
  *       - Locations
- *     parameters:
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *         description: Case-insensitive match against name and description
  *     responses:
  *       200:
  *         description: Locations retrieved
@@ -136,6 +133,121 @@ router.get("/bookmarks", verifyToken, controller.getBookmarkedLocations);
 
 /**
  * @swagger
+ * /api/locations/recently-viewed:
+ *   get:
+ *     summary: Get recently viewed locations for the current user
+ *     tags:
+ *       - Locations
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Number of records to return (default 20, max 50)
+ *     responses:
+ *       200:
+ *         description: Recently viewed locations retrieved
+ *       400:
+ *         description: Invalid limit parameter
+ */
+router.get("/recently-viewed", verifyToken, controller.getRecentlyViewedLocations);
+
+/**
+ * @swagger
+ * /api/locations/lists:
+ *   get:
+ *     summary: Get custom location lists for the current user
+ *     tags:
+ *       - Locations
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Custom lists retrieved
+ */
+router.get("/lists", verifyToken, controller.getLocationLists);
+
+/**
+ * @swagger
+ * /api/locations/lists:
+ *   post:
+ *     summary: Create a custom location list
+ *     tags:
+ *       - Locations
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       201:
+ *         description: Custom list created
+ *       400:
+ *         description: Invalid or duplicate name
+ */
+router.post("/lists", verifyToken, controller.createLocationList);
+
+/**
+ * @swagger
+ * /api/locations/lists/{listId}:
+ *   patch:
+ *     summary: Rename a custom location list
+ *     tags:
+ *       - Locations
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Custom list updated
+ */
+router.patch("/lists/:listId", verifyToken, controller.updateLocationList);
+
+/**
+ * @swagger
+ * /api/locations/lists/{listId}:
+ *   delete:
+ *     summary: Delete a custom location list
+ *     tags:
+ *       - Locations
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Custom list deleted
+ */
+router.delete("/lists/:listId", verifyToken, controller.deleteLocationList);
+
+/**
+ * @swagger
+ * /api/locations/lists/{listId}/items:
+ *   post:
+ *     summary: Add a location to a custom list
+ *     tags:
+ *       - Locations
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       201:
+ *         description: Location added to list
+ */
+router.post("/lists/:listId/items", verifyToken, controller.addLocationToList);
+
+/**
+ * @swagger
+ * /api/locations/lists/{listId}/items/{locationId}:
+ *   delete:
+ *     summary: Remove a location from a custom list
+ *     tags:
+ *       - Locations
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Location removed from list
+ */
+router.delete("/lists/:listId/items/:locationId", verifyToken, controller.removeLocationFromList);
+
+/**
+ * @swagger
  * /api/locations/{locationId}:
  *   get:
  *     summary: Get location by id
@@ -162,6 +274,28 @@ router.get("/bookmarks", verifyToken, controller.getBookmarkedLocations);
  *         description: Location not found
  */
 router.get("/:locationId", controller.getLocationById);
+
+/**
+ * @swagger
+ * /api/locations/{locationId}/share-link:
+ *   get:
+ *     summary: Get a shareable deep link for a location
+ *     tags:
+ *       - Locations
+ *     parameters:
+ *       - in: path
+ *         name: locationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Deep link generated
+ *       404:
+ *         description: Location not found
+ */
+router.get("/:locationId/share-link", controller.getLocationShareLink);
 
 /**
  * @swagger
@@ -196,6 +330,23 @@ router.get("/:locationId", controller.getLocationById);
  *         description: Location not found
  */
 router.post("/:locationId/bookmark", verifyToken, controller.bookmarkLocation);
+
+/**
+ * @swagger
+ * /api/locations/{locationId}/recently-viewed:
+ *   post:
+ *     summary: Mark a location as recently viewed for the current user
+ *     tags:
+ *       - Locations
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Recently viewed location updated
+ *       404:
+ *         description: Location not found
+ */
+router.post("/:locationId/recently-viewed", verifyToken, controller.addRecentlyViewedLocation);
 
 /**
  * @swagger

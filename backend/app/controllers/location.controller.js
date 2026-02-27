@@ -3,12 +3,19 @@ const { Op } = require("sequelize");
 
 const Location = db.Location;
 const LocationBookmark = db.LocationBookmark;
+const LocationList = db.LocationList;
+const LocationListItem = db.LocationListItem;
+const RecentlyViewedLocation = db.RecentlyViewedLocation;
+
+const frontendBaseUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
+const buildShareUrl = (locationId) => `${frontendBaseUrl}/map?place=${encodeURIComponent(locationId)}`;
 
 const buildLocationSummary = (location) => ({
     location_id: location.location_id,
     name: location.name,
     description: location.description,
-    coordinates: location.coordinates
+    coordinates: location.coordinates,
+    share_url: buildShareUrl(location.location_id)
 });
 
 const buildBookmarkResponse = (bookmark) => ({
@@ -21,6 +28,33 @@ const buildBookmarkResponse = (bookmark) => ({
     location: bookmark.Location ? buildLocationSummary(bookmark.Location) : null
 });
 
+const buildRecentlyViewedResponse = (recentView) => ({
+    recent_view_id: recentView.recent_view_id,
+    viewed_at: recentView.viewed_at,
+    location: recentView.Location ? buildLocationSummary(recentView.Location) : null
+});
+
+const buildListItemResponse = (item) => ({
+    list_item_id: item.list_item_id,
+    added_at: item.added_at,
+    location: item.Location ? buildLocationSummary(item.Location) : null
+});
+
+const buildLocationListResponse = (list) => {
+    const items = Array.isArray(list.items)
+        ? [...list.items].sort((a, b) => new Date(b.added_at) - new Date(a.added_at))
+        : [];
+
+    return {
+        list_id: list.list_id,
+        name: list.name,
+        created_at: list.created_at,
+        updated_at: list.updated_at,
+        item_count: items.length,
+        items: items.map(buildListItemResponse)
+    };
+};
+
 const parseBoolean = (value) => {
     if (value === undefined) return undefined;
     if (typeof value === "boolean") return value;
@@ -29,20 +63,35 @@ const parseBoolean = (value) => {
     return null;
 };
 
+const normalizeListName = (value) => {
+    if (typeof value !== "string") {
+        return null;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.length > 100) {
+        return null;
+    }
+
+    return trimmed;
+};
+
+const parseLimit = (value, defaultValue = 20, max = 50) => {
+    if (value === undefined || value === null || value === "") {
+        return defaultValue;
+    }
+
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isNaN(parsed) || parsed < 1) {
+        return null;
+    }
+
+    return Math.min(parsed, max);
+};
+
 exports.getLocations = async (req, res) => {
     try {
-        const { search } = req.query;
-        const whereClause = {};
-
-        if (search) {
-            whereClause[Op.or] = [
-                { name: { [Op.iLike]: `%${search}%` } },
-                { description: { [Op.iLike]: `%${search}%` } }
-            ];
-        }
-
         const locations = await Location.findAll({
-            where: whereClause,
             order: [["name", "ASC"]]
         });
 
@@ -60,9 +109,26 @@ exports.getLocationById = async (req, res) => {
             return res.status(404).send({ message: "Location not found." });
         }
 
-        res.send({ location });
+        res.send({ location: buildLocationSummary(location) });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error retrieving location." });
+    }
+};
+
+exports.getLocationShareLink = async (req, res) => {
+    try {
+        const location = await Location.findByPk(req.params.locationId);
+
+        if (!location) {
+            return res.status(404).send({ message: "Location not found." });
+        }
+
+        res.send({
+            location_id: location.location_id,
+            share_url: buildShareUrl(location.location_id)
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error generating location share link." });
     }
 };
 
@@ -246,5 +312,278 @@ exports.removeBookmark = async (req, res) => {
         res.send({ message: "Bookmark removed." });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error removing bookmark." });
+    }
+};
+
+exports.getRecentlyViewedLocations = async (req, res) => {
+    try {
+        const limit = parseLimit(req.query.limit);
+        if (limit === null) {
+            return res.status(400).send({ message: "limit must be a positive integer." });
+        }
+
+        const recentlyViewed = await RecentlyViewedLocation.findAll({
+            where: { user_id: req.user_id },
+            include: [{ model: Location, required: true }],
+            order: [["viewed_at", "DESC"]],
+            limit
+        });
+
+        res.send({
+            recently_viewed: recentlyViewed.map(buildRecentlyViewedResponse)
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error retrieving recently viewed locations." });
+    }
+};
+
+exports.addRecentlyViewedLocation = async (req, res) => {
+    try {
+        const locationId = req.params.locationId;
+        const location = await Location.findByPk(locationId);
+
+        if (!location) {
+            return res.status(404).send({ message: "Location not found." });
+        }
+
+        const [recentView, created] = await RecentlyViewedLocation.findOrCreate({
+            where: { user_id: req.user_id, location_id: locationId },
+            defaults: {
+                user_id: req.user_id,
+                location_id: locationId,
+                viewed_at: new Date()
+            }
+        });
+
+        if (!created) {
+            await recentView.update({ viewed_at: new Date() });
+        }
+
+        const savedRecentView = await RecentlyViewedLocation.findOne({
+            where: { user_id: req.user_id, location_id: locationId },
+            include: [{ model: Location, required: true }]
+        });
+
+        res.send({
+            message: "Recently viewed location updated.",
+            recently_viewed: buildRecentlyViewedResponse(savedRecentView)
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error updating recently viewed locations." });
+    }
+};
+
+exports.getLocationLists = async (req, res) => {
+    try {
+        const lists = await LocationList.findAll({
+            where: { user_id: req.user_id },
+            include: [
+                {
+                    model: LocationListItem,
+                    as: "items",
+                    required: false,
+                    include: [{ model: Location, required: true }]
+                }
+            ],
+            order: [["updated_at", "DESC"]]
+        });
+
+        res.send({ lists: lists.map(buildLocationListResponse) });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error retrieving custom lists." });
+    }
+};
+
+exports.createLocationList = async (req, res) => {
+    try {
+        const listName = normalizeListName(req.body?.name);
+        if (!listName) {
+            return res.status(400).send({ message: "name is required and must be 1-100 characters." });
+        }
+
+        const existingList = await LocationList.findOne({
+            where: {
+                user_id: req.user_id,
+                name: { [Op.iLike]: listName }
+            }
+        });
+
+        if (existingList) {
+            return res.status(400).send({ message: "A list with this name already exists." });
+        }
+
+        const createdList = await LocationList.create({
+            user_id: req.user_id,
+            name: listName
+        });
+
+        res.status(201).send({
+            message: "Custom list created.",
+            list: buildLocationListResponse(createdList)
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error creating custom list." });
+    }
+};
+
+exports.updateLocationList = async (req, res) => {
+    try {
+        const listName = normalizeListName(req.body?.name);
+        if (!listName) {
+            return res.status(400).send({ message: "name is required and must be 1-100 characters." });
+        }
+
+        const list = await LocationList.findOne({
+            where: {
+                list_id: req.params.listId,
+                user_id: req.user_id
+            }
+        });
+
+        if (!list) {
+            return res.status(404).send({ message: "Custom list not found." });
+        }
+
+        const existingList = await LocationList.findOne({
+            where: {
+                list_id: { [Op.ne]: list.list_id },
+                user_id: req.user_id,
+                name: { [Op.iLike]: listName }
+            }
+        });
+
+        if (existingList) {
+            return res.status(400).send({ message: "A list with this name already exists." });
+        }
+
+        await list.update({
+            name: listName,
+            updated_at: new Date()
+        });
+
+        const updatedList = await LocationList.findOne({
+            where: { list_id: list.list_id },
+            include: [
+                {
+                    model: LocationListItem,
+                    as: "items",
+                    required: false,
+                    include: [{ model: Location, required: true }]
+                }
+            ]
+        });
+
+        res.send({
+            message: "Custom list updated.",
+            list: buildLocationListResponse(updatedList)
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error updating custom list." });
+    }
+};
+
+exports.deleteLocationList = async (req, res) => {
+    try {
+        const deleted = await LocationList.destroy({
+            where: {
+                list_id: req.params.listId,
+                user_id: req.user_id
+            }
+        });
+
+        if (deleted === 0) {
+            return res.status(404).send({ message: "Custom list not found." });
+        }
+
+        res.send({ message: "Custom list deleted." });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error deleting custom list." });
+    }
+};
+
+exports.addLocationToList = async (req, res) => {
+    try {
+        const listId = req.params.listId;
+        const locationId = req.body?.location_id;
+
+        if (!locationId) {
+            return res.status(400).send({ message: "location_id is required." });
+        }
+
+        const list = await LocationList.findOne({
+            where: {
+                list_id: listId,
+                user_id: req.user_id
+            }
+        });
+
+        if (!list) {
+            return res.status(404).send({ message: "Custom list not found." });
+        }
+
+        const location = await Location.findByPk(locationId);
+        if (!location) {
+            return res.status(404).send({ message: "Location not found." });
+        }
+
+        const [listItem, created] = await LocationListItem.findOrCreate({
+            where: { list_id: listId, location_id: locationId },
+            defaults: {
+                list_id: listId,
+                location_id: locationId
+            }
+        });
+
+        if (!created) {
+            return res.status(200).send({ message: "Location is already in this list." });
+        }
+
+        await list.update({ updated_at: new Date() });
+
+        const savedListItem = await LocationListItem.findByPk(listItem.list_item_id, {
+            include: [{ model: Location, required: true }]
+        });
+
+        res.status(201).send({
+            message: "Location added to list.",
+            item: buildListItemResponse(savedListItem)
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error adding location to list." });
+    }
+};
+
+exports.removeLocationFromList = async (req, res) => {
+    try {
+        const listId = req.params.listId;
+        const locationId = req.params.locationId;
+
+        const list = await LocationList.findOne({
+            where: {
+                list_id: listId,
+                user_id: req.user_id
+            }
+        });
+
+        if (!list) {
+            return res.status(404).send({ message: "Custom list not found." });
+        }
+
+        const deleted = await LocationListItem.destroy({
+            where: {
+                list_id: listId,
+                location_id: locationId
+            }
+        });
+
+        if (deleted === 0) {
+            return res.status(404).send({ message: "Location is not in this list." });
+        }
+
+        await list.update({ updated_at: new Date() });
+
+        res.send({ message: "Location removed from list." });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error removing location from list." });
     }
 };

@@ -175,6 +175,34 @@ CREATE TABLE location_bookmarks (
     UNIQUE(user_id, location_id)
 );
 
+CREATE TABLE location_lists (
+    list_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, name)
+);
+
+CREATE TABLE location_list_items (
+    list_item_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    list_id UUID NOT NULL REFERENCES location_lists(list_id) ON DELETE CASCADE,
+    location_id UUID NOT NULL REFERENCES locations(location_id) ON DELETE CASCADE,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(list_id, location_id)
+);
+
+CREATE TABLE recently_viewed_locations (
+    recent_view_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    location_id UUID NOT NULL REFERENCES locations(location_id) ON DELETE CASCADE,
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, location_id)
+);
+
+CREATE INDEX idx_location_list_items_list_id ON location_list_items(list_id);
+CREATE INDEX idx_recently_viewed_locations_user_viewed_at ON recently_viewed_locations(user_id, viewed_at DESC);
+
 CREATE TABLE reports (
     report_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     reporter_id UUID NOT NULL REFERENCES users(user_id),

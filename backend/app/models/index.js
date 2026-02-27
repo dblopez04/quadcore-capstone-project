@@ -10,6 +10,9 @@ const defineEvent = require('./event.model');
 const defineEventRegistration = require('./eventRegistration.model');
 const defineEventBookmark = require('./eventBookmark.model');
 const defineLocationBookmark = require('./locationBookmark.model');
+const defineLocationList = require('./locationList.model');
+const defineLocationListItem = require('./locationListItem.model');
+const defineRecentlyViewedLocation = require('./recentlyViewedLocation.model');
 const defineReport = require('./report.model');
 
 const db = {};
@@ -27,6 +30,9 @@ db.Event = defineEvent(sequelize, Sequelize.DataTypes);
 db.EventRegistration = defineEventRegistration(sequelize, Sequelize.DataTypes);
 db.EventBookmark = defineEventBookmark(sequelize, Sequelize.DataTypes);
 db.LocationBookmark = defineLocationBookmark(sequelize, Sequelize.DataTypes);
+db.LocationList = defineLocationList(sequelize, Sequelize.DataTypes);
+db.LocationListItem = defineLocationListItem(sequelize, Sequelize.DataTypes);
+db.RecentlyViewedLocation = defineRecentlyViewedLocation(sequelize, Sequelize.DataTypes);
 db.Report = defineReport(sequelize, Sequelize.DataTypes);
 
 // User associations
@@ -66,6 +72,20 @@ db.User.hasMany(db.LocationBookmark, { foreignKey: 'user_id', onDelete: 'CASCADE
 db.LocationBookmark.belongsTo(db.User, { foreignKey: 'user_id' });
 db.Location.hasMany(db.LocationBookmark, { foreignKey: 'location_id', onDelete: 'CASCADE' });
 db.LocationBookmark.belongsTo(db.Location, { foreignKey: 'location_id' });
+
+// Custom location list associations
+db.User.hasMany(db.LocationList, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+db.LocationList.belongsTo(db.User, { foreignKey: 'user_id' });
+db.LocationList.hasMany(db.LocationListItem, { as: 'items', foreignKey: 'list_id', onDelete: 'CASCADE' });
+db.LocationListItem.belongsTo(db.LocationList, { as: 'list', foreignKey: 'list_id' });
+db.Location.hasMany(db.LocationListItem, { foreignKey: 'location_id', onDelete: 'CASCADE' });
+db.LocationListItem.belongsTo(db.Location, { foreignKey: 'location_id' });
+
+// Recently viewed location associations
+db.User.hasMany(db.RecentlyViewedLocation, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+db.RecentlyViewedLocation.belongsTo(db.User, { foreignKey: 'user_id' });
+db.Location.hasMany(db.RecentlyViewedLocation, { foreignKey: 'location_id', onDelete: 'CASCADE' });
+db.RecentlyViewedLocation.belongsTo(db.Location, { foreignKey: 'location_id' });
 
 // Report associations
 db.User.hasMany(db.Report, { as: 'reports', foreignKey: 'reporter_id' });
