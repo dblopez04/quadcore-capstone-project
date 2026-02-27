@@ -2,9 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../models");
 const User = db.User;
-const Student = db.Student;
-const Faculty = db.Faculty;
-const Visitor = db.Visitor;
+const REGISTERABLE_ROLES = new Set(["STUDENT", "FACULTY", "VISITOR"]);
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
@@ -33,42 +31,52 @@ const generateRefreshToken = (user) => {
         JWT_REFRESH_SECRET, 
         { expiresIn: "7d" }
     );
-}
+};
 
 exports.register = async (req, res) => {
-    const user = await User.create({
-        email: req.body.email,
-        password_hash: bcrypt.hashSync(req.body.password, 10),
-        first_name: req.body.first_name,
-        last_name: req.body.last_name,
-        phone_number: req.body.phone_number,
-        user_role: req.body.user_role
-    });
+    const requestedRole = req.body.user_role;
+    if (!REGISTERABLE_ROLES.has(requestedRole)) {
+        return res.status(400).send({
+            message: "Invalid role. Registration supports STUDENT, FACULTY, or VISITOR only."
+        });
+    }
 
-    
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    try {
+        const user = await User.create({
+            email: req.body.email,
+            password_hash: bcrypt.hashSync(req.body.password, 10),
+            first_name: req.body.first_name,
+            last_name: req.body.last_name,
+            phone_number: req.body.phone_number,
+            user_role: requestedRole
+        });
 
-    await user.update({ refresh_token: refreshToken });
+        const accessToken = generateAccessToken(user);
+        const refreshToken = generateRefreshToken(user);
 
-    res.cookie('accessToken', accessToken, ACCESS_COOKIE);
-    res.cookie('refreshToken', refreshToken, REFRESH_COOKIE);
+        await user.update({ refresh_token: refreshToken });
 
-    res.status(201).send({
-        message: "User registered successfully!",
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        user: {
-            id: user.id,
-            user_id: user.user_id,
-            email: user.email,
-            first_name: user.first_name,
-            last_name: user.last_name,
-            phone_number: user.phone_number,
-            user_role: user.user_role
-        }
-    });
-}
+        res.cookie('accessToken', accessToken, ACCESS_COOKIE);
+        res.cookie('refreshToken', refreshToken, REFRESH_COOKIE);
+
+        res.status(201).send({
+            message: "User registered successfully!",
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            user: {
+                id: user.id,
+                user_id: user.user_id,
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                phone_number: user.phone_number,
+                user_role: user.user_role
+            }
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message });
+    }
+};
 
 exports.login = async (req, res) => {
   try {

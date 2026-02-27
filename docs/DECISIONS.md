@@ -18,6 +18,25 @@ Decision:
 
 Consequences:
 
+## 2026-02-27 - Owner-Gated Admin Delegation
+Status: accepted
+
+Context:
+Admin delegation endpoints existed, but any admin could grant/revoke admin and the
+auth register endpoint accepted `ADMIN` directly. This allowed privilege escalation
+and made ownership responsibilities unclear.
+
+Decision:
+Keep `ADMIN` as the elevated user role and add owner metadata to the `admin` table:
+`is_owner` and `previous_role`. Add `requireOwner` middleware and gate delegation
+endpoints (`grant-admin`, `revoke-admin`, `grant-owner`, `revoke-owner`) behind it.
+Update registration to only accept `STUDENT`, `FACULTY`, and `VISITOR`.
+
+Consequences:
+Privilege assignment is now explicit and owner-controlled, admin revocation restores
+the user's prior role, and initial environments can bootstrap ownership through the
+owner middleware fallback when no owner exists yet.
+
 ## 2026-02-25 - Remove Legacy POI Bookmarks Table
 Status: accepted
 

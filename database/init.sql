@@ -99,7 +99,9 @@ CREATE TABLE visitors(
 
 CREATE TABLE admin(
     admin_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
+    user_id UUID UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    is_owner BOOLEAN NOT NULL DEFAULT FALSE,
+    previous_role role NOT NULL DEFAULT 'VISITOR'
 );
 
 CREATE TABLE locations(

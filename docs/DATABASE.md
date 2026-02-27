@@ -47,5 +47,8 @@ container starts.
 ## Notes
 - Sequelize models exist for users, roles, locations, POIs, events, event registrations,
   event bookmarks, location bookmarks, and reports in `backend/app/models/`.
+- `admin` now stores:
+  - `is_owner` (boolean) for owner-only delegation controls
+  - `previous_role` (`STUDENT`/`FACULTY`/`VISITOR`) so revoking admin restores the prior role
 - There is no migration tool yet; update `database/init.sql` directly and document
   decisions in `docs/DECISIONS.md`.

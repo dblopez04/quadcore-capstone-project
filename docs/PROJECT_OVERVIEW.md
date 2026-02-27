@@ -66,7 +66,8 @@ See `docs/REQUIREMENTS.md` for status.
 - POI read endpoints are still missing for non-admin users.
 - Search and settings pages are still static UI.
 - Location bookmark API exists, but the bookmarks page is not wired to it yet.
-- Role-based access for student/faculty/visitor/admin is not enforced yet.
+- Role-based access is partial: admin and owner controls are enforced, but
+  student/faculty/visitor-specific policy checks are still limited.
 
 ## Non-Functional Requirements (summary)
 - Security: protect login info, search history, and bookmarks; restrict admin actions.

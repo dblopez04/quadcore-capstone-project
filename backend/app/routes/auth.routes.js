@@ -59,8 +59,8 @@ const middleware = require("../middleware/auth.middleware");
  *           description: User's phone number
  *         user_role:
  *           type: string
- *           enum: [STUDENT, FACULTY, ADMIN, VISITOR]
- *           description: User's role in the system
+ *           enum: [STUDENT, FACULTY, VISITOR]
+ *           description: Public registration role (admin assignment is owner-controlled)
  *     LoginRequest:
  *       type: object
  *       required:
@@ -172,7 +172,7 @@ const middleware = require("../middleware/auth.middleware");
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/register", controller.register);
+router.post("/register", middleware.duplicateRegistration, controller.register);
 
 /**
  * @swagger
