@@ -17,7 +17,7 @@ import Search from './pages/Search.jsx'
 import Bookmarks from './pages/Bookmarks.jsx'
 import Settings from './pages/Settings.jsx'
 import Events from './pages/Events.jsx'
-
+import { ToastProvider } from './components/ToastProvider'
 
 const router = createBrowserRouter([
     { path: '/', element: <Login /> },
@@ -94,6 +94,8 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <RouterProvider router={router} />
+        <ToastProvider>
+            <RouterProvider router={router} />
+        </ToastProvider>
     </React.StrictMode>,
 )

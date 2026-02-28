@@ -2,8 +2,8 @@
 import { useNavigate } from "react-router-dom";
 import { searchLocations } from "../api/locationService";
 import { addBookmark, isBookmarked } from "../utils/bookmarks";
-
-
+import { getRecentSearches, addRecentSearch, clearRecentSearches } from "../utils/recentSearches";
+import { useToast } from "../components/ToastProvider";
 export default function Search() {
     const [tab, setTab] = useState("search");
     const filters = ["Dining", "Parking", "Accessibility Routes", "Well-Lit Paths"];
@@ -12,8 +12,10 @@ export default function Search() {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [recentSearches, setRecentSearches] = useState(() => getRecentSearches());
 
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     // Search as user types 
     useEffect(() => {
@@ -29,6 +31,8 @@ export default function Search() {
             try {
                 const data = await searchLocations(query);
                 if (!cancelled) setResults(data);
+                //addRecentSearch(query);
+                //setRecentSearches(getRecentSearches());
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -41,6 +45,9 @@ export default function Search() {
     }, [query]);
 
     function handleSelect(loc) {
+        addRecentSearch(loc.name);
+        setRecentSearches(getRecentSearches());
+
         navigate("/map", {
             state: {
                 lat: loc.lat,
@@ -107,6 +114,39 @@ export default function Search() {
                                 }}
                             />
                         </div>
+                        {recentSearches.length > 0 && (
+                            <div style={{ marginTop: -8, marginBottom: 16 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <div style={{ fontSize: 13, color: "#777" }}>Recent</div>
+                                    <button
+                                        className="btn"
+                                        style={{ width: "auto", padding: "6px 10px" }}
+                                        type="button"
+                                        onClick={() => {
+                                            clearRecentSearches();   // remove from localStorage
+                                            setRecentSearches([]);   // immediately update UI
+                                        }}
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+
+                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
+                                    {recentSearches.map((term) => (
+                                        <button
+                                            key={term}
+                                            type="button"
+                                            className="pill"
+                                            style={{ cursor: "pointer", border: "1px solid var(--border)" }}
+                                            onClick={() => setQuery(term)}
+                                            title={`Search: ${term}`}
+                                        >
+                                            {term}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Status text */}
                         {loading && (
@@ -152,15 +192,17 @@ export default function Search() {
                                         className="btn"
                                         style={{ width: "auto", marginLeft: 8 }}
                                         disabled={isBookmarked(loc.id)}
-                                        onClick={() =>
+                                        onClick={() => {
                                             addBookmark({
                                                 id: loc.id,
                                                 name: loc.name,
                                                 description: "Added from search",
                                                 lat: loc.lat,
-                                                lon: loc.lon,
-                                            })
-                                        }
+                                                lon: loc.lng,
+                                            });
+
+                                            showToast("Saved to bookmarks.", "success");
+                                        }}
                                     >
                                         {isBookmarked(loc.id) ? "Saved" : "Bookmark"}
                                     </button>
