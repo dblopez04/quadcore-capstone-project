@@ -7,6 +7,15 @@ const User = db.User;
 const Admin = db.Admin;
 const { Op } = require("sequelize");
 
+const NON_ADMIN_ROLES = new Set(["STUDENT", "FACULTY", "VISITOR"]);
+
+const normalizePreviousRole = (role) => {
+    if (NON_ADMIN_ROLES.has(role)) {
+        return role;
+    }
+    return "VISITOR";
+};
+
 // --- LOCATIONS ---
 
 exports.getAllLocations = async (req, res) => {
@@ -262,10 +271,30 @@ exports.deleteReport = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.findAll({
-            attributes: { exclude: ['password_hash', 'refresh_token'] }
+        const [users, admins] = await Promise.all([
+            User.findAll({
+                attributes: { exclude: ["password_hash", "refresh_token"] }
+            }),
+            Admin.findAll({
+                attributes: ["admin_id", "user_id", "is_owner"]
+            })
+        ]);
+
+        const adminByUserId = new Map(
+            admins.map((admin) => [admin.user_id, admin])
+        );
+
+        const usersWithPrivileges = users.map((user) => {
+            const userJson = user.toJSON();
+            const adminInfo = adminByUserId.get(user.user_id);
+            return {
+                ...userJson,
+                is_admin: Boolean(adminInfo),
+                is_owner: Boolean(adminInfo && adminInfo.is_owner)
+            };
         });
-        res.send(users);
+
+        res.send(usersWithPrivileges);
     } catch (err) {
         res.status(500).send({ message: err.message || "Error retrieving users." });
     }
@@ -279,19 +308,31 @@ exports.grantAdmin = async (req, res) => {
             return res.status(404).send({ message: "User not found." });
         }
 
-        // Check if already admin
         const existingAdmin = await Admin.findOne({ where: { user_id: userId } });
         if (existingAdmin) {
             return res.status(400).send({ message: "User is already an admin." });
         }
 
-        // Create admin entry
-        await Admin.create({ user_id: userId });
+        const previousRole = normalizePreviousRole(user.user_role);
 
-        // Update user role
-        await user.update({ user_role: 'ADMIN' });
+        await db.sequelize.transaction(async (transaction) => {
+            await Admin.create(
+                {
+                    user_id: userId,
+                    is_owner: false,
+                    previous_role: previousRole
+                },
+                { transaction }
+            );
 
-        res.send({ message: "Admin privileges granted successfully." });
+            await user.update({ user_role: "ADMIN" }, { transaction });
+        });
+
+        res.send({
+            message: "Admin privileges granted successfully.",
+            user_id: userId,
+            previous_role: previousRole
+        });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error granting admin privileges." });
     }
@@ -305,23 +346,91 @@ exports.revokeAdmin = async (req, res) => {
             return res.status(404).send({ message: "User not found." });
         }
 
-        // Remove from admin table
-        const num = await Admin.destroy({ where: { user_id: userId } });
-
-        if (num == 1) {
-            // Revert user role to STUDENT (default fallback, or maybe could be VISITOR/FACULTY? 
-            // Ideally we'd know their original role, but for now we'll default to STUDENT or just leave it?
-            // User requirement didn't specify fallback. I'll set it to STUDENT for safety or keep as is?
-            // Current User model has user_role ENUM. 
-            // Let's set it to STUDENT as a safe default, OR ask user. 
-            // For now, I'll set to STUDENT.
-            await user.update({ user_role: 'STUDENT' });
-
-            res.send({ message: "Admin privileges revoked successfully." });
-        } else {
-            res.send({ message: "User is not an admin." });
+        const admin = await Admin.findOne({ where: { user_id: userId } });
+        if (!admin) {
+            return res.status(400).send({ message: "User is not an admin." });
         }
+
+        if (admin.is_owner) {
+            return res.status(400).send({
+                message: "Owner privileges must be revoked before admin privileges can be removed."
+            });
+        }
+
+        const restoredRole = normalizePreviousRole(admin.previous_role);
+
+        await db.sequelize.transaction(async (transaction) => {
+            await Admin.destroy({
+                where: { user_id: userId },
+                transaction
+            });
+
+            await user.update({ user_role: restoredRole }, { transaction });
+        });
+
+        res.send({
+            message: "Admin privileges revoked successfully.",
+            user_id: userId,
+            restored_role: restoredRole
+        });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error revoking admin privileges." });
+    }
+};
+
+exports.grantOwner = async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        const admin = await Admin.findOne({ where: { user_id: userId } });
+        if (!admin) {
+            return res.status(400).send({
+                message: "User must be an admin before owner privileges can be granted."
+            });
+        }
+
+        if (admin.is_owner) {
+            return res.status(400).send({ message: "User is already a site owner." });
+        }
+
+        await admin.update({ is_owner: true });
+
+        res.send({
+            message: "Owner privileges granted successfully.",
+            user_id: userId
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error granting owner privileges." });
+    }
+};
+
+exports.revokeOwner = async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        const admin = await Admin.findOne({ where: { user_id: userId } });
+        if (!admin) {
+            return res.status(400).send({ message: "User is not an admin." });
+        }
+
+        if (!admin.is_owner) {
+            return res.status(400).send({ message: "User is not a site owner." });
+        }
+
+        const ownerCount = await Admin.count({ where: { is_owner: true } });
+        if (ownerCount <= 1) {
+            return res.status(400).send({
+                message: "Cannot revoke owner privileges from the last remaining owner."
+            });
+        }
+
+        await admin.update({ is_owner: false });
+
+        res.send({
+            message: "Owner privileges revoked successfully.",
+            user_id: userId
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error revoking owner privileges." });
     }
 };

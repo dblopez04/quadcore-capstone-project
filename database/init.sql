@@ -99,7 +99,9 @@ CREATE TABLE visitors(
 
 CREATE TABLE admin(
     admin_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE
+    user_id UUID UNIQUE NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    is_owner BOOLEAN NOT NULL DEFAULT FALSE,
+    previous_role role NOT NULL DEFAULT 'VISITOR'
 );
 
 CREATE TABLE locations(
@@ -161,18 +163,68 @@ CREATE TABLE event_bookmarks (
     UNIQUE(user_id, event_id)
 );
 
-CREATE TABLE bookmarks (
-    bookmark_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+CREATE TABLE event_tags (
+    event_tag_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE event_tag_assignments (
+    event_tag_assignment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+    event_tag_id UUID NOT NULL REFERENCES event_tags(event_tag_id) ON DELETE CASCADE,
+    UNIQUE(event_id, event_tag_id)
+);
+
+CREATE TABLE event_reminders (
+    event_reminder_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    poi_id UUID NOT NULL REFERENCES points_of_interest(poi_id) ON DELETE CASCADE,
+    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+    remind_at TIMESTAMP NOT NULL,
+    channel VARCHAR(50) DEFAULT 'IN_APP',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, event_id, remind_at)
+);
+
+CREATE TABLE location_bookmarks (
+    location_bookmark_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    location_id UUID NOT NULL REFERENCES locations(location_id) ON DELETE CASCADE,
     custom_name VARCHAR(255),
     notes TEXT,
-    category VARCHAR(100),
     is_favorite BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_visited TIMESTAMP,
-    UNIQUE(user_id, poi_id)
+    UNIQUE(user_id, location_id)
 );
+
+CREATE TABLE location_lists (
+    list_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, name)
+);
+
+CREATE TABLE location_list_items (
+    list_item_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    list_id UUID NOT NULL REFERENCES location_lists(list_id) ON DELETE CASCADE,
+    location_id UUID NOT NULL REFERENCES locations(location_id) ON DELETE CASCADE,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(list_id, location_id)
+);
+
+CREATE TABLE recently_viewed_locations (
+    recent_view_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    location_id UUID NOT NULL REFERENCES locations(location_id) ON DELETE CASCADE,
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, location_id)
+);
+
+CREATE INDEX idx_location_list_items_list_id ON location_list_items(list_id);
+CREATE INDEX idx_recently_viewed_locations_user_viewed_at ON recently_viewed_locations(user_id, viewed_at DESC);
 
 CREATE TABLE reports (
     report_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

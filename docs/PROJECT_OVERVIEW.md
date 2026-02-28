@@ -63,10 +63,11 @@ See `docs/REQUIREMENTS.md` for status.
 
 ## Known Gaps (observed)
 - OSRM is not yet wired into backend endpoints.
-- POI and location tables exist in the database, but no API endpoints yet.
-- Search, bookmarks, and settings pages are still static UI.
-- No calendar/events or reporting endpoints yet.
-- Role-based access for student/faculty/visitor/admin is not enforced yet.
+- POI read endpoints are still missing for non-admin users.
+- Search and settings pages are still static UI.
+- Location bookmark API exists, but the bookmarks page is not wired to it yet.
+- Role-based access is partial: admin and owner controls are enforced, but
+  student/faculty/visitor-specific policy checks are still limited.
 
 ## Non-Functional Requirements (summary)
 - Security: protect login info, search history, and bookmarks; restrict admin actions.

@@ -9,7 +9,13 @@ const definePointOfInterest = require('./poi.model');
 const defineEvent = require('./event.model');
 const defineEventRegistration = require('./eventRegistration.model');
 const defineEventBookmark = require('./eventBookmark.model');
-const defineBookmark = require('./bookmark.model');
+const defineEventTag = require('./eventTag.model');
+const defineEventTagAssignment = require('./eventTagAssignment.model');
+const defineEventReminder = require('./eventReminder.model');
+const defineLocationBookmark = require('./locationBookmark.model');
+const defineLocationList = require('./locationList.model');
+const defineLocationListItem = require('./locationListItem.model');
+const defineRecentlyViewedLocation = require('./recentlyViewedLocation.model');
 const defineReport = require('./report.model');
 
 const db = {};
@@ -26,7 +32,13 @@ db.PointOfInterest = definePointOfInterest(sequelize, Sequelize.DataTypes);
 db.Event = defineEvent(sequelize, Sequelize.DataTypes);
 db.EventRegistration = defineEventRegistration(sequelize, Sequelize.DataTypes);
 db.EventBookmark = defineEventBookmark(sequelize, Sequelize.DataTypes);
-db.Bookmark = defineBookmark(sequelize, Sequelize.DataTypes);
+db.EventTag = defineEventTag(sequelize, Sequelize.DataTypes);
+db.EventTagAssignment = defineEventTagAssignment(sequelize, Sequelize.DataTypes);
+db.EventReminder = defineEventReminder(sequelize, Sequelize.DataTypes);
+db.LocationBookmark = defineLocationBookmark(sequelize, Sequelize.DataTypes);
+db.LocationList = defineLocationList(sequelize, Sequelize.DataTypes);
+db.LocationListItem = defineLocationListItem(sequelize, Sequelize.DataTypes);
+db.RecentlyViewedLocation = defineRecentlyViewedLocation(sequelize, Sequelize.DataTypes);
 db.Report = defineReport(sequelize, Sequelize.DataTypes);
 
 // User associations
@@ -61,11 +73,43 @@ db.EventBookmark.belongsTo(db.User, { foreignKey: 'user_id' });
 db.Event.hasMany(db.EventBookmark, { foreignKey: 'event_id', onDelete: 'CASCADE' });
 db.EventBookmark.belongsTo(db.Event, { foreignKey: 'event_id' });
 
-// Bookmark associations
-db.User.hasMany(db.Bookmark, { foreignKey: 'user_id', onDelete: 'CASCADE' });
-db.Bookmark.belongsTo(db.User, { foreignKey: 'user_id' });
-db.PointOfInterest.hasMany(db.Bookmark, { foreignKey: 'poi_id', onDelete: 'CASCADE' });
-db.Bookmark.belongsTo(db.PointOfInterest, { foreignKey: 'poi_id' });
+// Event tag associations
+db.Event.belongsToMany(db.EventTag, {
+    through: db.EventTagAssignment,
+    foreignKey: 'event_id',
+    otherKey: 'event_tag_id'
+});
+db.EventTag.belongsToMany(db.Event, {
+    through: db.EventTagAssignment,
+    foreignKey: 'event_tag_id',
+    otherKey: 'event_id'
+});
+
+// Event reminder associations
+db.User.hasMany(db.EventReminder, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+db.EventReminder.belongsTo(db.User, { foreignKey: 'user_id' });
+db.Event.hasMany(db.EventReminder, { foreignKey: 'event_id', onDelete: 'CASCADE' });
+db.EventReminder.belongsTo(db.Event, { foreignKey: 'event_id' });
+
+// Location bookmark associations
+db.User.hasMany(db.LocationBookmark, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+db.LocationBookmark.belongsTo(db.User, { foreignKey: 'user_id' });
+db.Location.hasMany(db.LocationBookmark, { foreignKey: 'location_id', onDelete: 'CASCADE' });
+db.LocationBookmark.belongsTo(db.Location, { foreignKey: 'location_id' });
+
+// Custom location list associations
+db.User.hasMany(db.LocationList, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+db.LocationList.belongsTo(db.User, { foreignKey: 'user_id' });
+db.LocationList.hasMany(db.LocationListItem, { as: 'items', foreignKey: 'list_id', onDelete: 'CASCADE' });
+db.LocationListItem.belongsTo(db.LocationList, { as: 'list', foreignKey: 'list_id' });
+db.Location.hasMany(db.LocationListItem, { foreignKey: 'location_id', onDelete: 'CASCADE' });
+db.LocationListItem.belongsTo(db.Location, { foreignKey: 'location_id' });
+
+// Recently viewed location associations
+db.User.hasMany(db.RecentlyViewedLocation, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+db.RecentlyViewedLocation.belongsTo(db.User, { foreignKey: 'user_id' });
+db.Location.hasMany(db.RecentlyViewedLocation, { foreignKey: 'location_id', onDelete: 'CASCADE' });
+db.RecentlyViewedLocation.belongsTo(db.Location, { foreignKey: 'location_id' });
 
 // Report associations
 db.User.hasMany(db.Report, { as: 'reports', foreignKey: 'reporter_id' });

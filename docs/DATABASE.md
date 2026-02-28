@@ -29,7 +29,13 @@ container starts.
 - `events` - campus events with timing, status, and organizer.
 - `event_registrations` - user registrations for events.
 - `event_bookmarks` - user bookmarks for events.
-- `bookmarks` - user saved POIs with optional notes.
+- `event_tags` - tag catalog for events.
+- `event_tag_assignments` - join table linking events to tags.
+- `event_reminders` - user reminders for events.
+- `location_bookmarks` - user saved locations with optional notes/favorites.
+- `location_lists` - user-owned custom lists of saved places.
+- `location_list_items` - join table linking custom lists to locations.
+- `recently_viewed_locations` - per-user recency log for viewed places.
 - `reports` - user-submitted reports.
 
 ## Geospatial Notes
@@ -46,6 +52,12 @@ container starts.
 
 ## Notes
 - Sequelize models exist for users, roles, locations, POIs, events, event registrations,
-  event bookmarks, POI bookmarks, and reports in `backend/app/models/`.
+  event bookmarks, event tags/assignments, event reminders, location bookmarks,
+  location lists/items, recently viewed locations, and reports in `backend/app/models/`.
+- `admin` now stores:
+  - `is_owner` (boolean) for owner-only delegation controls
+  - `previous_role` (`STUDENT`/`FACULTY`/`VISITOR`) so revoking admin restores the prior role
+- Existing environments can apply `database/migration_location_qol.sql` to add
+  `location_lists`, `location_list_items`, and `recently_viewed_locations`.
 - There is no migration tool yet; update `database/init.sql` directly and document
   decisions in `docs/DECISIONS.md`.
