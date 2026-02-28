@@ -9,6 +9,9 @@ const definePointOfInterest = require('./poi.model');
 const defineEvent = require('./event.model');
 const defineEventRegistration = require('./eventRegistration.model');
 const defineEventBookmark = require('./eventBookmark.model');
+const defineEventTag = require('./eventTag.model');
+const defineEventTagAssignment = require('./eventTagAssignment.model');
+const defineEventReminder = require('./eventReminder.model');
 const defineLocationBookmark = require('./locationBookmark.model');
 const defineLocationList = require('./locationList.model');
 const defineLocationListItem = require('./locationListItem.model');
@@ -29,6 +32,9 @@ db.PointOfInterest = definePointOfInterest(sequelize, Sequelize.DataTypes);
 db.Event = defineEvent(sequelize, Sequelize.DataTypes);
 db.EventRegistration = defineEventRegistration(sequelize, Sequelize.DataTypes);
 db.EventBookmark = defineEventBookmark(sequelize, Sequelize.DataTypes);
+db.EventTag = defineEventTag(sequelize, Sequelize.DataTypes);
+db.EventTagAssignment = defineEventTagAssignment(sequelize, Sequelize.DataTypes);
+db.EventReminder = defineEventReminder(sequelize, Sequelize.DataTypes);
 db.LocationBookmark = defineLocationBookmark(sequelize, Sequelize.DataTypes);
 db.LocationList = defineLocationList(sequelize, Sequelize.DataTypes);
 db.LocationListItem = defineLocationListItem(sequelize, Sequelize.DataTypes);
@@ -66,6 +72,24 @@ db.User.hasMany(db.EventBookmark, { foreignKey: 'user_id', onDelete: 'CASCADE' }
 db.EventBookmark.belongsTo(db.User, { foreignKey: 'user_id' });
 db.Event.hasMany(db.EventBookmark, { foreignKey: 'event_id', onDelete: 'CASCADE' });
 db.EventBookmark.belongsTo(db.Event, { foreignKey: 'event_id' });
+
+// Event tag associations
+db.Event.belongsToMany(db.EventTag, {
+    through: db.EventTagAssignment,
+    foreignKey: 'event_id',
+    otherKey: 'event_tag_id'
+});
+db.EventTag.belongsToMany(db.Event, {
+    through: db.EventTagAssignment,
+    foreignKey: 'event_tag_id',
+    otherKey: 'event_id'
+});
+
+// Event reminder associations
+db.User.hasMany(db.EventReminder, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+db.EventReminder.belongsTo(db.User, { foreignKey: 'user_id' });
+db.Event.hasMany(db.EventReminder, { foreignKey: 'event_id', onDelete: 'CASCADE' });
+db.EventReminder.belongsTo(db.Event, { foreignKey: 'event_id' });
 
 // Location bookmark associations
 db.User.hasMany(db.LocationBookmark, { foreignKey: 'user_id', onDelete: 'CASCADE' });

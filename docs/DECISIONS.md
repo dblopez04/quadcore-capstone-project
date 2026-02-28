@@ -140,3 +140,20 @@ bookmark endpoints under `/api/events` for create/remove and date-range retrieva
 Consequences:
 Schema initialization now includes `event_bookmarks`, and the backend gains new
 authenticated routes for event bookmark operations.
+
+## 2026-02-27 - Event Tags, Reminders, and Calendar Support APIs
+Status: accepted
+
+Context:
+Calendar views need richer event metadata such as tags, saved reminders, and
+registration/conflict detection endpoints. Existing schema did not include tag
+or reminder tables.
+
+Decision:
+Add `event_tags`, `event_tag_assignments`, and `event_reminders` tables and expose
+user-facing APIs for event search/filtering, registrations, reminders, conflicts,
+and calendar exports.
+
+Consequences:
+Schema initialization gains new tables, and the backend now exposes additional
+event APIs under `/api/events`.

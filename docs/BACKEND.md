@@ -50,10 +50,25 @@ All user routes expect cookie auth (`accessToken` and `refreshToken`).
 ## Event Bookmark Routes
 All event bookmark routes are prefixed with `/api/events` and require `verifyToken`.
 
+- `GET /api/events` - list/search events (filters: `q`, `start`, `end`, `status`,
+  `event_type`, `location_id`, `organizer_id`, `tags`).
 - `GET /api/events/bookmarks` - list the current user's bookmarked events
-  (supports `?start=`, `?end=`, `?status=`, `?event_type=` filters).
+  (supports `?start=`, `?end=`, `?status=`, `?event_type=`, `?tags=` filters).
+- `GET /api/events/bookmarks.ics` - export bookmarked events as ICS.
 - `POST /api/events/:eventId/bookmark` - bookmark an event.
 - `DELETE /api/events/:eventId/bookmark` - remove an event bookmark.
+- `GET /api/events/registrations` - list the current user's registrations.
+- `POST /api/events/:eventId/register` - register for an event.
+- `DELETE /api/events/:eventId/register` - unregister from an event.
+- `GET /api/events/conflicts` - detect scheduling conflicts among bookmarked
+  and/or registered events.
+- `GET /api/events/reminders` - list event reminders for the current user.
+- `POST /api/events/:eventId/reminders` - create a reminder for an event.
+- `DELETE /api/events/reminders/:reminderId` - delete a reminder.
+- `GET /api/events/tags` - list event tags.
+- `POST /api/events/tags` - create a tag (admin only).
+- `POST /api/events/:eventId/tags` - assign tags to an event (admin only).
+- `DELETE /api/events/:eventId/tags/:tagId` - remove a tag from an event (admin only).
 
 ## Federated Search Route
 - `GET /api/search` - federated search across locations and POIs.

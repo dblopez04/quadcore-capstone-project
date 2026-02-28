@@ -163,6 +163,29 @@ CREATE TABLE event_bookmarks (
     UNIQUE(user_id, event_id)
 );
 
+CREATE TABLE event_tags (
+    event_tag_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE event_tag_assignments (
+    event_tag_assignment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+    event_tag_id UUID NOT NULL REFERENCES event_tags(event_tag_id) ON DELETE CASCADE,
+    UNIQUE(event_id, event_tag_id)
+);
+
+CREATE TABLE event_reminders (
+    event_reminder_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+    remind_at TIMESTAMP NOT NULL,
+    channel VARCHAR(50) DEFAULT 'IN_APP',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, event_id, remind_at)
+);
+
 CREATE TABLE location_bookmarks (
     location_bookmark_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
