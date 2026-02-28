@@ -38,6 +38,11 @@ imports it into PostGIS, and restarts OSRM.
 If your environment needs a different `osm2pgsql` image, override it:
 `OSM2PGSQL_IMAGE=<image> ./import_osm.sh`
 
+## Seed demo locations (non-destructive)
+```bash
+docker exec -i db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < database/seed_locations.sql
+```
+
 ## Frontend (local)
 ```bash
 cd frontend

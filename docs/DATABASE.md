@@ -54,6 +54,8 @@ container starts.
 - Sequelize models exist for users, roles, locations, POIs, events, event registrations,
   event bookmarks, event tags/assignments, event reminders, location bookmarks,
   location lists/items, recently viewed locations, and reports in `backend/app/models/`.
+- `database/init.sql` now seeds ~50 campus-area locations for demo search results.
+- `database/seed_locations.sql` can be re-run safely to add missing demo locations.
 - `admin` now stores:
   - `is_owner` (boolean) for owner-only delegation controls
   - `previous_role` (`STUDENT`/`FACULTY`/`VISITOR`) so revoking admin restores the prior role
