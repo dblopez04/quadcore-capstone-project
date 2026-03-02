@@ -18,6 +18,27 @@ Decision:
 
 Consequences:
 
+## 2026-03-02 - `verifyToken` Refresh Fallback and Token Lifetime Alignment
+Status: accepted
+
+Context:
+Authenticated routes relied strictly on `accessToken` cookie presence. In
+practice, users could retain a valid `refreshToken` while `accessToken` cookie
+had already expired (cookie maxAge 15m vs JWT expiry 30m), causing avoidable
+403/401 responses on protected endpoints.
+
+Decision:
+Update auth middleware so `verifyToken` (and shared auth checks used by
+`requireAdmin`/`requireOwner`) first validates `accessToken`, then falls back to
+`refreshToken` validation against DB state and issues a fresh `accessToken`
+cookie when refresh succeeds. Align access cookie maxAge with access JWT expiry
+at 30 minutes.
+
+Consequences:
+Protected API calls can transparently recover from expired/missing access
+cookies when refresh state is valid, reducing auth interruptions while keeping
+server-side refresh token checks in place.
+
 ## 2026-02-27 - Consolidate User Search to `/api/search`
 Status: accepted
 
