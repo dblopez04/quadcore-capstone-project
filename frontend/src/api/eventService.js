@@ -1,56 +1,30 @@
-// frontend/src/api/eventService.js
+// src/api/eventService.js
+import { apiRequest } from "./client";
 
-const API_BASE = "http://localhost:4000";
+/**
+ * Fetch events with optional filters.
+ * Backend: GET /api/events
+ * Query params supported: q, start, end, event_type, status, location_id, organizer_id, tags
+ */
+export async function fetchEvents(filters = {}) {
+    const params = new URLSearchParams();
 
-async function refreshAccessToken() {
-    await fetch(`${API_BASE}/api/auth/refresh`, {
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+        const v = String(value).trim();
+        if (!v) return;
+        params.set(key, v);
+    });
+
+    const qs = params.toString();
+    const url = qs ? `/api/events?${qs}` : `/api/events`;
+
+    // apiRequest should already have baseURL + credentials/cookies set up
+    return apiRequest(url, { method: "GET" });
+}
+
+export async function registerForEvent(eventId) {
+    return apiRequest(`/api/events/${eventId}/register`, {
         method: "POST",
-        credentials: "include",
     });
-}
-
-export async function getEvents() {
-    let response = await fetch(`${API_BASE}/api/events/bookmarks`, {
-        method: "GET",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-    });
-
-    //  If accessToken is missing/expired, refresh then retry once
-    if (response.status === 401 || response.status === 403) {
-        await refreshAccessToken();
-
-        response = await fetch(`${API_BASE}/api/events/bookmarks`, {
-            method: "GET",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-        });
-    }
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch events");
-    }
-
-    return data.events; // backend returns { events: [...] }
-}
-
-
-export async function getEventsByDate(dateStr) {
-    const events = await getEvents();
-    return events.filter((e) =>
-        e.start_date_time.startsWith(dateStr)
-    );
-}
-
-// search (frontend-side)
-export async function searchEvents(query) {
-    const events = await getEvents();
-    const q = (query || "").trim().toLowerCase();
-    if (!q) return events;
-
-    return events.filter((e) =>
-        e.title.toLowerCase().includes(q)
-    );
 }
