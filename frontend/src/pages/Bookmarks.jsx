@@ -1,37 +1,108 @@
-import { useEffect, useState } from "react";
-import { getBookmarks, removeBookmark, addBookmark } from "../utils/bookmarks";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiRequest } from "../api/client";
 
 export default function Bookmarks() {
     const [bookmarks, setBookmarks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    useEffect(() => {
-        setBookmarks(getBookmarks());
-    }, []);
-
-    function handleRemove(id) {
-        removeBookmark(id);
-        setBookmarks(getBookmarks());
-    }
-
-    function handleAddFromHistory(name) {
-        addBookmark({
-            id: name.toLowerCase().replace(/\s+/g, "-"),
-            name,
-            description: "Added from history"
-        });
-        setBookmarks(getBookmarks());
-    }
     const navigate = useNavigate();
 
-    const recent = [
-        "BUS Stop � Highland St",
-        "Eagle Point Parking",
-        "Gateway Center",
-    ];
+    async function loadBookmarks() {
+        try {
+            setLoading(true);
+            setError("");
+
+            const data = await apiRequest("/api/locations/bookmarks");
+            const list = Array.isArray(data) ? data : data?.bookmarks || data?.results || [];
+            console.log("BOOKMARK SAMPLE:", list[0]);
+
+            const enriched = await Promise.all(
+                list.map(async (b) => {
+                    // try common field names for location id
+                    const locId =
+                        b.location_id ||
+                        b.locationId ||
+                        b.location?.location_id ||
+                        b.location?.id;
+
+                    // If backend already returned a location object, keep it
+                    if (b.location && typeof b.location === "object") return b;
+
+                    if (!locId) return b;
+
+                    try {
+                        const loc = await apiRequest(`/api/locations/${locId}`);
+                        return { ...b, location: loc };
+                    } catch (e) {
+                        return b;
+                    }
+                })
+            );
+
+            setBookmarks(enriched);
+        } catch (err) {
+            console.error("Failed to load bookmarks:", err);
+            setError(err?.message || "Failed to load bookmarks.");
+            setBookmarks([]);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        loadBookmarks();
+    }, []);
+
+    async function handleRemove(bookmark) {
+        try {
+            // Prefer location id from the nested location object
+            const locationId =
+                bookmark?.location?.location_id ||
+                bookmark?.location_id ||
+                bookmark?.locationId;
+
+            if (!locationId) {
+                alert("Missing location id for this bookmark.");
+                return;
+            }
+
+            await apiRequest(`/api/locations/${locationId}/bookmark`, { method: "DELETE" });
+
+            // Refresh list after delete
+            await loadBookmarks();
+        } catch (err) {
+            console.error("Remove failed:", err);
+            alert(err?.message || "Failed to remove bookmark.");
+        }
+    }
+
+    function handleOpen(bookmark) {
+        const loc = bookmark?.location;
+
+        const coords = loc?.coordinates || {};
+        const lat = coords.lat ?? coords.latitude;
+        const lng = coords.lng ?? coords.lon ?? coords.longitude;
+
+        if (lat == null || lng == null) {
+            alert("This bookmark has no coordinates to open on map.");
+            return;
+        }
+
+        const name = bookmark?.custom_name || loc?.name || "Bookmarked location";
+
+        // Use URL params (more reliable than state)
+        const params = new URLSearchParams({
+            lat: String(lat),
+            lng: String(lng),
+            name,
+        });
+
+        navigate(`/map?${params.toString()}`);
+    }
 
     return (
-        // PAGE STARTS HERE
         <div className="page">
             <div className="container">
                 <div className="panel" style={{ padding: 18 }}>
@@ -39,93 +110,89 @@ export default function Bookmarks() {
 
                     <div style={{ marginTop: 14, marginBottom: 16 }}>
                         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                            <button className="btn-primary btn" style={{ width: "auto" }}>
+                            <button className="btn-primary btn" style={{ width: "auto" }} disabled>
                                 + New Bookmark
                             </button>
-                            <button className="btn" style={{ width: "auto" }}>Import</button>
+                            <button className="btn" style={{ width: "auto" }} disabled>
+                                Import
+                            </button>
                         </div>
 
-                        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                            {bookmarks.length === 0 && (
-                                <li style={{ padding: "10px 0", color: "var(--muted)" }}>
-                                    No bookmarks saved yet.
-                                </li>
-                            )}
+                        {loading && <div style={{ color: "var(--muted)" }}>Loading bookmarks...</div>}
+                        {error && <div style={{ color: "crimson" }}>{error}</div>}
 
-                            {bookmarks.map((b) => (
-                                <li
-                                    key={b.id}
-                                    style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                        padding: "10px 0",
-                                        borderBottom: "1px solid var(--border)",
-                                    }}
-                                >
-                                    <div>
-                                        <div style={{ fontWeight: 600 }}>{b.name}</div>
-                                        <div style={{ color: "var(--muted)", fontSize: 14 }}>
-                                            {b.description}
-                                        </div>
-                                    </div>
-                                    <div style={{ display: "flex", gap: 8 }}>
-                                        <button
-                                            className="btn"
-                                            style={{ width: "auto" }}
-                                            onClick={() =>
-                                                navigate("/map", {
-                                                    state: {
-                                                        lat: b.lat,
-                                                        lon: b.lon,
-                                                        name: b.name,
-                                                    },
-                                                })
-                                            }
-                                        >
-                                            Open
-                                        </button>
-                                        <button
-                                            className="btn"
-                                            style={{ width: "auto" }}
-                                            onClick={() => handleRemove(b.id)}
-                                        >
-                                            Remove
-                                        </button>
+                        {!loading && !error && (
+                            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                                {bookmarks.length === 0 && (
+                                    <li style={{ padding: "10px 0", color: "var(--muted)" }}>
+                                        No bookmarks saved yet.
+                                    </li>
+                                )}
 
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                                {bookmarks.map((b) => {
+                                    const loc = b.location;
+                                    const title = b.custom_name || loc?.name || "Untitled bookmark";
+                                    const subtitle = b.notes || loc?.description || "";
+
+                                    const coords = loc?.coordinates || {};
+                                    const hasCoords =
+                                        (coords.lat ?? coords.latitude) != null &&
+                                        (coords.lng ?? coords.lon ?? coords.longitude) != null;
+
+                                    return (
+                                        <li
+                                            key={b.location_bookmark_id || b.id}
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                padding: "10px 0",
+                                                borderBottom: "1px solid var(--border)",
+                                            }}
+                                        >
+                                            <div>
+                                                <div style={{ fontWeight: 600 }}>{title}</div>
+                                                {subtitle && (
+                                                    <div style={{ color: "var(--muted)", fontSize: 14 }}>
+                                                        {subtitle}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div style={{ display: "flex", gap: 8 }}>
+                                                <button
+                                                    className="btn"
+                                                    style={{ width: "auto" }}
+                                                    disabled={!hasCoords}
+                                                    onClick={() => handleOpen(b)}
+                                                >
+                                                    Open
+                                                </button>
+
+                                                <button
+                                                    className="btn"
+                                                    style={{ width: "auto" }}
+                                                    onClick={() => handleRemove(b)}
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
                     </div>
 
+                    {/* History section: keep the UI, but disable until backend supports it */}
                     <h2 className="h2" style={{ marginTop: 20, marginBottom: 12 }}>
                         History
                     </h2>
+
                     <div className="panel">
-                        <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-                            {recent.map((r, i) => (
-                                <li
-                                    key={i}
-                                    style={{
-                                        display: "flex",
-                                        justifyContent: "space-between",
-                                        alignItems: "center",
-                                        padding: "10px 0",
-                                        borderBottom: "1px solid var(--border)",
-                                    }}
-                                >
-                                    <span>{r}</span>
-                                    <button
-                                        className="btn"
-                                        style={{ width: "auto" }}
-                                        onClick={() => handleAddFromHistory(r)}
-                                    >
-                                        Bookmark
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                        <div style={{ color: "var(--muted)" }}>
+                            History → Bookmark is not wired yet (backend-dependent). Coming next sprint.
+                        </div>
                     </div>
                 </div>
             </div>
