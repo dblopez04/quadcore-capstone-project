@@ -33,9 +33,8 @@
 
 ## API Integration
 - `frontend/src/api/auth.js` uses `credentials: "include"` for cookie auth.
-- `API_BASE_URL` is currently `http://localhost:4000`.
-- If running frontend inside Docker, update the base URL to `http://backend:4000`
-  or move it to a Vite env var (example: `VITE_API_BASE_URL`).
+- API helpers read `VITE_API_BASE_URL` (fallback: `http://localhost:4000`).
+- Keep `VITE_API_BASE_URL` in `frontend/.env` for local overrides.
 - Planned APIs: POIs, routing, bookmarks, reporting, and events.
 
 ## Map UI Notes

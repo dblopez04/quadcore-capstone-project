@@ -1,6 +1,5 @@
-﻿// frontend/src/api/auth.js
-
-export const API_BASE_URL = "http://localhost:4000"; // adjust if your backend uses a different port or prefix
+// frontend/src/api/auth.js
+import { API_BASE_URL } from "./client";
 
 async function handleResponse(response, defaultErrorMessage) {
     let data = {};
@@ -49,4 +48,3 @@ export async function requestPasswordReset(email) {
 
     return { message: "Reset email sent (mock)." };
 }
-

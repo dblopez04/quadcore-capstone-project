@@ -184,8 +184,8 @@ npm run test:coverage # run tests with coverage report
 - `backend/tests/location.listing.test.js` - verifies `/api/locations` list behavior (non-search).
 
 ## CORS
-The API allows `http://localhost:5173` with credentials. Update `backend/server.js`
-if the frontend origin changes.
+The API allows credentials for local frontend origins and `FRONTEND_URL`
+(`http://localhost:5173` and `http://127.0.0.1:5173` are allowed by default).
 
 ## Known Gaps
 - There is no standalone public POI list/details endpoint yet; POI discovery is currently exposed via `/api/search`.

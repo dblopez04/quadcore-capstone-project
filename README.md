@@ -23,7 +23,9 @@ If you would like to use different credentials for the Postgres database, all yo
 | `POSTGRES_USER`      | Username of the Postgres user in the container.                                    |
 | `POSTGRES_PASSWORD`  | Password of the Postgres user in the container.                                    |
 | `POSTGRES_DB`        | Name of the database used in Postgres.                                             |
-| `DATABASE_URL`       | URL of the Postgres database. postgres://\<username>:\<password>@db:5433/<db_name> |
+| `DATABASE_URL`       | URL of the Postgres database. Local default: postgres://\<username>:\<password>@localhost:5433/<db_name> |
+| `FRONTEND_URL`       | Frontend origin for backend CORS and generated links. Default: http://localhost:5173 |
+| `VITE_API_BASE_URL`  | Backend API base URL used by the frontend. Default: http://localhost:4000 |
 | `JWT_SECRET`         | Secret key used for JWT (specifically access tokens)                               |
 | `JWT_REFRESH_SECRET` | Secret key used for JWT (specifically refresh tokens)                              |
 

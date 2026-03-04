@@ -3,6 +3,8 @@
 ## Setup
 - Copy `.env.example` to `.env` and update secrets and credentials.
 - The backend reads `DATABASE_URL` from env; Docker sets it to use the `db` service.
+- Local backend dev expects `DATABASE_URL` to point to host Postgres
+  (`postgres://...@localhost:5433/...`).
 - Database schema is initialized from `database/init.sql` on first container start.
 - For existing databases, apply incremental SQL migrations manually (for example:
   `database/migration_location_qol.sql` for custom lists/recently viewed tables).
@@ -86,7 +88,9 @@ docker compose down -v
 Use this only if you need a clean slate; it removes volumes and data.
 
 ## Common Gotchas
-- Frontend API base URL is hard-coded in `frontend/src/api/auth.js`; update it if running inside Docker.
+- Frontend API base URL comes from `VITE_API_BASE_URL` (defaults to `http://localhost:4000`).
+- Backend CORS origin comes from `FRONTEND_URL` and also allows
+  `http://localhost:5173` and `http://127.0.0.1:5173` in dev.
 - OSRM rebuilds only when `osrm-data/map.osrm` is missing; see `docs/MAP.md` before deleting files.
 - Tooling services behind compose profiles are not started by default; use `docker compose --profile tools ...` when running `osmium`.
 - Docker uses `linux/amd64` for DB and OSRM images; Apple Silicon may run under emulation.

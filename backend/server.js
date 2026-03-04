@@ -5,10 +5,20 @@ const cookieParser = require("cookie-parser");
 const db = require("./app/models/index");
 const { swaggerUi, swaggerSpec } = require("./app/config/swagger.config");
 
+const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+const allowedOrigins = new Set([frontendUrl, "http://localhost:5173", "http://127.0.0.1:5173"]);
+
 app.use(
     cors({
-        origin: "http://localhost:5173", // your Vite dev server
-        credentials: true,              // allow cookies / auth headers
+        origin(origin, callback) {
+            // Allow non-browser clients and local dev origins.
+            if (!origin || allowedOrigins.has(origin)) {
+                return callback(null, true);
+            }
+
+            return callback(new Error("Not allowed by CORS"));
+        },
+        credentials: true, // allow cookies / auth headers
     })
 );
 // Access controls for cross-origin requests, prevents XSS

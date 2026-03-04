@@ -1,6 +1,6 @@
 // frontend/src/api/client.js
-
-export const API_BASE_URL = "http://localhost:4000";
+const fallbackApiBaseUrl = "http://localhost:4000";
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || fallbackApiBaseUrl).replace(/\/$/, "");
 
 /**
  * Basic JSON request helper:
