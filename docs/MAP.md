@@ -29,6 +29,8 @@ Backend uses `OSRM_URL=http://osrm:5000` inside Docker.
 ## Updating the Campus Map
 1. Run `./import_osm.sh` to refresh source data, extract `map.osm`, import
    PostGIS data, and restart OSRM.
+   - On macOS, use `./import_osm_macos.sh` (same flow, plus source-file
+     validation and idempotent location/POI upserts).
 2. If you manually replace `osrm-data/map.osm`, delete `osrm-data/map.osrm*`
    so OSRM regenerates the graph.
 3. Run `docker compose up --build osrm`.

@@ -18,6 +18,97 @@ Decision:
 
 Consequences:
 
+## 2026-03-04 - Make macOS OSM Import Idempotent and POI-Aware
+Status: accepted
+
+Context:
+`import_osm_macos.sh` inserted only 500 named point features and assigned all
+generated POIs to `OTHER`. Existing stale or invalid source files could also be
+reused silently, causing missing locations.
+
+Decision:
+Update `import_osm_macos.sh` to validate OSM source files, support
+`FORCE_MAP_REFRESH=1`, import named features from both `planet_osm_point` and
+`planet_osm_polygon`, dedupe `locations` inserts by name+coordinate, and
+update/insert `points_of_interest` with OSM tag-based category mapping.
+
+Consequences:
+Map data refresh on macOS now captures substantially more named places, avoids
+duplicate location growth across reruns, and produces more useful POI metadata
+for search/filter behavior.
+
+## 2026-03-04 - Frontend Fuzzy Location Search via Cached Location Index
+Status: accepted
+
+Context:
+Search interactions in the frontend depended on strict backend text matches.
+Minor typos or abbreviation-style input could miss valid campus locations even
+when the correct location data was available.
+
+Decision:
+Update `frontend/src/api/locationService.js` so search fetches `/api/locations`
+once, caches the list client-side, and applies a fuzzy scorer (prefix/infix,
+subsequence, acronym, and typo-tolerant token matching) before returning the
+top location results.
+
+Consequences:
+Search now handles misspellings and shorthand input more gracefully, and avoids
+making a network request on every keystroke after the initial location fetch.
+The backend federated `/api/search` endpoint remains available for broader
+location+POI discovery use cases.
+
+## 2026-03-04 - Wire Bookmark Lists Into Frontend Bookmarks Page
+Status: accepted
+
+Context:
+Bookmark list APIs were already available (`/api/locations/lists` and list item
+endpoints), but the frontend bookmarks page only displayed a basic bookmark list
+and left list actions disabled.
+
+Decision:
+Update `frontend/src/pages/Bookmarks.jsx` to load bookmarks and custom lists
+together, support list creation/rename/deletion, and support add/remove location
+membership for lists directly from the bookmarks UI.
+
+Consequences:
+Bookmark-list behavior is now available end-to-end for authenticated users
+without backend contract changes, and requirement 9 can be marked implemented.
+
+## 2026-03-04 - Normalize Location Bookmark Response IDs
+Status: accepted
+
+Context:
+`GET /api/locations/bookmarks` responses could omit usable location data in some
+runtime shapes because serializer helpers assumed included associations were
+always exposed as `Location` (capitalized). The frontend remove action depends on
+`location_id`, and some payloads produced bookmarks without a resolvable id.
+
+Decision:
+Update location response serializers to read included associations from both
+`Location` and `location` shapes, and include top-level `location_id` in location
+bookmark responses (and related location list/recently viewed serializers).
+
+Consequences:
+Bookmark actions can consistently resolve the target `location_id`, reducing
+frontend coupling to ORM include casing and preventing remove-flow failures.
+
+## 2026-03-04 - Add Bookmark-ID Delete Endpoint for Location Bookmarks
+Status: accepted
+
+Context:
+Some client flows may have a bookmark id but not a location id available in
+memory (for example, legacy payloads or partially normalized frontend state).
+Delete-by-location-id alone can fail in these cases.
+
+Decision:
+Add `DELETE /api/locations/bookmarks/:bookmarkId` to remove location bookmarks
+using `location_bookmark_id` scoped to the authenticated user.
+
+Consequences:
+Clients can reliably remove bookmarks with either `location_id` or
+`location_bookmark_id`, making bookmark removal resilient to response-shape
+drift.
+
 ## 2026-03-02 - `verifyToken` Refresh Fallback and Token Lifetime Alignment
 Status: accepted
 

@@ -108,6 +108,19 @@ body {
     gap: 16px;
 }
 
+.bookmarks-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    align-items: start;
+}
+
+@media (min-width: 920px) {
+    .bookmarks-layout {
+        grid-template-columns: 280px minmax(0, 1fr);
+    }
+}
+
 /* Desktop ≥1024px: 3-column layout */
 @media (min-width: 1024px) {
     .map-grid {
@@ -580,5 +593,570 @@ html, body {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+    }
+}
+
+
+/* =========================================================
+   Bookmarks Page
+   ========================================================= */
+
+/* ── Page header ───────────────────────────────────────────── */
+.bk-page-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.bk-page-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.02em;
+    color: var(--text);
+}
+
+.bk-page-count {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--muted);
+    background: rgba(0, 106, 49, 0.07);
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────── */
+.bk-sidebar {
+    padding: 16px !important;
+}
+
+.bk-sidebar-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.bk-sidebar-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+}
+
+.bk-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.02);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bk-icon-btn:hover {
+    background: rgba(0, 106, 49, 0.08);
+    border-color: rgba(0, 106, 49, 0.2);
+    color: var(--unt-green);
+}
+
+/* ── Create list form ──────────────────────────────────────── */
+.bk-create-form {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    animation: bk-slideDown 0.2s ease;
+}
+
+.bk-create-input {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px !important;
+    font-size: 13px;
+    border-radius: 8px !important;
+}
+
+.bk-create-btn {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    border: none;
+    background: var(--unt-green);
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease;
+}
+
+.bk-create-btn:hover:not(:disabled) {
+    background: var(--unt-green-600);
+}
+
+.bk-create-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── List navigation ───────────────────────────────────────── */
+.bk-list-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.bk-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+}
+
+.bk-list-item:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.bk-list-item.active {
+    background: rgba(0, 106, 49, 0.08);
+    color: var(--unt-green);
+    font-weight: 700;
+    border-left: 3px solid var(--unt-green);
+    padding-left: 9px;
+}
+
+.bk-list-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bk-badge {
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 22px;
+    text-align: center;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--muted);
+    flex-shrink: 0;
+}
+
+.bk-list-item.active .bk-badge {
+    background: rgba(0, 106, 49, 0.12);
+    color: var(--unt-green);
+}
+
+/* ── List manage actions ───────────────────────────────────── */
+.bk-list-manage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.bk-text-btn {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: color 0.15s ease;
+}
+
+.bk-text-btn:hover:not(:disabled) {
+    color: var(--unt-green);
+}
+
+.bk-text-btn.danger:hover:not(:disabled) {
+    color: #dc2626;
+}
+
+.bk-dot-sep {
+    color: var(--border);
+    font-size: 16px;
+    line-height: 1;
+    user-select: none;
+}
+
+/* ── Content area ──────────────────────────────────────────── */
+.bk-content {
+    min-height: 200px;
+}
+
+.bk-content-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.bk-content-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text);
+}
+
+.bk-content-count {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 500;
+}
+
+/* ── Cards ─────────────────────────────────────────────────── */
+.bk-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bk-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: var(--bg);
+    transition: all 0.2s ease;
+    animation: bk-cardIn 0.35s ease both;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bk-card--clickable {
+    cursor: pointer;
+}
+
+.bk-card--clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 106, 49, 0.15);
+}
+
+.bk-card-accent {
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: var(--unt-green);
+    opacity: 0.5;
+}
+
+.bk-card-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.bk-card-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bk-card-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bk-card-hint {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--unt-green);
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.2s ease, opacity 0.2s ease, margin 0.2s ease;
+    margin: 0;
+}
+
+.bk-card--clickable:hover .bk-card-hint {
+    max-height: 20px;
+    opacity: 1;
+    margin-top: 4px;
+}
+
+/* ── Menu trigger ──────────────────────────────────────────── */
+.bk-card-menu {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.bk-menu-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.bk-menu-trigger:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text);
+}
+
+/* ── Dropdown ──────────────────────────────────────────────── */
+.bk-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 4px);
+    min-width: 200px;
+    background: var(--bg);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+    padding: 6px;
+    z-index: 100;
+    animation: bk-dropIn 0.15s ease;
+}
+
+.bk-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s ease;
+}
+
+.bk-dropdown-item:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.bk-dropdown-item--danger {
+    color: #dc2626;
+}
+
+.bk-dropdown-item--danger:hover:not(:disabled) {
+    background: rgba(220, 38, 38, 0.06);
+}
+
+.bk-dropdown-item--list {
+    padding-left: 6px;
+}
+
+.bk-dropdown-icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: var(--muted);
+}
+
+.bk-dropdown-item--danger .bk-dropdown-icon {
+    color: #dc2626;
+}
+
+.bk-dropdown-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    border: 1.5px solid var(--border);
+    flex-shrink: 0;
+    color: transparent;
+    transition: all 0.15s ease;
+}
+
+.bk-dropdown-item--list.checked .bk-dropdown-check {
+    background: var(--unt-green);
+    border-color: var(--unt-green);
+    color: #fff;
+}
+
+.bk-dropdown-sep {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 8px;
+}
+
+.bk-dropdown-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    padding: 6px 10px 2px;
+}
+
+/* ── Loading / Error / Empty ───────────────────────────────── */
+.bk-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 32px 0;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.bk-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--unt-green);
+    border-radius: 50%;
+    animation: bk-spin 0.7s linear infinite;
+}
+
+.bk-error {
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: rgba(220, 38, 38, 0.06);
+    color: #dc2626;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.bk-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 48px 20px;
+    animation: bk-fadeIn 0.4s ease;
+}
+
+.bk-empty-icon {
+    margin-bottom: 14px;
+}
+
+.bk-empty-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 6px;
+}
+
+.bk-empty-hint {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 0;
+    max-width: 260px;
+}
+
+/* ── History ───────────────────────────────────────────────── */
+.bk-history {
+    margin-top: 24px;
+    padding: 20px !important;
+}
+
+.bk-history-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.bk-history-placeholder {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin: 0;
+}
+
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes bk-cardIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bk-dropIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes bk-slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bk-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes bk-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Mobile adjustments ────────────────────────────────────── */
+@media (max-width: 480px) {
+    .bk-card {
+        padding: 12px 14px;
+    }
+
+    .bk-dropdown {
+        right: -8px;
+        min-width: 180px;
+    }
+
+    .bk-card-hint {
+        display: none;
     }
 }

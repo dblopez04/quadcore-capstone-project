@@ -28,6 +28,9 @@ const { verifyToken } = require("../middleware/auth.middleware");
  *         location_bookmark_id:
  *           type: string
  *           format: uuid
+ *         location_id:
+ *           type: string
+ *           format: uuid
  *         custom_name:
  *           type: string
  *         notes:
@@ -130,6 +133,30 @@ router.get("/", controller.getLocations);
  *         description: Forbidden - No token provided
  */
 router.get("/bookmarks", verifyToken, controller.getBookmarkedLocations);
+
+/**
+ * @swagger
+ * /api/locations/bookmarks/{bookmarkId}:
+ *   delete:
+ *     summary: Remove a location bookmark by bookmark id
+ *     tags:
+ *       - Locations
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookmarkId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Bookmark removed
+ *       404:
+ *         description: Bookmark not found
+ */
+router.delete("/bookmarks/:bookmarkId", verifyToken, controller.removeBookmarkById);
 
 /**
  * @swagger

@@ -10,6 +10,13 @@ const RecentlyViewedLocation = db.RecentlyViewedLocation;
 const frontendBaseUrl = (process.env.FRONTEND_URL || "http://localhost:5173").replace(/\/$/, "");
 const buildShareUrl = (locationId) => `${frontendBaseUrl}/map?place=${encodeURIComponent(locationId)}`;
 
+const getIncludedLocation = (record) =>
+    record?.Location ||
+    record?.location ||
+    record?.dataValues?.Location ||
+    record?.dataValues?.location ||
+    null;
+
 const buildLocationSummary = (location) => ({
     location_id: location.location_id,
     name: location.name,
@@ -18,27 +25,42 @@ const buildLocationSummary = (location) => ({
     share_url: buildShareUrl(location.location_id)
 });
 
-const buildBookmarkResponse = (bookmark) => ({
-    location_bookmark_id: bookmark.location_bookmark_id,
-    custom_name: bookmark.custom_name,
-    notes: bookmark.notes,
-    is_favorite: bookmark.is_favorite,
-    created_at: bookmark.created_at,
-    last_visited: bookmark.last_visited,
-    location: bookmark.Location ? buildLocationSummary(bookmark.Location) : null
-});
+const buildBookmarkResponse = (bookmark) => {
+    const location = getIncludedLocation(bookmark);
 
-const buildRecentlyViewedResponse = (recentView) => ({
-    recent_view_id: recentView.recent_view_id,
-    viewed_at: recentView.viewed_at,
-    location: recentView.Location ? buildLocationSummary(recentView.Location) : null
-});
+    return {
+        location_bookmark_id: bookmark.location_bookmark_id,
+        location_id: bookmark.location_id || location?.location_id || null,
+        custom_name: bookmark.custom_name,
+        notes: bookmark.notes,
+        is_favorite: bookmark.is_favorite,
+        created_at: bookmark.created_at,
+        last_visited: bookmark.last_visited,
+        location: location ? buildLocationSummary(location) : null
+    };
+};
 
-const buildListItemResponse = (item) => ({
-    list_item_id: item.list_item_id,
-    added_at: item.added_at,
-    location: item.Location ? buildLocationSummary(item.Location) : null
-});
+const buildRecentlyViewedResponse = (recentView) => {
+    const location = getIncludedLocation(recentView);
+
+    return {
+        recent_view_id: recentView.recent_view_id,
+        location_id: recentView.location_id || location?.location_id || null,
+        viewed_at: recentView.viewed_at,
+        location: location ? buildLocationSummary(location) : null
+    };
+};
+
+const buildListItemResponse = (item) => {
+    const location = getIncludedLocation(item);
+
+    return {
+        list_item_id: item.list_item_id,
+        location_id: item.location_id || location?.location_id || null,
+        added_at: item.added_at,
+        location: location ? buildLocationSummary(location) : null
+    };
+};
 
 const buildLocationListResponse = (list) => {
     const items = Array.isArray(list.items)
@@ -303,6 +325,22 @@ exports.removeBookmark = async (req, res) => {
     try {
         const deleted = await LocationBookmark.destroy({
             where: { user_id: req.user_id, location_id: req.params.locationId }
+        });
+
+        if (deleted === 0) {
+            return res.status(404).send({ message: "Bookmark not found." });
+        }
+
+        res.send({ message: "Bookmark removed." });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error removing bookmark." });
+    }
+};
+
+exports.removeBookmarkById = async (req, res) => {
+    try {
+        const deleted = await LocationBookmark.destroy({
+            where: { user_id: req.user_id, location_bookmark_id: req.params.bookmarkId }
         });
 
         if (deleted === 0) {

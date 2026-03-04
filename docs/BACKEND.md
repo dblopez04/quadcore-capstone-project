@@ -97,7 +97,10 @@ Recently viewed routes require `verifyToken`:
 
 Location bookmark routes require `verifyToken`:
 - `GET /api/locations/bookmarks` - list current user's bookmarked locations
-  (supports `?favorite=true|false` and `?search=` filters).
+  (supports `?favorite=true|false` and `?search=` filters). Each bookmark
+  includes both `location_id` and nested `location` summary data.
+- `DELETE /api/locations/bookmarks/:bookmarkId` - remove a location bookmark by
+  bookmark id (fallback-safe when clients only have bookmark ids).
 - `POST /api/locations/:locationId/bookmark` - bookmark a location (idempotent).
 - `PATCH /api/locations/:locationId/bookmark` - update bookmark metadata (`custom_name`,
   `notes`, `is_favorite`, `last_visited`).
