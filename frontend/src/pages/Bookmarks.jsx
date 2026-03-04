@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../api/client";
 import { useToast } from "../components/ToastProvider";
+import { isGuestMode } from "../utils/authMode";
 
 const ALL_BOOKMARKS_LIST_ID = "all-bookmarks";
-const SEEDED_TEXT_PATTERN = /\bseeded from local osm extract\b\.?/ig;
 
 /* ── Inline SVG Icons ──────────────────────────────────────── */
 const Icon = {
@@ -58,15 +58,6 @@ const Icon = {
 };
 
 /* ── Helpers ────────────────────────────────────────────────── */
-function cleanBookmarkSubtitle(value) {
-    if (!value) return "";
-    return value
-        .replace(SEEDED_TEXT_PATTERN, "")
-        .replace(/\s{2,}/g, " ")
-        .replace(/^[\s,;:.-]+|[\s,;:.-]+$/g, "")
-        .trim();
-}
-
 function resolveLocationId(record) {
     return (
         record?.location_id ||
@@ -103,6 +94,7 @@ function normalizeList(list) {
 
 /* ── Component ──────────────────────────────────────────────── */
 export default function Bookmarks() {
+    const guestMode = isGuestMode();
     const [bookmarks, setBookmarks] = useState([]);
     const [lists, setLists] = useState([]);
     const [selectedListId, setSelectedListId] = useState(ALL_BOOKMARKS_LIST_ID);
@@ -225,9 +217,18 @@ export default function Bookmarks() {
     }
 
     useEffect(() => {
+        if (guestMode) {
+            setLoading(false);
+            setError("");
+            setBookmarks([]);
+            setLists([]);
+            setSelectedListId(ALL_BOOKMARKS_LIST_ID);
+            return;
+        }
+
         loadBookmarkData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [guestMode]);
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -387,6 +388,28 @@ export default function Bookmarks() {
     }
 
     const actionsDisabled = loading || saving;
+
+    if (guestMode) {
+        return (
+            <div className="page">
+                <div className="container">
+                    <div className="panel" style={{ marginTop: 16 }}>
+                        <h2 style={{ marginTop: 0 }}>Bookmarks</h2>
+                        <p style={{ marginBottom: 12 }}>
+                            Guests cannot add or manage bookmarks.
+                        </p>
+                        <button
+                            className="btn btn-primary"
+                            style={{ width: "auto" }}
+                            onClick={() => navigate("/")}
+                        >
+                            Sign in to continue
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     /* ── Render ─────────────────────────────────────────────── */
     return (

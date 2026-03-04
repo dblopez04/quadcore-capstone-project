@@ -1,4 +1,5 @@
 *.osrm
 *.osrm*
 *.pbf*
-map.osm
+
+*map.osm*

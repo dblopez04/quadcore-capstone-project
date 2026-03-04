@@ -5,6 +5,7 @@ import { searchLocations } from "../api/locationService";
 import { getRecentSearches, addRecentSearch, clearRecentSearches } from "../utils/recentSearches";
 import { useToast } from "../components/ToastProvider";
 import { apiRequest } from "../api/client";
+import { isGuestMode } from "../utils/authMode";
 
 export default function Search() {
     const [tab, setTab] = useState("search");
@@ -18,6 +19,7 @@ export default function Search() {
 
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const guestMode = isGuestMode();
 
     // Search as user types
     useEffect(() => {
@@ -65,6 +67,11 @@ export default function Search() {
     }
 
     async function handleBookmark(loc) {
+        if (guestMode) {
+            showToast("Guest users cannot add bookmarks. Sign in to save locations.", "error");
+            return;
+        }
+
         try {
             const id = loc.location_id || loc.id; // prefer UUID
             if (!id) {
@@ -218,8 +225,10 @@ export default function Search() {
                                         className="btn"
                                         style={{ width: "auto", marginLeft: 8 }}
                                         onClick={() => handleBookmark(loc)}
+                                        disabled={guestMode}
+                                        title={guestMode ? "Sign in to save bookmarks" : "Save this location"}
                                     >
-                                        Bookmark
+                                        {guestMode ? "Sign in to bookmark" : "Bookmark"}
                                     </button>
                                 </li>
                             ))}

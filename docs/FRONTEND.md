@@ -41,6 +41,8 @@
   from subtitle text before rendering.
 - Bookmarks UI now calls `/api/locations/bookmarks` and `/api/locations/lists`
   for bookmark/list data and list item actions.
+- Guest mode (`Continue as Guest`) is tracked in `localStorage` (`authMode`).
+  Guests can browse map/search but cannot save or manage bookmarks in the UI.
 - Planned APIs: POIs, routing, bookmarks, reporting, and events.
 
 ## Map UI Notes

@@ -1,12 +1,21 @@
 ﻿import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { logoutRequest } from "../api/auth";
+import { clearAuthMode } from "../utils/authMode";
 
 export default function Navbar() {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         setIsOpen(false);
+        try {
+            await logoutRequest();
+        } catch (err) {
+            console.warn("Logout request failed:", err);
+        }
+        clearAuthMode();
+        localStorage.removeItem("accessToken");
         navigate("/");
     };
 
