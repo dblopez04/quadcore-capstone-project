@@ -10,32 +10,25 @@ export default function Bookmarks() {
     const navigate = useNavigate();
 
     async function loadBookmarks() {
-        try {
-            setLoading(true);
-            setError("");
+        setLoading(true);
+        setError("");
 
+        try {
             const data = await apiRequest("/api/locations/bookmarks");
-            const list = Array.isArray(data) ? data : data?.bookmarks || data?.results || [];
-            console.log("BOOKMARK SAMPLE:", list[0]);
+            const list = Array.isArray(data) ? data : (data.bookmarks || data.results || []);
 
             const enriched = await Promise.all(
                 list.map(async (b) => {
-                    // try common field names for location id
-                    const locId =
-                        b.location_id ||
-                        b.locationId ||
-                        b.location?.location_id ||
-                        b.location?.id;
+                    if (b.location && b.location.name) return b;
 
-                    // If backend already returned a location object, keep it
-                    if (b.location && typeof b.location === "object") return b;
-
+                    const locId = b.location_id || b.locationId;
                     if (!locId) return b;
 
                     try {
-                        const loc = await apiRequest(`/api/locations/${locId}`);
+                        const locResp = await apiRequest(`/api/locations/${locId}`);
+                        const loc = locResp.location || locResp;
                         return { ...b, location: loc };
-                    } catch (e) {
+                    } catch {
                         return b;
                     }
                 })
@@ -44,8 +37,8 @@ export default function Bookmarks() {
             setBookmarks(enriched);
         } catch (err) {
             console.error("Failed to load bookmarks:", err);
-            setError(err?.message || "Failed to load bookmarks.");
             setBookmarks([]);
+            setError(err.message || "Failed to load bookmarks.");
         } finally {
             setLoading(false);
         }
@@ -57,7 +50,6 @@ export default function Bookmarks() {
 
     async function handleRemove(bookmark) {
         try {
-            // Prefer location id from the nested location object
             const locationId =
                 bookmark?.location?.location_id ||
                 bookmark?.location_id ||
@@ -69,21 +61,36 @@ export default function Bookmarks() {
             }
 
             await apiRequest(`/api/locations/${locationId}/bookmark`, { method: "DELETE" });
-
-            // Refresh list after delete
             await loadBookmarks();
         } catch (err) {
             console.error("Remove failed:", err);
-            alert(err?.message || "Failed to remove bookmark.");
         }
     }
+
 
     function handleOpen(bookmark) {
         const loc = bookmark?.location;
 
-        const coords = loc?.coordinates || {};
-        const lat = coords.lat ?? coords.latitude;
-        const lng = coords.lng ?? coords.lon ?? coords.longitude;
+        const coords = loc?.coordinates;
+        let lat = null;
+        let lng = null;
+        
+        //const lat = coords.lat ?? coords.latitude;
+        //const lng = coords.lng ?? coords.lon ?? coords.longitude;
+
+        /*if (lat == null || lng == null) {
+            alert("This bookmark has no coordinates to open on map.");
+            return;
+        }*/
+
+        if (coords?.type === "Point" && Array.isArray(coords.coordinates)) {
+            lng = coords.coordinates[0];
+            lat = coords.coordinates[1];
+        } else {
+            // fallback for old shapes
+            lat = coords?.lat ?? coords?.latitude;
+            lng = coords?.lng ?? coords?.lon ?? coords?.longitude;
+        }
 
         if (lat == null || lng == null) {
             alert("This bookmark has no coordinates to open on map.");
@@ -92,7 +99,6 @@ export default function Bookmarks() {
 
         const name = bookmark?.custom_name || loc?.name || "Bookmarked location";
 
-        // Use URL params (more reliable than state)
         const params = new URLSearchParams({
             lat: String(lat),
             lng: String(lng),
@@ -134,10 +140,11 @@ export default function Bookmarks() {
                                     const title = b.custom_name || loc?.name || "Untitled bookmark";
                                     const subtitle = b.notes || loc?.description || "";
 
-                                    const coords = loc?.coordinates || {};
+                                    const coords = loc?.coordinates;
                                     const hasCoords =
-                                        (coords.lat ?? coords.latitude) != null &&
-                                        (coords.lng ?? coords.lon ?? coords.longitude) != null;
+                                        (coords?.type === "Point" && Array.isArray(coords?.coordinates) && coords.coordinates.length >= 2)
+                                        || ((coords?.lat ?? coords?.latitude) != null &&
+                                            (coords?.lng ?? coords?.lon ?? coords?.longitude) != null);
 
                                     return (
                                         <li

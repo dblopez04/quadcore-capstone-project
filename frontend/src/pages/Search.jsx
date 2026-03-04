@@ -1,9 +1,11 @@
-﻿import { useEffect, useState } from "react";
+﻿// src/pages/Search.jsx
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { searchLocations } from "../api/locationService";
-import { addBookmark, isBookmarked } from "../utils/bookmarks";
 import { getRecentSearches, addRecentSearch, clearRecentSearches } from "../utils/recentSearches";
 import { useToast } from "../components/ToastProvider";
+import { apiRequest } from "../api/client";
+
 export default function Search() {
     const [tab, setTab] = useState("search");
     const filters = ["Dining", "Parking", "Accessibility Routes", "Well-Lit Paths"];
@@ -17,7 +19,7 @@ export default function Search() {
     const navigate = useNavigate();
     const { showToast } = useToast();
 
-    // Search as user types 
+    // Search as user types
     useEffect(() => {
         if (!query.trim()) {
             setResults([]);
@@ -30,9 +32,12 @@ export default function Search() {
         const t = setTimeout(async () => {
             try {
                 const data = await searchLocations(query);
-                if (!cancelled) setResults(data);
-                //addRecentSearch(query);
-                //setRecentSearches(getRecentSearches());
+                if (!cancelled) setResults(Array.isArray(data) ? data : (data?.results || data?.locations || []));
+            } catch (err) {
+                if (!cancelled) {
+                    console.error(err);
+                    setResults([]);
+                }
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -50,14 +55,37 @@ export default function Search() {
 
         navigate("/map", {
             state: {
-                lat: loc.lat,
-                lng: loc.lng,
+                // support both shapes (some code uses lng, some uses lon)
+                lat: loc.lat ?? loc.coordinates?.lat,
+                lng: loc.lng ?? loc.lon ?? loc.coordinates?.lon,
                 name: loc.name,
-                id: loc.id,
+                id: loc.location_id || loc.id, // prefer UUID
             },
         });
     }
 
+    async function handleBookmark(loc) {
+        try {
+            const id = loc.location_id || loc.id; // prefer UUID
+            if (!id) {
+                showToast("This result is missing a location id.", "error");
+                return;
+            }
+
+            await apiRequest(`/api/locations/${id}/bookmark`, {
+                method: "POST",
+                body: JSON.stringify({
+                    custom_name: loc.name,
+                    notes: null,
+                    is_favorite: false,
+                }),
+            });
+            showToast("Saved to bookmarks.", "success");
+            navigate("/bookmarks");
+        } catch (err) {
+            showToast(err.message || "Failed to save bookmark.", "error");
+        }
+    }
 
     return (
         <div className="page" style={{ padding: 16, fontFamily: "system-ui" }}>
@@ -114,6 +142,8 @@ export default function Search() {
                                 }}
                             />
                         </div>
+
+                        {/* Recent searches */}
                         {recentSearches.length > 0 && (
                             <div style={{ marginTop: -8, marginBottom: 16 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -123,8 +153,8 @@ export default function Search() {
                                         style={{ width: "auto", padding: "6px 10px" }}
                                         type="button"
                                         onClick={() => {
-                                            clearRecentSearches();   // remove from localStorage
-                                            setRecentSearches([]);   // immediately update UI
+                                            clearRecentSearches(); // remove from localStorage
+                                            setRecentSearches([]); // immediately update UI
                                         }}
                                     >
                                         Clear
@@ -149,21 +179,17 @@ export default function Search() {
                         )}
 
                         {/* Status text */}
-                        {loading && (
-                            <div style={{ marginBottom: 12, color: "#666" }}>Searching…</div>
-                        )}
+                        {loading && <div style={{ marginBottom: 12, color: "#666" }}>Searching…</div>}
 
                         {/* Results */}
                         <ul style={{ listStyle: "none", padding: 0, marginBottom: 24 }}>
                             {!loading && query.trim() && results.length === 0 && (
-                                <li style={{ padding: "10px 0", color: "#666" }}>
-                                    No matches found.
-                                </li>
+                                <li style={{ padding: "10px 0", color: "#666" }}>No matches found.</li>
                             )}
 
                             {results.map((loc) => (
                                 <li
-                                    key={loc.id}
+                                    key={loc.location_id || loc.id}
                                     style={{
                                         display: "flex",
                                         justifyContent: "space-between",
@@ -187,27 +213,15 @@ export default function Search() {
                                         {loc.name}
                                     </button>
 
-                                    {/* Bookmark */}
+                                    {/* Bookmark (backend) */}
                                     <button
                                         className="btn"
                                         style={{ width: "auto", marginLeft: 8 }}
-                                        disabled={isBookmarked(loc.id)}
-                                        onClick={() => {
-                                            addBookmark({
-                                                id: loc.id,
-                                                name: loc.name,
-                                                description: "Added from search",
-                                                lat: loc.lat,
-                                                lon: loc.lng,
-                                            });
-
-                                            showToast("Saved to bookmarks.", "success");
-                                        }}
+                                        onClick={() => handleBookmark(loc)}
                                     >
-                                        {isBookmarked(loc.id) ? "Saved" : "Bookmark"}
+                                        Bookmark
                                     </button>
                                 </li>
-
                             ))}
                         </ul>
 
@@ -230,10 +244,7 @@ export default function Search() {
                             <input className="search-input" placeholder="From…" />
                             <input className="search-input" placeholder="To…" />
                         </div>
-                        <button
-                            className="btn-primary btn"
-                            style={{ marginTop: 12, width: "auto" }}
-                        >
+                        <button className="btn-primary btn" style={{ marginTop: 12, width: "auto" }}>
                             Find Route
                         </button>
                         <div style={{ color: "#777", marginTop: 8, fontSize: 14 }}>
