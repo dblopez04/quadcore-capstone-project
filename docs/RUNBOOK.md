@@ -48,8 +48,12 @@ The macOS script validates source files, imports named features from both
 `planet_osm_point` and `planet_osm_polygon`, inserts missing `locations`
 idempotently, and updates/inserts `points_of_interest` with tag-based categories.
 Set `FORCE_MAP_REFRESH=1` to force a re-download and re-extract before import.
+Default extraction box is tuned for UNT main campus:
+`-97.165,33.198,-97.142,33.217`.
+Override with `DENTON_COBOX=<min_lon,min_lat,max_lon,max_lat>` if needed.
 If your machine cannot pull the default osmium image, override it:
 `OSMIUM_IMAGE=<image> ./import_osm_macos.sh`
+Current default osmium image: `iboates/osmium:latest`.
 
 ## Seed demo locations (non-destructive)
 ```bash

@@ -3,3 +3,4 @@
 .vscode/settings.json
 .vs/
 *.pbf
+osrm-data/map.osm

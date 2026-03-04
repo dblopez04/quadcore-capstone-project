@@ -18,19 +18,42 @@ Decision:
 
 Consequences:
 
+## 2026-03-04 - Enforce Guest-Mode Bookmark Restrictions in Frontend
+Status: accepted
+
+Context:
+The login flow has a "Continue as Guest" path, but bookmark actions in search
+and the bookmarks page were still exposed in UI flows. This caused failed API
+calls and inconsistent behavior when users intentionally entered guest mode.
+
+Decision:
+Add explicit frontend guest-mode handling with `authMode` helpers, wire
+"Continue as Guest" to set guest mode and attempt server logout, disable
+"Bookmark" actions in search for guests, and render a sign-in-required state
+for the bookmarks page when guest mode is active.
+
+Consequences:
+Guest users can no longer add bookmarks from the UI, and bookmark management
+surfaces a clear sign-in prompt instead of API error states.
+
 ## 2026-03-04 - Make macOS OSM Import Idempotent and POI-Aware
 Status: accepted
 
 Context:
 `import_osm_macos.sh` inserted only 500 named point features and assigned all
 generated POIs to `OTHER`. Existing stale or invalid source files could also be
-reused silently, causing missing locations.
+reused silently, causing missing locations. The previous Denton-wide extraction
+box also pulled a large amount of non-UNT data.
 
 Decision:
 Update `import_osm_macos.sh` to validate OSM source files, support
 `FORCE_MAP_REFRESH=1`, import named features from both `planet_osm_point` and
 `planet_osm_polygon`, dedupe `locations` inserts by name+coordinate, and
-update/insert `points_of_interest` with OSM tag-based category mapping.
+update/insert `points_of_interest` with OSM tag-based category mapping. Set the
+default extraction bounding box to UNT main campus/athletics
+(`-97.165,33.198,-97.142,33.217`) with `DENTON_COBOX` override support.
+Use `iboates/osmium:latest` for the compose `osmium` service and as the script
+default, with `OSMIUM_IMAGE` override support in the macOS import script.
 
 Consequences:
 Map data refresh on macOS now captures substantially more named places, avoids

@@ -17,8 +17,8 @@ DB_USER="$POSTGRES_USER"
 DB_NAME="$POSTGRES_DB"
 DB_PASS="$POSTGRES_PASSWORD"
 
-#denton coordinate box
-DENTON_COBOX="-97.2,33.1,-97.0,33.3"
+# UNT main campus + athletics bounding box (min_lon,min_lat,max_lon,max_lat).
+DENTON_COBOX="${DENTON_COBOX:--97.165,33.198,-97.142,33.217}"
 echo "Begin import..."
 echo "----------------"
 
@@ -38,7 +38,7 @@ if [ ! -f "OSM_FILE" ]; then
     else
         echo "Using docker for osmium"
         docker run --rm -v "$(pwd)/$OSM_DIR":/data \
-            ghcr.io/osmcode/osmium-tool:latest \
+            iboates/osmium:latest \
             extract -b "$DENTON_COBOX" /data/texas-latest.osm.pbf -o /data/denton-map.osm.pbf
     fi
     echo "Denton area map extracted"
