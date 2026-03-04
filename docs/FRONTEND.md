@@ -43,6 +43,8 @@
   for bookmark/list data and list item actions.
 - Guest mode (`Continue as Guest`) is tracked in `localStorage` (`authMode`).
   Guests can browse map/search but cannot save or manage bookmarks in the UI.
+- Navbar auth action reflects mode: authenticated users see `Log Out`; guests or
+  unauthenticated users see `Log In`, which routes to the login page.
 - Planned APIs: POIs, routing, bookmarks, reporting, and events.
 
 ## Map UI Notes

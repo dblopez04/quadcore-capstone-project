@@ -12,6 +12,10 @@ export function isGuestMode() {
     return getAuthMode() === "guest";
 }
 
+export function isAuthenticatedMode() {
+    return getAuthMode() === "authenticated";
+}
+
 export function setGuestMode() {
     try {
         localStorage.setItem(AUTH_MODE_KEY, "guest");

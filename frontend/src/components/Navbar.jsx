@@ -1,14 +1,21 @@
 ﻿import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { logoutRequest } from "../api/auth";
-import { clearAuthMode } from "../utils/authMode";
+import { clearAuthMode, isAuthenticatedMode } from "../utils/authMode";
 
 export default function Navbar() {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
+    const isAuthenticated = isAuthenticatedMode();
 
-    const handleLogout = async () => {
+    const handleAuthAction = async () => {
         setIsOpen(false);
+
+        if (!isAuthenticated) {
+            navigate("/");
+            return;
+        }
+
         try {
             await logoutRequest();
         } catch (err) {
@@ -57,8 +64,8 @@ export default function Navbar() {
                 <NavLink to="/help" style={linkStyle}>Help</NavLink>
                 <NavLink to="/settings" style={linkStyle}>Settings</NavLink>
 
-                <button className="btn btn-outline" style={{ width: "auto" }} onClick={handleLogout}>
-                    Log Out
+                <button className="btn btn-outline" style={{ width: "auto" }} onClick={handleAuthAction}>
+                    {isAuthenticated ? "Log Out" : "Log In"}
                 </button>
             </nav>
 
@@ -75,8 +82,8 @@ export default function Navbar() {
                 <NavLink to="/help" onClick={() => setIsOpen(false)}>Help</NavLink>
                 <NavLink to="/settings" onClick={() => setIsOpen(false)}>Settings</NavLink>
 
-                <button className="drawer-logout" onClick={handleLogout}>
-                    Log Out
+                <button className="drawer-logout" onClick={handleAuthAction}>
+                    {isAuthenticated ? "Log Out" : "Log In"}
                 </button>
             </nav>
         </header>
