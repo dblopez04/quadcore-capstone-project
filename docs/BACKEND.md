@@ -32,11 +32,13 @@
 - `POST /api/auth/refresh` - issues a new access token from refresh cookie.
 
 Access tokens are stored in `accessToken` cookies and are validated by
-`verifyToken` middleware.
+`verifyToken` middleware. If `accessToken` is missing or expired but a valid
+`refreshToken` cookie exists (and matches the DB token), `verifyToken`
+automatically issues a new `accessToken` cookie and continues the request.
 
 Token timing (current):
 - Access token JWT expiry: 30 minutes.
-- Access cookie maxAge: 15 minutes.
+- Access cookie maxAge: 30 minutes.
 - Refresh token JWT expiry: 7 days.
 
 ## User Routes
@@ -45,7 +47,8 @@ Token timing (current):
 - `POST /api/user/search-history` - prepends a search string.
 - `DELETE /api/user/search-history` - clears search history.
 
-All user routes expect cookie auth (`accessToken` and `refreshToken`).
+All user routes expect cookie auth. `accessToken` is used primarily, with
+`refreshToken` as fallback via `verifyToken`.
 
 ## Event Bookmark Routes
 All event bookmark routes are prefixed with `/api/events` and require `verifyToken`.
