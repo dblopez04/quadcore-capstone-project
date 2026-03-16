@@ -830,10 +830,12 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    position: relative;
 }
 
 .bk-card {
     position: relative;
+    overflow: visible;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -844,6 +846,10 @@ html, body {
     transition: all 0.2s ease;
     animation: bk-cardIn 0.35s ease both;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bk-card--menu-open {
+    z-index: 3000;
 }
 
 .bk-card--clickable {
@@ -914,6 +920,7 @@ html, body {
 .bk-card-menu {
     position: relative;
     flex-shrink: 0;
+    z-index: 200;
 }
 
 .bk-menu-trigger {
@@ -946,7 +953,7 @@ html, body {
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
     padding: 6px;
-    z-index: 100;
+    z-index: 1000;
     animation: bk-dropIn 0.15s ease;
 }
 

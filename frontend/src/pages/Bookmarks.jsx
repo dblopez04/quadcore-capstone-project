@@ -106,6 +106,7 @@ export default function Bookmarks() {
     // New UI state
     const [openMenuId, setOpenMenuId] = useState(null);
     const [showNewListForm, setShowNewListForm] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
 
     const navigate = useNavigate();
     const { showToast } = useToast();
@@ -158,8 +159,12 @@ export default function Bookmarks() {
             return mapped.filter((row) => selectedListLocationSet.has(row.locationId));
         }
 
-        return mapped;
-    }, [bookmarks, selectedListId, selectedListLocationSet]);
+        const filtered = mapped.filter(row =>
+            row.title.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+        return filtered;
+    }, [bookmarks, selectedListId, selectedListLocationSet, searchQuery]);
 
     /* ── Data fetching ─────────────────────────────────────── */
     async function fetchBookmarksWithLocations(rawBookmarks) {
@@ -504,6 +509,14 @@ export default function Bookmarks() {
                     {/* ── Content ──────────────────────────── */}
                     <section className="bk-content">
                         <div className="bk-content-header">
+                            <input
+                                type="text"
+                                placeholder="Search bookmarks..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="search-input"
+                                style={{ marginTop: "8px", marginBottom: "12px" }}
+                            />
                             <h3 className="bk-content-title">
                                 {selectedListId === ALL_BOOKMARKS_LIST_ID
                                     ? "All Bookmarks"
@@ -560,7 +573,7 @@ export default function Bookmarks() {
                                     return (
                                         <div
                                             key={row.rowId}
-                                            className={`bk-card${hasCoords ? " bk-card--clickable" : ""}`}
+                                            className={`bk-card${hasCoords ? " bk-card--clickable" : ""}${menuOpen ? " bk-card--menu-open" : ""}`}
                                             onClick={() => handleCardClick(row)}
                                             style={{ animationDelay: `${index * 0.035}s` }}
                                         >
