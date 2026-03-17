@@ -18,6 +18,8 @@ export default function Search() {
     const [recentSearches, setRecentSearches] = useState(() => getRecentSearches());
     const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
     const [activeFilter, setActiveFilter] = useState("");
+    const [bookmarkLists, setBookmarkLists] = useState([]);
+    const [selectedListId, setSelectedListId] = useState("");
 
     const navigate = useNavigate();
     const { showToast } = useToast();
@@ -85,10 +87,14 @@ export default function Search() {
 
         async function loadBookmarkedIds() {
             try {
-                const data = await apiRequest("/api/locations/bookmarks");
-                const bookmarkList = Array.isArray(data)
-                    ? data
-                    : (data.bookmarks || data.results || []);
+                const [bookmarkData, listData] = await Promise.all([
+                    apiRequest("/api/locations/bookmarks"),
+                    apiRequest("/api/locations/lists"),
+                ]);
+
+                const bookmarkList = Array.isArray(bookmarkData)
+                    ? bookmarkData
+                    : (bookmarkData.bookmarks || bookmarkData.results || []);
 
                 const ids = new Set(
                     bookmarkList
@@ -101,13 +107,17 @@ export default function Search() {
                         .filter(Boolean)
                 );
 
+                const lists = Array.isArray(listData?.lists) ? listData.lists : [];
+
                 if (!cancelled) {
                     setBookmarkedIds(ids);
+                    setBookmarkLists(lists);
                 }
             } catch (err) {
                 console.error("Failed to load bookmarked ids:", err);
                 if (!cancelled) {
                     setBookmarkedIds(new Set());
+                    setBookmarkLists([]);
                 }
             }
         }
@@ -156,6 +166,17 @@ export default function Search() {
                     is_favorite: false,
                 }),
             });
+            // If a list is selected, also add to that list
+            if (selectedListId) {
+                try {
+                    await apiRequest(`/api/locations/lists/${selectedListId}/items`, {
+                        method: "POST",
+                        body: JSON.stringify({ location_id: id }),
+                    });
+                } catch (err) {
+                    console.error("Failed to add to list:", err);
+                }
+            }
             
             setBookmarkedIds((prev) => {
                 const next = new Set(prev);
@@ -275,6 +296,29 @@ export default function Search() {
                             )}
                         </div>
 
+                        {!guestMode && bookmarkLists.length > 0 && (
+                            <div style={{ marginBottom: 16 }}>
+                                <label
+                                    htmlFor="bookmark-list-select"
+                                    style={{ display: "block", marginBottom: 6, fontSize: 14, color: "#666" }}
+                                >
+                                    Save new bookmarks to list
+                                </label>
+                                <select
+                                    id="bookmark-list-select"
+                                    className="search-input"
+                                    value={selectedListId}
+                                    onChange={(e) => setSelectedListId(e.target.value)}
+                                >
+                                    <option value="">All Bookmarks only</option>
+                                    {bookmarkLists.map((list) => (
+                                        <option key={list.list_id} value={list.list_id}>
+                                            {list.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         {/* Recent searches */}
                         {recentSearches.length > 0 && (
                             <div style={{ marginTop: -8, marginBottom: 16 }}>
