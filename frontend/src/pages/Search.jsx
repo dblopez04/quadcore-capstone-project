@@ -37,7 +37,28 @@ export default function Search() {
         const t = setTimeout(async () => {
             try {
                 const data = await searchLocations(query);
-                if (!cancelled) setResults(Array.isArray(data) ? data : (data?.results || data?.locations || []));
+                const rawResults = Array.isArray(data) ? data : (data?.results || data?.locations || []);
+
+                let filteredResults = rawResults;
+
+                if (activeFilter) {
+                    const keywordMap = {
+                        "Dining": ["dining", "cafe", "restaurant", "food"],
+                        "Parking": ["parking", "garage"],
+                        "Accessibility Routes": ["accessible", "accessibility"],
+                        "Well-Lit Paths": ["light", "path"]
+                    };
+
+                    const keywords = keywordMap[activeFilter] || [];
+
+                    filteredResults = rawResults.filter((loc) =>
+                        keywords.some((word) =>
+                            loc.name.toLowerCase().includes(word)
+                        )
+                    );
+                }
+
+                if (!cancelled) setResults(filteredResults);
             } catch (err) {
                 if (!cancelled) {
                     console.error(err);
@@ -52,7 +73,7 @@ export default function Search() {
             cancelled = true;
             clearTimeout(t);
         };
-    }, [query]);
+    }, [query, activeFilter]);
 
     useEffect(() => {
         if (guestMode) {
@@ -298,12 +319,13 @@ export default function Search() {
                         )}
 
                         {/* Results */}
-                        <ul style={{ listStyle: "none", padding: 0, marginBottom: 24 }}>
+                        <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "grid", gap: 10 }}>
                             {!loading && query.trim() && results.length === 0 && (
                                 <li style={{ padding: "10px 0", color: "#666" }}>No matches found.</li>
                             )}
 
                             {results.map((loc) => {
+                                console.log(loc);
                                 const locId = loc.location_id || loc.id;
                                 const isBookmarked = bookmarkedIds.has(locId);
 
@@ -314,8 +336,11 @@ export default function Search() {
                                             display: "flex",
                                             justifyContent: "space-between",
                                             alignItems: "center",
-                                            padding: "10px 0",
-                                            borderBottom: "1px solid #eee",
+                                            padding: "14px 16px",
+                                            border: "1px solid rgba(0, 0, 0, 0.08)",
+                                            borderRadius: 14,
+                                            background: "var(--bg)",
+                                            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                                         }}
                                     >
                                         {/* Select location */}
@@ -330,13 +355,22 @@ export default function Search() {
                                                 padding: 0,
                                             }}
                                         >
-                                            {loc.name}
+                                            <div style={{ fontWeight: 600 }}>{loc.name}</div>
+                                            <div style={{ fontSize: 13, color: "#666", marginTop: 2 }}>
+                                                {isBookmarked ? "Saved in bookmarks" : "Tap to view on map"}
+                                            </div>
                                         </button>
 
                                         {/* Bookmark */}
                                         <button
                                             className="btn"
-                                            style={{ width: "auto", marginLeft: 8 }}
+                                            style={{
+                                                width: "auto",
+                                                marginLeft: 8,
+                                                background: isBookmarked ? "var(--unt-green)" : undefined,
+                                                color: isBookmarked ? "#fff" : undefined,
+                                                border: isBookmarked ? "1px solid var(--unt-green)" : undefined,
+                                            }}
                                             onClick={() => (isBookmarked ? handleUnbookmark(loc) : handleBookmark(loc))}
                                             disabled={guestMode}
                                             title={
