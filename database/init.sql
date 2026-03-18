@@ -135,7 +135,6 @@ CREATE TABLE events (
     start_date_time TIMESTAMP NOT NULL,
     end_date_time TIMESTAMP NOT NULL,
     event_type event_type NOT NULL,
-    organizer_id UUID NOT NULL REFERENCES users(user_id),
     capacity INTEGER CHECK (capacity > 0),
     registered_count INTEGER DEFAULT 0 CHECK (registered_count >= 0),
     is_public BOOLEAN DEFAULT true,
@@ -144,6 +143,21 @@ CREATE TABLE events (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT end_after_start CHECK (end_date_time > start_date_time),
     CONSTRAINT capacity_check CHECK (registered_count <= capacity)
+);
+
+CREATE TABLE event_details (
+    event_detail_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id UUID NOT NULL UNIQUE REFERENCES events(event_id) ON DELETE CASCADE,
+    source_url TEXT,
+    source_location_name VARCHAR(255),
+    source_location_url TEXT,
+    room_detail VARCHAR(255),
+    address TEXT,
+    image_url TEXT,
+    website_url TEXT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE event_registrations (

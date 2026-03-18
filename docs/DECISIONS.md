@@ -18,6 +18,84 @@ Decision:
 
 Consequences:
 
+## 2026-03-18 - Drop Event Organizer and Store Import Metadata in `event_details`
+Status: accepted
+
+Context:
+Imported UNT calendar events do not have a meaningful in-app organizer user, but
+the schema required `events.organizer_id`. The importer was forced to create a
+synthetic user and pack room/address/source data into `events.description`, which
+made the data model misleading and hard to query.
+
+Decision:
+Drop `organizer_id` from `events` and add a one-to-one `event_details` table for
+source-facing metadata (`source_url`, source venue strings, room detail, address,
+image, website, and raw metadata JSON). Update the event API to return `details`
+with each event and allow `q` search to match imported detail fields. Keep
+source-derived tags so imported room/source-venue details remain searchable even
+without a dedicated UI yet.
+
+Consequences:
+Imported events no longer pretend to be owned by a fake organizer account.
+Structured metadata is queryable without bloating descriptions, and existing DBs
+need `database/migration_event_details.sql` before the importer is rerun.
+
+## 2026-03-16 - Seed Public UNT Events via Widget Scrape and Detail JSON-LD
+Status: accepted
+
+Context:
+The UNT calendar widget does not expose an ICS feed for the filtered event set we
+need to seed. The app already has an `events` table, but event venue matching has
+to line up with the existing `locations` and `points_of_interest` data instead of
+blindly creating duplicate venue rows.
+
+Decision:
+Add `scripts/scrape_unt_events.py` as a local ingestion tool. It scrapes the
+public UNT widget for event URLs, hydrates each event from the detail page
+`application/ld+json` payload plus page metadata, matches venues against existing
+`locations` and `points_of_interest` through `psql`, emits idempotent SQL inserts,
+and skips broad campus-wide venues (`UNIVERSITY OF NORTH TEXAS`, `ALL DINING HALLS`)
+plus explicitly hidden venue names (`DISCOVERY PARK BUILDING`, `UNT COLAB`,
+`FRISCO LANDING -- UNT AT FRISCO`). The matcher now supports explicit alias
+overrides for ambiguous outdoor/common-area venues (for example `University Union
+South Lawn -> University Union` and `Library Mall -> Willis Library`) and collapses
+room-style strings to the parent building when possible.
+
+The tool no longer creates new `locations` rows automatically. If a venue cannot
+be matched confidently, the event is skipped and a `reports` row is emitted in the
+generated SQL so the admin reports flow can handle manual mediation later. The
+script now also applies its generated SQL directly to Postgres by default, with a
+`--no-apply` escape hatch when we only want a file artifact.
+
+Consequences:
+Event seeding is reproducible without adding a backend admin scrape endpoint or a
+schema migration. Calendar imports preserve richer source metadata in event
+descriptions and tags, and ambiguous venue handling is safer because unresolved
+cases become admin-review reports instead of bad foreign-key assignments or
+auto-created map locations.
+
+## 2026-03-08 - Split Docker Dev and Proxmox Deployment Stacks
+Status: accepted
+
+Context:
+The repo only had development-oriented containers: Vite dev server, Nodemon,
+direct host port exposure, and no reverse proxy/tunnel layer. That was not a
+safe or repeatable layout for a Proxmox-hosted deployment behind Cloudflare.
+
+Decision:
+Convert the frontend and backend Dockerfiles to multi-stage builds, keep
+`compose.yaml` focused on development targets, and add `compose.proxmox.yaml`
+for production-style deployment. The Proxmox stack uses Caddy as the single
+public web origin, proxies `/api`, `/docs`, and `/osrm/*`, and runs a
+`cloudflared` connector with a named-tunnel token. Backend runtime config now
+supports proxy-aware cookies, configurable port binding, extra CORS origins, and
+an explicit `/healthz` endpoint.
+
+Consequences:
+Local development remains unchanged in intent, while deployment now has a
+documented same-origin path that avoids frontend/backend cross-origin drift and
+works cleanly behind Cloudflare Tunnel.
+
 ## 2026-03-04 - Enforce Guest-Mode Bookmark Restrictions in Frontend
 Status: accepted
 
