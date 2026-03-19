@@ -102,7 +102,6 @@ export default function Events() {
             const raw = Array.isArray(data?.events) ? data.events : [];
             const normalized = raw.map(normalizeEvent);
 
-            // DEMO FALLBACK (remove later when DB is seeded)
             const demo = [
                 {
                     id: "demo-1",
@@ -114,6 +113,7 @@ export default function Events() {
                     lng: -97.1490,
                     start: new Date().toISOString(),
                     end: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                    isDemo: true,
                 },
                 {
                     id: "demo-2",
@@ -125,17 +125,20 @@ export default function Events() {
                     lng: -97.1503,
                     start: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
                     end: new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString(),
+                    isDemo: true,
                 },
             ];
 
             // If backend returns no events, show demo events so UI is not empty for sprint demo
             const finalEvents = normalized.length === 0 ? demo : normalized;
+
             setAllEvents(finalEvents);
+
             // if a date filter is active, keep it applied
             if (selectedDate) {
-                setEvents(normalized.filter((ev) => ev.start?.startsWith(selectedDate)));
+                setEvents(finalEvents.filter((ev) => ev.start?.startsWith(selectedDate)));
             } else {
-                setEvents(normalized);
+                setEvents(finalEvents);
             }
         } catch (e) {
             console.error(e);
@@ -235,9 +238,9 @@ export default function Events() {
                         return (
                             <button
                                 key={idx}
-                                onClick={() => {
+                                onClick={async () => {
                                     setSelectedDate(dStr);
-                                    setEvents(allEvents.filter((ev) => ev.start?.startsWith(dStr)));
+                                    await loadEvents({ start: dStr, end: dStr, q });
                                 }}
                                 style={{
                                     padding: "10px 0",
@@ -260,9 +263,9 @@ export default function Events() {
 
                 <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center" }}>
                     <button
-                        onClick={() => {
+                        onClick={async () => {
                             setSelectedDate("");
-                            setEvents(allEvents);
+                            await loadEvents(q ? { q } : {});
                         }}
                         style={{ padding: "6px 10px", borderRadius: 8 }}
                     >
@@ -294,6 +297,21 @@ export default function Events() {
                 </button>
             </form>
 
+            {events.length > 0 && events.every((ev) => ev.isDemo) && (
+                <div
+                    style={{
+                        margin: "12px 0",
+                        padding: "10px 12px",
+                        borderRadius: "10px",
+                        background: "#fff8e1",
+                        border: "1px solid #f0d98c",
+                        color: "#6b5b00",
+                        fontSize: "14px",
+                    }}
+                >
+                    Showing demo events because no real events are currently available from the backend.
+                </div>
+            )}
             {loading ? (
                 <p>Loading events...</p>
             ) : error ? (
