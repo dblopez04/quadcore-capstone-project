@@ -6,6 +6,7 @@ import './index.css'
 import "./App.css";
 
 import Login from './pages/Login.jsx'
+import Admin from './pages/Admin.jsx'
 import Register from "./pages/Register";
 import ForgotPassword from './pages/ForgotPassword';
 import Layout from './components/Layout.jsx'
@@ -66,6 +67,14 @@ const router = createBrowserRouter([
         ),
     },
 
+    {
+        path: '/admin',
+        element: (
+            <Layout narrow>
+                <Admin />
+            </Layout>
+        ),
+    },
     {
         path: '/about',
         element: (

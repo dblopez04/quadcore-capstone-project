@@ -30,8 +30,9 @@ export default function Login() {
         try {
             const result = await loginRequest(email, password);
             console.log("Login success:", result);
+
             setAuthenticatedMode();
-            localStorage.removeItem("accessToken");
+            localStorage.setItem("user", JSON.stringify(result.user));
 
             // redirect after successful login
             navigate("/home");

@@ -2,11 +2,12 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { logoutRequest } from "../api/auth";
 import { clearAuthMode, isAuthenticatedMode } from "../utils/authMode";
-
+import { clearStoredUser, isAdminUser } from "../utils/userSession";
 export default function Navbar() {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
     const isAuthenticated = isAuthenticatedMode();
+    const isAdmin = isAdminUser();
 
     const handleAuthAction = async () => {
         setIsOpen(false);
@@ -21,8 +22,8 @@ export default function Navbar() {
         } catch (err) {
             console.warn("Logout request failed:", err);
         }
+        clearStoredUser();
         clearAuthMode();
-        localStorage.removeItem("accessToken");
         navigate("/");
     };
 
@@ -61,6 +62,7 @@ export default function Navbar() {
                 <NavLink to="/bookmarks" style={linkStyle}>Bookmarks</NavLink>
                 <NavLink to="/about" style={linkStyle}>About</NavLink>
                 <NavLink to="/events" style={linkStyle}>Events</NavLink>
+                {isAdmin && <NavLink to="/admin" style={linkStyle}>Admin</NavLink>}
                 <NavLink to="/help" style={linkStyle}>Help</NavLink>
                 <NavLink to="/settings" style={linkStyle}>Settings</NavLink>
 
@@ -79,6 +81,7 @@ export default function Navbar() {
                 <NavLink to="/bookmarks" onClick={() => setIsOpen(false)}>Bookmarks</NavLink>
                 <NavLink to="/about" onClick={() => setIsOpen(false)}>About</NavLink>
                 <NavLink to="/events" onClick={() => setIsOpen(false)}>Events</NavLink>
+                {isAdmin && <NavLink to="/admin" onClick={() => setIsOpen(false)}>Admin</NavLink>}
                 <NavLink to="/help" onClick={() => setIsOpen(false)}>Help</NavLink>
                 <NavLink to="/settings" onClick={() => setIsOpen(false)}>Settings</NavLink>
 
