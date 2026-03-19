@@ -2,8 +2,26 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { isAuthenticatedMode } from "../utils/authMode";
 import { isAdminUser, getStoredUser } from "../utils/userSession";
-import { createEventRequest } from "../api/admin";
+import {
+    createEventRequest,
+    fetchAdminEvents,
+    deleteAdminEvent,
+} from "../api/admin";
 import { searchLocations } from "../api/locationService";
+
+function normalizeAdminEvent(ev) {
+    return {
+        id: ev.event_id || ev.id,
+        title: ev.title || "Untitled Event",
+        description: ev.description || "",
+        eventType: ev.event_type || "OTHER",
+        start: ev.start_date_time || null,
+        end: ev.end_date_time || null,
+        locationId: ev.location_id || "",
+        capacity: ev.capacity ?? "",
+        status: ev.status || "SCHEDULED",
+    };
+}
 
 export default function Admin() {
     const isAuthenticated = isAuthenticatedMode();
@@ -26,6 +44,10 @@ export default function Admin() {
     const [searchingLocations, setSearchingLocations] = useState(false);
     const [locationPicked, setLocationPicked] = useState(false);
 
+    const [adminEvents, setAdminEvents] = useState([]);
+    const [loadingEvents, setLoadingEvents] = useState(true);
+    const [deletingEventId, setDeletingEventId] = useState("");
+
     useEffect(() => {
         let active = true;
 
@@ -36,6 +58,7 @@ export default function Admin() {
                 setLocationResults([]);
                 return;
             }
+
             if (!q) {
                 setLocationResults([]);
                 return;
@@ -65,7 +88,25 @@ export default function Admin() {
             active = false;
             clearTimeout(timer);
         };
-    }, [locationQuery]);
+    }, [locationQuery, locationPicked]);
+
+    useEffect(() => {
+        loadAdminEvents();
+    }, []);
+
+    async function loadAdminEvents() {
+        try {
+            setLoadingEvents(true);
+            const data = await fetchAdminEvents();
+            const raw = Array.isArray(data) ? data : Array.isArray(data?.events) ? data.events : [];
+            setAdminEvents(raw.map(normalizeAdminEvent));
+        } catch (err) {
+            console.error("Failed to load admin events:", err);
+            setAdminEvents([]);
+        } finally {
+            setLoadingEvents(false);
+        }
+    }
 
     if (!isAuthenticated) {
         return <Navigate to="/" replace />;
@@ -94,6 +135,21 @@ export default function Admin() {
         }));
     };
 
+    const resetForm = () => {
+        setForm({
+            title: "",
+            description: "",
+            location_id: "",
+            start_date_time: "",
+            end_date_time: "",
+            event_type: "ACADEMIC",
+            capacity: ""
+        });
+        setLocationQuery("");
+        setLocationResults([]);
+        setLocationPicked(false);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage("");
@@ -111,19 +167,27 @@ export default function Admin() {
             });
 
             setMessage("Event created successfully!");
-            setForm({
-                title: "",
-                description: "",
-                location_id: "",
-                start_date_time: "",
-                end_date_time: "",
-                event_type: "ACADEMIC",
-                capacity: ""
-            });
-            setLocationQuery("");
-            setLocationResults([]);
+            resetForm();
+            await loadAdminEvents();
         } catch (err) {
             setMessage(err.message || "Error creating event");
+        }
+    };
+
+    const handleDelete = async (eventId) => {
+        const confirmed = window.confirm("Delete this event?");
+        if (!confirmed) return;
+
+        try {
+            setDeletingEventId(eventId);
+            setMessage("");
+            await deleteAdminEvent(eventId);
+            setMessage("Event deleted successfully!");
+            await loadAdminEvents();
+        } catch (err) {
+            setMessage(err.message || "Error deleting event");
+        } finally {
+            setDeletingEventId("");
         }
     };
 
@@ -275,6 +339,62 @@ export default function Admin() {
             </form>
 
             {message && <p style={{ marginTop: 10 }}>{message}</p>}
+
+            <h2 style={{ marginTop: 28 }}>Manage Events</h2>
+
+            {loadingEvents ? (
+                <p>Loading admin events...</p>
+            ) : adminEvents.length === 0 ? (
+                <p>No events found.</p>
+            ) : (
+                <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+                    {adminEvents.map((ev) => (
+                        <div
+                            key={ev.id}
+                            style={{
+                                border: "1px solid #e5e5e5",
+                                borderRadius: 12,
+                                padding: 14,
+                                background: "#fff",
+                            }}
+                        >
+                            <h3 style={{ margin: 0 }}>{ev.title}</h3>
+
+                            <p style={{ margin: "6px 0", color: "#444" }}>
+                                <strong>{ev.eventType}</strong>
+                                {ev.description ? ` • ${ev.description}` : ""}
+                            </p>
+
+                            <p style={{ margin: "6px 0", fontSize: 14, color: "#666" }}>
+                                {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
+                                {ev.end ? ` – ${new Date(ev.end).toLocaleString()}` : ""}
+                            </p>
+
+                            <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
+                                Status: {ev.status} | Capacity: {ev.capacity || "N/A"}
+                            </p>
+
+                            <button
+                                type="button"
+                                onClick={() => handleDelete(ev.id)}
+                                disabled={deletingEventId === ev.id}
+                                style={{
+                                    marginTop: 8,
+                                    padding: "8px 10px",
+                                    borderRadius: 8,
+                                    background: "#b42318",
+                                    color: "white",
+                                    border: "none",
+                                    cursor: deletingEventId === ev.id ? "not-allowed" : "pointer",
+                                    opacity: deletingEventId === ev.id ? 0.7 : 1,
+                                }}
+                            >
+                                {deletingEventId === ev.id ? "Deleting..." : "Delete"}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
