@@ -7,6 +7,7 @@ const defineAdmin = require('./admin.model');
 const defineLocation = require('./location.model');
 const definePointOfInterest = require('./poi.model');
 const defineEvent = require('./event.model');
+const defineEventDetail = require('./eventDetail.model');
 const defineEventRegistration = require('./eventRegistration.model');
 const defineEventBookmark = require('./eventBookmark.model');
 const defineEventTag = require('./eventTag.model');
@@ -30,6 +31,7 @@ db.Admin = defineAdmin(sequelize, Sequelize.DataTypes);
 db.Location = defineLocation(sequelize, Sequelize.DataTypes);
 db.PointOfInterest = definePointOfInterest(sequelize, Sequelize.DataTypes);
 db.Event = defineEvent(sequelize, Sequelize.DataTypes);
+db.EventDetail = defineEventDetail(sequelize, Sequelize.DataTypes);
 db.EventRegistration = defineEventRegistration(sequelize, Sequelize.DataTypes);
 db.EventBookmark = defineEventBookmark(sequelize, Sequelize.DataTypes);
 db.EventTag = defineEventTag(sequelize, Sequelize.DataTypes);
@@ -58,8 +60,8 @@ db.PointOfInterest.belongsTo(db.Location, { foreignKey: 'location_id' });
 // Event associations
 db.Location.hasMany(db.Event, { foreignKey: 'location_id' });
 db.Event.belongsTo(db.Location, { foreignKey: 'location_id' });
-db.User.hasMany(db.Event, { foreignKey: 'organizer_id' });
-db.Event.belongsTo(db.User, { as: 'organizer', foreignKey: 'organizer_id' });
+db.Event.hasOne(db.EventDetail, { as: 'details', foreignKey: 'event_id', onDelete: 'CASCADE' });
+db.EventDetail.belongsTo(db.Event, { foreignKey: 'event_id' });
 
 // Event registration associations
 db.Event.hasMany(db.EventRegistration, { foreignKey: 'event_id', onDelete: 'CASCADE' });

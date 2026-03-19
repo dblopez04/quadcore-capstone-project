@@ -60,6 +60,34 @@ Current default osmium image: `iboates/osmium:latest`.
 docker exec -i db psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < database/seed_locations.sql
 ```
 
+## Seed UNT events from the public calendar
+Generate SQL from the public UNT Localist widget, resolve event venues against the
+current `locations`/`points_of_interest` tables, write an idempotent seed file,
+and apply it to Postgres:
+```bash
+python3 scripts/scrape_unt_events.py
+```
+
+Useful flags:
+- `--output -` prints SQL to stdout instead of writing `database/seed_unt_events.sql`
+- `--limit 10` limits the number of widget events fetched during testing
+- `--no-apply` generates the SQL file without executing it against Postgres
+- `--ignore-location "Some Venue"` skips additional broad venue names
+
+Behavior:
+- skips widget events whose location is `UNIVERSITY OF NORTH TEXAS` or `ALL DINING HALLS`
+- matches against both `locations.name` and `points_of_interest.name`
+- also skips `DISCOVERY PARK BUILDING`, `UNT COLAB`, and `FRISCO LANDING -- UNT AT FRISCO`
+- applies explicit venue overrides such as `University Union South Lawn -> University Union`
+  and `Library Mall -> Willis Library`
+- collapses room-style venue strings to the parent building when possible
+- never inserts new `locations`; unresolved venues are skipped
+- stores source metadata in `event_details` instead of inflating `events.description`
+- writes room/source venue search tags onto imported events
+- applies the generated SQL to the configured Postgres database by default
+- writes `reports` rows into the generated SQL so admins can review skipped events
+  in the admin reports flow and mediate them manually
+
 ## Frontend (local)
 ```bash
 cd frontend

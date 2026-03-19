@@ -54,7 +54,8 @@ All user routes expect cookie auth. `accessToken` is used primarily, with
 All event bookmark routes are prefixed with `/api/events` and require `verifyToken`.
 
 - `GET /api/events` - list/search events (filters: `q`, `start`, `end`, `status`,
-  `event_type`, `location_id`, `organizer_id`, `tags`).
+  `event_type`, `location_id`, `tags`). Search now also matches imported event
+  detail fields such as room detail, source location name, and address.
 - `GET /api/events/bookmarks` - list the current user's bookmarked events
   (supports `?start=`, `?end=`, `?status=`, `?event_type=`, `?tags=` filters).
 - `GET /api/events/bookmarks.ics` - export bookmarked events as ICS.
@@ -151,6 +152,7 @@ All admin routes are prefixed with `/api/admin` and protected by `requireAdmin` 
 ## Models
 - `User` - main auth table with roles and `search_history`.
 - `Student`, `Faculty`, `Visitor` - role-specific tables (DB has `admin` too).
+- `EventDetail` - one-to-one structured metadata for imported event source fields.
 
 ## Role-Based Access
 - `verifyToken` enforces authenticated access for user-only routes.

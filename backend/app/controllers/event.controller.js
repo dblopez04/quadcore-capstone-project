@@ -3,6 +3,7 @@ const { Op } = require("sequelize");
 
 const Event = db.Event;
 const EventBookmark = db.EventBookmark;
+const EventDetail = db.EventDetail;
 const EventRegistration = db.EventRegistration;
 const EventTag = db.EventTag;
 const EventTagAssignment = db.EventTagAssignment;
@@ -82,6 +83,20 @@ const buildEventResponse = (event, sources) => {
         }))
         : [];
 
+    const details = event && event.details
+        ? {
+            event_detail_id: event.details.event_detail_id,
+            source_url: event.details.source_url,
+            source_location_name: event.details.source_location_name,
+            source_location_url: event.details.source_location_url,
+            room_detail: event.details.room_detail,
+            address: event.details.address,
+            image_url: event.details.image_url,
+            website_url: event.details.website_url,
+            metadata: event.details.metadata || {}
+        }
+        : null;
+
     const response = {
         event_id: event.event_id,
         title: event.title,
@@ -92,6 +107,7 @@ const buildEventResponse = (event, sources) => {
         status: event.status,
         is_public: event.is_public,
         location,
+        details,
         tags
     };
 
@@ -105,6 +121,7 @@ const buildEventResponse = (event, sources) => {
 const buildEventInclude = (tagNames) => {
     const include = [
         { model: Location },
+        { model: EventDetail, as: "details", required: false },
         {
             model: EventTag,
             through: { attributes: [] },
@@ -134,13 +151,12 @@ const formatIcsDate = (value) => {
 
 exports.getEvents = async (req, res) => {
     try {
-        const { q, start, end, status, event_type, location_id, organizer_id } = req.query;
+        const { q, start, end, status, event_type, location_id } = req.query;
         const tagNames = parseList(req.query.tags || req.query.tag);
         const where = {};
 
         if (status) where.status = status;
         if (location_id) where.location_id = location_id;
-        if (organizer_id) where.organizer_id = organizer_id;
 
         const eventTypes = parseList(event_type);
         if (eventTypes.length === 1) {
@@ -152,7 +168,11 @@ exports.getEvents = async (req, res) => {
         if (q) {
             where[Op.or] = [
                 { title: { [Op.iLike]: `%${q}%` } },
-                { description: { [Op.iLike]: `%${q}%` } }
+                { description: { [Op.iLike]: `%${q}%` } },
+                { "$Location.name$": { [Op.iLike]: `%${q}%` } },
+                { "$details.source_location_name$": { [Op.iLike]: `%${q}%` } },
+                { "$details.room_detail$": { [Op.iLike]: `%${q}%` } },
+                { "$details.address$": { [Op.iLike]: `%${q}%` } }
             ];
         }
 
