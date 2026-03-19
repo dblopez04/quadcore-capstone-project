@@ -6,8 +6,9 @@ import {
     createEventRequest,
     fetchAdminEvents,
     deleteAdminEvent,
+    updateAdminEvent,
 } from "../api/admin";
-import { searchLocations } from "../api/locationService";
+import { searchLocations, getAllLocations } from "../api/locationService";
 
 function normalizeAdminEvent(ev) {
     return {
@@ -18,6 +19,11 @@ function normalizeAdminEvent(ev) {
         start: ev.start_date_time || null,
         end: ev.end_date_time || null,
         locationId: ev.location_id || "",
+        locationName:
+            ev.location_name ||
+            ev.location?.name ||
+            ev.locationName ||
+            "",
         capacity: ev.capacity ?? "",
         status: ev.status || "SCHEDULED",
     };
@@ -47,6 +53,8 @@ export default function Admin() {
     const [adminEvents, setAdminEvents] = useState([]);
     const [loadingEvents, setLoadingEvents] = useState(true);
     const [deletingEventId, setDeletingEventId] = useState("");
+    const [editingEventId, setEditingEventId] = useState(null);
+    const [allLocations, setAllLocations] = useState([]);
 
     useEffect(() => {
         let active = true;
@@ -108,6 +116,20 @@ export default function Admin() {
         }
     }
 
+    useEffect(() => {
+        async function loadAllLocations() {
+            try {
+                const locations = await getAllLocations();
+                setAllLocations(locations || []);
+            } catch (err) {
+                console.error("Failed to load all locations:", err);
+                setAllLocations([]);
+            }
+        }
+
+        loadAllLocations();
+    }, []);
+
     if (!isAuthenticated) {
         return <Navigate to="/" replace />;
     }
@@ -148,6 +170,7 @@ export default function Admin() {
         setLocationQuery("");
         setLocationResults([]);
         setLocationPicked(false);
+        setEditingEventId(null);
     };
 
     const handleSubmit = async (e) => {
@@ -160,17 +183,28 @@ export default function Admin() {
         }
 
         try {
-            await createEventRequest({
-                ...form,
-                organizer_id: user.user_id,
-                capacity: form.capacity ? Number(form.capacity) : null
-            });
+            if (editingEventId) {
+                await updateAdminEvent(editingEventId, {
+                    ...form,
+                    organizer_id: user.user_id,
+                    capacity: form.capacity ? Number(form.capacity) : null
+                });
 
-            setMessage("Event created successfully!");
+                setMessage("Event updated successfully!");
+            } else {
+                await createEventRequest({
+                    ...form,
+                    organizer_id: user.user_id,
+                    capacity: form.capacity ? Number(form.capacity) : null
+                });
+
+                setMessage("Event created successfully!");
+            }
+
             resetForm();
             await loadAdminEvents();
         } catch (err) {
-            setMessage(err.message || "Error creating event");
+            setMessage(err.message || "Error saving event");
         }
     };
 
@@ -196,7 +230,7 @@ export default function Admin() {
             <h1>Admin Panel</h1>
             <p>Welcome, {user?.first_name || "Admin"}.</p>
 
-            <h2>Create Event</h2>
+            <h2>{editingEventId ? "Edit Event" : "Create Event"}</h2>
 
             <form
                 onSubmit={handleSubmit}
@@ -335,7 +369,27 @@ export default function Admin() {
                     onChange={handleChange}
                 />
 
-                <button type="submit">Create Event</button>
+                <div style={{ display: "flex", gap: 10 }}>
+                    <button type="submit">
+                        {editingEventId ? "Save Changes" : "Create Event"}
+                    </button>
+
+                    {editingEventId && (
+                        <button
+                            type="button"
+                            onClick={resetForm}
+                            style={{
+                                padding: "8px 10px",
+                                borderRadius: 8,
+                                border: "1px solid #ccc",
+                                background: "#f7f7f7",
+                                cursor: "pointer",
+                            }}
+                        >
+                            Cancel Edit
+                        </button>
+                    )}
+                </div>
             </form>
 
             {message && <p style={{ marginTop: 10 }}>{message}</p>}
@@ -373,6 +427,43 @@ export default function Admin() {
                             <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
                                 Status: {ev.status} | Capacity: {ev.capacity || "N/A"}
                             </p>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEditingEventId(ev.id);
+
+                                    const matchedLocation = allLocations.find(
+                                        (loc) => loc.id === ev.locationId
+                                    );
+
+                                    setLocationPicked(true);
+                                    setLocationResults([]);
+                                    setLocationQuery(matchedLocation?.name || "");
+
+                                    setForm({
+                                        title: ev.title,
+                                        description: ev.description || "",
+                                        location_id: ev.locationId,
+                                        start_date_time: ev.start ? ev.start.slice(0, 16) : "",
+                                        end_date_time: ev.end ? ev.end.slice(0, 16) : "",
+                                        event_type: ev.eventType,
+                                        capacity: ev.capacity || ""
+                                    });
+                                }}
+                                style={{
+                                    marginTop: 8,
+                                    marginRight: 10,
+                                    padding: "8px 10px",
+                                    borderRadius: 8,
+                                    background: "#1d4ed8",
+                                    color: "white",
+                                    border: "none",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Edit
+                            </button>
 
                             <button
                                 type="button"

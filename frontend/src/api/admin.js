@@ -48,3 +48,22 @@ export async function deleteAdminEvent(eventId) {
 
     return data;
 }
+
+export async function updateAdminEvent(eventId, payload) {
+    const response = await fetch(`${API_BASE_URL}/api/admin/events/${eventId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to update event");
+    }
+
+    return data;
+}
