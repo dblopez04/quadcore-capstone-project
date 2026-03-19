@@ -26,6 +26,7 @@ DEFAULT_WIDGET_URL = (
 DEFAULT_IGNORE_LOCATIONS = (
     "UNIVERSITY OF NORTH TEXAS",
     "ALL DINING HALLS",
+    "ANY DINING HALL",
     "DISCOVERY PARK BUILDING",
     "UNT COLAB",
     "FRISCO LANDING -- UNT AT FRISCO",
@@ -156,6 +157,9 @@ EVENT_TYPE_HINTS: Sequence[Tuple[str, Tuple[str, ...]]] = (
 EXPLICIT_LOCATION_OVERRIDES = {
     "UNIVERSITY UNION SOUTH LAWN": "University Union",
     "LIBRARY MALL": "Willis Library",
+    "14C - SAGEMORE LAWN C": "Sage Hall",
+    "SAGEMORE LAWN C": "Sage Hall",
+    "SAGEMORE LAWN": "Sage Hall",
 }
 
 
@@ -1124,6 +1128,24 @@ def render_event_sql(event: ScrapedEvent) -> str:
     cte_blocks.append(
         "\n".join(
             [
+                "updated_existing_event AS (",
+                "    UPDATE events",
+                "    SET",
+                f"        description = {sql_text_or_null(description)},",
+                f"        event_type = {sql_literal(event.event_type)}::event_type,",
+                f"        status = {sql_literal(event.status)}::event_status,",
+                "        capacity = NULL,",
+                "        is_public = TRUE,",
+                "        updated_at = CURRENT_TIMESTAMP",
+                "    WHERE event_id IN (SELECT event_id FROM existing_event)",
+                "    RETURNING event_id",
+                ")",
+            ]
+        )
+    )
+    cte_blocks.append(
+        "\n".join(
+            [
                 "inserted_event AS (",
                 "    INSERT INTO events (",
                 "        title,",
@@ -1162,26 +1184,8 @@ def render_event_sql(event: ScrapedEvent) -> str:
                 "resolved_event AS (",
                 "    SELECT event_id FROM inserted_event",
                 "    UNION ALL",
-                "    SELECT event_id FROM existing_event",
+                "    SELECT event_id FROM updated_existing_event",
                 "    LIMIT 1",
-                ")",
-            ]
-        )
-    )
-    cte_blocks.append(
-        "\n".join(
-            [
-                "updated_event AS (",
-                "    UPDATE events",
-                "    SET",
-                f"        description = {sql_text_or_null(description)},",
-                f"        event_type = {sql_literal(event.event_type)}::event_type,",
-                f"        status = {sql_literal(event.status)}::event_status,",
-                "        capacity = NULL,",
-                "        is_public = TRUE,",
-                "        updated_at = CURRENT_TIMESTAMP",
-                "    WHERE event_id = (SELECT event_id FROM resolved_event)",
-                "    RETURNING event_id",
                 ")",
             ]
         )
@@ -1202,7 +1206,7 @@ def render_event_sql(event: ScrapedEvent) -> str:
                 "        metadata",
                 "    )",
                 "    SELECT",
-                "        (SELECT event_id FROM updated_event),",
+                "        (SELECT event_id FROM resolved_event),",
                 f"        {sql_text_or_null(event.source_url)},",
                 f"        {sql_text_or_null(source_location_name)},",
                 f"        {sql_text_or_null(event.location_url)},",
@@ -1211,6 +1215,7 @@ def render_event_sql(event: ScrapedEvent) -> str:
                 f"        {sql_text_or_null(event.image_url)},",
                 f"        {sql_text_or_null(event.website_url)},",
                 f"        {sql_jsonb(event.metadata or {})}",
+                "    WHERE EXISTS (SELECT 1 FROM resolved_event)",
                 "    ON CONFLICT (event_id) DO UPDATE",
                 "    SET",
                 "        source_url = EXCLUDED.source_url,",
@@ -1240,6 +1245,7 @@ def render_event_sql(event: ScrapedEvent) -> str:
                     "        t.event_tag_id",
                     "    FROM event_tags t",
                     f"    WHERE t.name IN ({tag_list})",
+                    "      AND EXISTS (SELECT 1 FROM resolved_event)",
                     "    ON CONFLICT DO NOTHING",
                     "    RETURNING event_tag_assignment_id",
                     ")",
@@ -1249,7 +1255,7 @@ def render_event_sql(event: ScrapedEvent) -> str:
 
     statements.append("WITH")
     statements.append(",\n".join(cte_blocks))
-    statements.append("SELECT event_id FROM updated_event;")
+    statements.append("SELECT event_id FROM resolved_event;")
     return "\n".join(statements)
 
 
@@ -1289,6 +1295,9 @@ def render_sql(
         "WHERE NOT EXISTS (",
         "    SELECT 1 FROM users WHERE email = " + sql_literal(reporter_email),
         ");",
+        "",
+        "-- Refresh generated import-review reports so they reflect the latest match rules.",
+        "DELETE FROM reports WHERE target_type = 'EVENT_IMPORT';",
         "",
     ]
 

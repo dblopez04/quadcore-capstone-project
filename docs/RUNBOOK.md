@@ -79,12 +79,13 @@ Behavior:
 - matches against both `locations.name` and `points_of_interest.name`
 - also skips `DISCOVERY PARK BUILDING`, `UNT COLAB`, and `FRISCO LANDING -- UNT AT FRISCO`
 - applies explicit venue overrides such as `University Union South Lawn -> University Union`
-  and `Library Mall -> Willis Library`
+  , `Library Mall -> Willis Library`, and `14C - Sagemore Lawn C -> Sage Hall`
 - collapses room-style venue strings to the parent building when possible
 - never inserts new `locations`; unresolved venues are skipped
 - stores source metadata in `event_details` instead of inflating `events.description`
 - writes room/source venue search tags onto imported events
 - applies the generated SQL to the configured Postgres database by default
+- refreshes `EVENT_IMPORT` reports on each run so the admin review list reflects current matching rules
 - writes `reports` rows into the generated SQL so admins can review skipped events
   in the admin reports flow and mediate them manually
 

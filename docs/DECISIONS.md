@@ -58,14 +58,17 @@ and skips broad campus-wide venues (`UNIVERSITY OF NORTH TEXAS`, `ALL DINING HAL
 plus explicitly hidden venue names (`DISCOVERY PARK BUILDING`, `UNT COLAB`,
 `FRISCO LANDING -- UNT AT FRISCO`). The matcher now supports explicit alias
 overrides for ambiguous outdoor/common-area venues (for example `University Union
-South Lawn -> University Union` and `Library Mall -> Willis Library`) and collapses
-room-style strings to the parent building when possible.
+South Lawn -> University Union`, `Library Mall -> Willis Library`, and
+`14C - Sagemore Lawn C -> Sage Hall`) and collapses room-style strings to the
+parent building when possible.
 
 The tool no longer creates new `locations` rows automatically. If a venue cannot
 be matched confidently, the event is skipped and a `reports` row is emitted in the
 generated SQL so the admin reports flow can handle manual mediation later. The
 script now also applies its generated SQL directly to Postgres by default, with a
-`--no-apply` escape hatch when we only want a file artifact.
+`--no-apply` escape hatch when we only want a file artifact, and refreshes
+generated `EVENT_IMPORT` reports on each run so old failed-match artifacts do not
+linger after matcher improvements.
 
 Consequences:
 Event seeding is reproducible without adding a backend admin scrape endpoint or a
