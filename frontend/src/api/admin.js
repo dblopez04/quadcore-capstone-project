@@ -1,0 +1,20 @@
+import { API_BASE_URL } from "./client";
+
+export async function createEventRequest(payload) {
+    const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to create event");
+    }
+
+    return data;
+}

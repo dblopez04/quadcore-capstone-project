@@ -39,8 +39,20 @@ function buildMonthGrid(viewDate) {
 // Try to support both your old mock shape + backend shape
 function normalizeEvent(ev) {
     const startRaw =
-        ev.start_time || ev.startTime || ev.start || ev.start_date || ev.startDate;
-    const endRaw = ev.end_time || ev.endTime || ev.end || ev.end_date || ev.endDate;
+        ev.start_date_time ||
+        ev.start_time ||
+        ev.startTime ||
+        ev.start ||
+        ev.start_date ||
+        ev.startDate;
+
+    const endRaw =
+        ev.end_date_time ||
+        ev.end_time ||
+        ev.endTime ||
+        ev.end ||
+        ev.end_date ||
+        ev.endDate;
 
     const start = startRaw ? new Date(startRaw).toISOString() : null;
     const end = endRaw ? new Date(endRaw).toISOString() : null;

@@ -215,3 +215,7 @@ export async function searchLocations(query) {
         .slice(0, MAX_RESULTS)
         .map(({ score, ...location }) => location);
 }
+
+export async function getAllLocations() {
+    return await getSearchableLocations();
+}
