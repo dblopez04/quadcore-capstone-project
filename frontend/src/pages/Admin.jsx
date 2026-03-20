@@ -55,6 +55,28 @@ export default function Admin() {
     const [deletingEventId, setDeletingEventId] = useState("");
     const [editingEventId, setEditingEventId] = useState(null);
     const [allLocations, setAllLocations] = useState([]);
+    const [savingEvent, setSavingEvent] = useState(false);
+
+    const fieldStyle = {
+        width: "100%",
+        padding: "12px 14px",
+        borderRadius: 12,
+        border: "1px solid #d1d5db",
+        fontSize: 16,
+        outline: "none",
+        background: "#fff",
+        boxSizing: "border-box",
+    };
+
+    const handleFieldFocus = (e) => {
+        e.target.style.border = "1px solid #006A31";
+        e.target.style.boxShadow = "0 0 0 2px rgba(0,106,49,0.15)";
+    };
+
+    const handleFieldBlur = (e) => {
+        e.target.style.border = "1px solid #d1d5db";
+        e.target.style.boxShadow = "none";
+    };
 
     useEffect(() => {
         let active = true;
@@ -130,6 +152,16 @@ export default function Admin() {
         loadAllLocations();
     }, []);
 
+    useEffect(() => {
+        if (!message) return;
+
+        const timer = setTimeout(() => {
+            setMessage("");
+        }, 3000);
+
+        return () => clearTimeout(timer);
+    }, [message]);
+
     if (!isAuthenticated) {
         return <Navigate to="/" replace />;
     }
@@ -183,6 +215,8 @@ export default function Admin() {
         }
 
         try {
+            setSavingEvent(true);
+
             if (editingEventId) {
                 await updateAdminEvent(editingEventId, {
                     ...form,
@@ -205,6 +239,8 @@ export default function Admin() {
             await loadAdminEvents();
         } catch (err) {
             setMessage(err.message || "Error saving event");
+        } finally {
+            setSavingEvent(false);
         }
     };
 
@@ -226,266 +262,397 @@ export default function Admin() {
     };
 
     return (
-        <div style={{ padding: 24 }}>
-            <h1>Admin Panel</h1>
-            <p>Welcome, {user?.first_name || "Admin"}.</p>
+        <div
+            style={{
+                padding: 24,
+                maxWidth: 980,
+                margin: "0 auto",
+            }}
+        >
+            <h1 style={{ marginBottom: 8 }}>Admin Panel</h1>
+            <p style={{ marginTop: 0, marginBottom: 20, color: "#555" }}>
+                Welcome, {user?.first_name || "Admin"}.
+            </p>
 
-            <h2>{editingEventId ? "Edit Event" : "Create Event"}</h2>
-
-            <form
-                onSubmit={handleSubmit}
+            <div
                 style={{
-                    maxWidth: 500,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 10
+                    background: "#fff",
+                    border: "1px solid #e5e5e5",
+                    borderRadius: 16,
+                    padding: 20,
+                    boxShadow: "0 6px 16px rgba(0,0,0,0.04)",
+                    marginBottom: 24,
                 }}
             >
-                <input
-                    name="title"
-                    placeholder="Title"
-                    value={form.title}
-                    onChange={handleChange}
-                    required
-                />
-
-                <input
-                    name="description"
-                    placeholder="Description"
-                    value={form.description}
-                    onChange={handleChange}
-                />
-
-                <div style={{ position: "relative" }}>
-                    <input
-                        type="text"
-                        placeholder="Search for a location"
-                        value={locationQuery}
-                        onChange={(e) => {
-                            setLocationPicked(false);
-                            setLocationQuery(e.target.value);
-                            setForm((prev) => ({
-                                ...prev,
-                                location_id: ""
-                            }));
-                        }}
-                        onBlur={() => {
-                            setTimeout(() => {
-                                setLocationResults([]);
-                            }, 150);
-                        }}
-                        required
-                    />
-
-                    {searchingLocations && (
-                        <div style={{ marginTop: 6, fontSize: 12, color: "#666" }}>
-                            Searching locations...
-                        </div>
-                    )}
-
-                    {locationResults.length > 0 && (
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: "100%",
-                                left: 0,
-                                right: 0,
-                                background: "#fff",
-                                border: "1px solid #ddd",
-                                borderRadius: 8,
-                                marginTop: 4,
-                                zIndex: 20,
-                                maxHeight: 220,
-                                overflowY: "auto",
-                                boxShadow: "0 8px 18px rgba(0,0,0,0.08)"
-                            }}
-                        >
-                            {locationResults.map((loc) => (
-                                <button
-                                    key={loc.id}
-                                    type="button"
-                                    onMouseDown={() => handleLocationPick(loc)}
-                                    style={{
-                                        display: "block",
-                                        width: "100%",
-                                        textAlign: "left",
-                                        padding: "10px 12px",
-                                        border: "none",
-                                        background: "white",
-                                        cursor: "pointer"
-                                    }}
-                                >
-                                    {loc.name}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {form.location_id && (
-                    <div style={{ fontSize: 12, color: "#444" }}>
-                        Selected location ID: {form.location_id}
-                    </div>
-                )}
-
-                <input
-                    type="datetime-local"
-                    name="start_date_time"
-                    value={form.start_date_time}
-                    onChange={handleChange}
-                    required
-                />
-
-                <input
-                    type="datetime-local"
-                    name="end_date_time"
-                    value={form.end_date_time}
-                    onChange={handleChange}
-                    required
-                />
-
-                <select
-                    name="event_type"
-                    value={form.event_type}
-                    onChange={handleChange}
-                >
-                    <option value="ACADEMIC">ACADEMIC</option>
-                    <option value="SOCIAL">SOCIAL</option>
-                    <option value="CAREER FAIR">CAREER FAIR</option>
-                    <option value="SPORTS">SPORTS</option>
-                    <option value="CULTURAL">CULTURAL</option>
-                    <option value="WORKSHOP">WORKSHOP</option>
-                    <option value="CONFERENCE">CONFERENCE</option>
-                    <option value="SEMINAR">SEMINAR</option>
-                    <option value="OTHER">OTHER</option>
-                </select>
-
-                <input
-                    name="capacity"
-                    type="number"
-                    min="1"
-                    placeholder="Capacity"
-                    value={form.capacity}
-                    onChange={handleChange}
-                />
-
-                <div style={{ display: "flex", gap: 10 }}>
-                    <button type="submit">
-                        {editingEventId ? "Save Changes" : "Create Event"}
-                    </button>
+                <div style={{ marginBottom: 16 }}>
+                    <h2 style={{ marginBottom: 4 }}>
+                        {editingEventId ? "Edit Event" : "Create Event"}
+                    </h2>
 
                     {editingEventId && (
-                        <button
-                            type="button"
-                            onClick={resetForm}
-                            style={{
-                                padding: "8px 10px",
-                                borderRadius: 8,
-                                border: "1px solid #ccc",
-                                background: "#f7f7f7",
-                                cursor: "pointer",
-                            }}
-                        >
-                            Cancel Edit
-                        </button>
+                        <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
+                            You are editing an existing event. Save changes when finished.
+                        </p>
                     )}
                 </div>
-            </form>
 
-            {message && <p style={{ marginTop: 10 }}>{message}</p>}
+                <form
+                    onSubmit={handleSubmit}
+                    style={{
+                        maxWidth: 560,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12
+                    }}
+                >
+                    <input
+                        name="title"
+                        placeholder="Title"
+                        value={form.title}
+                        onChange={handleChange}
+                        onFocus={handleFieldFocus}
+                        onBlur={handleFieldBlur}
+                        required
+                        style={fieldStyle}
+                    />
 
-            <h2 style={{ marginTop: 28 }}>Manage Events</h2>
+                    <input
+                        name="description"
+                        placeholder="Description"
+                        value={form.description}
+                        onChange={handleChange}
+                        onFocus={handleFieldFocus}
+                        onBlur={handleFieldBlur}
+                        style={fieldStyle}
+                    />
 
-            {loadingEvents ? (
-                <p>Loading admin events...</p>
-            ) : adminEvents.length === 0 ? (
-                <p>No events found.</p>
-            ) : (
-                <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-                    {adminEvents.map((ev) => (
-                        <div
-                            key={ev.id}
+                    <div style={{ position: "relative" }}>
+                        <input
+                            type="text"
+                            placeholder="Search for a location"
+                            value={locationQuery}
+                            onChange={(e) => {
+                                setLocationPicked(false);
+                                setLocationQuery(e.target.value);
+                                setForm((prev) => ({
+                                    ...prev,
+                                    location_id: ""
+                                }));
+                            }}
+                            onFocus={handleFieldFocus}
+                            onBlur={(e) => {
+                                handleFieldBlur(e);
+                                setTimeout(() => {
+                                    setLocationResults([]);
+                                }, 150);
+                            }}
+                            required
+                            style={fieldStyle}
+                        />
+
+                        {searchingLocations && (
+                            <div style={{ marginTop: 6, fontSize: 12, color: "#666" }}>
+                                Searching locations...
+                            </div>
+                        )}
+
+                        {locationResults.length > 0 && (
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: "100%",
+                                    left: 0,
+                                    right: 0,
+                                    background: "#fff",
+                                    border: "1px solid #ddd",
+                                    borderRadius: 10,
+                                    marginTop: 6,
+                                    zIndex: 20,
+                                    maxHeight: 220,
+                                    overflowY: "auto",
+                                    boxShadow: "0 8px 18px rgba(0,0,0,0.08)"
+                                }}
+                            >
+                                {locationResults.map((loc) => (
+                                    <button
+                                        key={loc.id}
+                                        type="button"
+                                        onMouseDown={() => handleLocationPick(loc)}
+                                        style={{
+                                            display: "block",
+                                            width: "100%",
+                                            textAlign: "left",
+                                            padding: "12px 14px",
+                                            border: "none",
+                                            background: "white",
+                                            cursor: "pointer",
+                                            fontSize: 15,
+                                        }}
+                                    >
+                                        {loc.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {form.location_id && (
+                        <div style={{ fontSize: 13, color: "#444" }}>
+                            Selected location: {allLocations.find((loc) => loc.id === form.location_id)?.name || "Unknown location"}
+                        </div>
+                    )}
+
+                    <input
+                        type="datetime-local"
+                        name="start_date_time"
+                        value={form.start_date_time}
+                        onChange={handleChange}
+                        onFocus={handleFieldFocus}
+                        onBlur={handleFieldBlur}
+                        required
+                        style={fieldStyle}
+                    />
+
+                    <input
+                        type="datetime-local"
+                        name="end_date_time"
+                        value={form.end_date_time}
+                        onChange={handleChange}
+                        onFocus={handleFieldFocus}
+                        onBlur={handleFieldBlur}
+                        required
+                        style={fieldStyle}
+                    />
+
+                    <select
+                        name="event_type"
+                        value={form.event_type}
+                        onChange={handleChange}
+                        onFocus={handleFieldFocus}
+                        onBlur={handleFieldBlur}
+                        style={fieldStyle}
+                    >
+                        <option value="ACADEMIC">ACADEMIC</option>
+                        <option value="SOCIAL">SOCIAL</option>
+                        <option value="CAREER FAIR">CAREER FAIR</option>
+                        <option value="SPORTS">SPORTS</option>
+                        <option value="CULTURAL">CULTURAL</option>
+                        <option value="WORKSHOP">WORKSHOP</option>
+                        <option value="CONFERENCE">CONFERENCE</option>
+                        <option value="SEMINAR">SEMINAR</option>
+                        <option value="OTHER">OTHER</option>
+                    </select>
+
+                    <input
+                        name="capacity"
+                        type="number"
+                        min="1"
+                        placeholder="Capacity"
+                        value={form.capacity}
+                        onChange={handleChange}
+                        onFocus={handleFieldFocus}
+                        onBlur={handleFieldBlur}
+                        style={fieldStyle}
+                    />
+
+                    <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
+                        <button
+                            type="submit"
+                            disabled={savingEvent}
                             style={{
-                                border: "1px solid #e5e5e5",
+                                flex: 1,
+                                padding: "12px 14px",
                                 borderRadius: 12,
-                                padding: 14,
-                                background: "#fff",
+                                border: "none",
+                                background: "#006A31",
+                                color: "white",
+                                fontWeight: 600,
+                                fontSize: 15,
+                                cursor: savingEvent ? "not-allowed" : "pointer",
+                                opacity: savingEvent ? 0.7 : 1,
                             }}
                         >
-                            <h3 style={{ margin: 0 }}>{ev.title}</h3>
+                            {savingEvent
+                                ? (editingEventId ? "Saving..." : "Creating...")
+                                : (editingEventId ? "Save Changes" : "Create Event")}
+                        </button>
 
-                            <p style={{ margin: "6px 0", color: "#444" }}>
-                                <strong>{ev.eventType}</strong>
-                                {ev.description ? ` • ${ev.description}` : ""}
-                            </p>
-
-                            <p style={{ margin: "6px 0", fontSize: 14, color: "#666" }}>
-                                {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                {ev.end ? ` – ${new Date(ev.end).toLocaleString()}` : ""}
-                            </p>
-
-                            <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
-                                Status: {ev.status} | Capacity: {ev.capacity || "N/A"}
-                            </p>
-
+                        {editingEventId && (
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setEditingEventId(ev.id);
-
-                                    const matchedLocation = allLocations.find(
-                                        (loc) => loc.id === ev.locationId
-                                    );
-
-                                    setLocationPicked(true);
-                                    setLocationResults([]);
-                                    setLocationQuery(matchedLocation?.name || "");
-
-                                    setForm({
-                                        title: ev.title,
-                                        description: ev.description || "",
-                                        location_id: ev.locationId,
-                                        start_date_time: ev.start ? ev.start.slice(0, 16) : "",
-                                        end_date_time: ev.end ? ev.end.slice(0, 16) : "",
-                                        event_type: ev.eventType,
-                                        capacity: ev.capacity || ""
-                                    });
-                                }}
+                                onClick={resetForm}
                                 style={{
-                                    marginTop: 8,
-                                    marginRight: 10,
-                                    padding: "8px 10px",
-                                    borderRadius: 8,
-                                    background: "#1d4ed8",
-                                    color: "white",
-                                    border: "none",
+                                    flex: 1,
+                                    padding: "12px 14px",
+                                    borderRadius: 12,
+                                    border: "1px solid #ccc",
+                                    background: "#f7f7f7",
+                                    color: "#222",
+                                    fontWeight: 600,
+                                    fontSize: 15,
                                     cursor: "pointer",
                                 }}
                             >
-                                Edit
+                                Cancel Edit
                             </button>
+                        )}
+                    </div>
+                </form>
+            </div>
 
-                            <button
-                                type="button"
-                                onClick={() => handleDelete(ev.id)}
-                                disabled={deletingEventId === ev.id}
-                                style={{
-                                    marginTop: 8,
-                                    padding: "8px 10px",
-                                    borderRadius: 8,
-                                    background: "#b42318",
-                                    color: "white",
-                                    border: "none",
-                                    cursor: deletingEventId === ev.id ? "not-allowed" : "pointer",
-                                    opacity: deletingEventId === ev.id ? 0.7 : 1,
-                                }}
-                            >
-                                {deletingEventId === ev.id ? "Deleting..." : "Delete"}
-                            </button>
-                        </div>
-                    ))}
+            {message && (
+                <div
+                    style={{
+                        marginBottom: 16,
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        background: message.toLowerCase().includes("error")
+                            ? "#fdecec"
+                            : "#edf7ed",
+                        border: message.toLowerCase().includes("error")
+                            ? "1px solid #f5c2c7"
+                            : "1px solid #b7dfb9",
+                        color: message.toLowerCase().includes("error")
+                            ? "#842029"
+                            : "#1e4620",
+                        fontSize: 14,
+                    }}
+                >
+                    {message}
                 </div>
             )}
+
+            <div
+                style={{
+                    background: "#fff",
+                    border: "1px solid #e5e5e5",
+                    borderRadius: 16,
+                    padding: 20,
+                    boxShadow: "0 6px 16px rgba(0,0,0,0.04)",
+                }}
+            >
+                <h2 style={{ marginTop: 0, marginBottom: 12 }}>Manage Events</h2>
+
+                {loadingEvents ? (
+                    <p>Loading admin events...</p>
+                ) : adminEvents.length === 0 ? (
+                    <p>No events found.</p>
+                ) : (
+                    <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+                        {adminEvents.map((ev) => (
+                            <div
+                                key={ev.id}
+                                style={{
+                                    border: "1px solid #e5e5e5",
+                                    borderRadius: 16,
+                                    padding: 16,
+                                    background: "#fff",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                                    transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = "translateY(-2px)";
+                                    e.currentTarget.style.boxShadow = "0 8px 18px rgba(0,0,0,0.08)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = "translateY(0)";
+                                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05)";
+                                }}
+                            >
+                                <h3 style={{ margin: 0, marginBottom: 6 }}>{ev.title}</h3>
+
+                                <p style={{ margin: "6px 0", color: "#444", lineHeight: 1.5 }}>
+                                    <strong>{ev.eventType}</strong>
+                                    {ev.description ? ` • ${ev.description}` : ""}
+                                </p>
+
+                                <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
+                                    Location: {allLocations.find((loc) => loc.id === ev.locationId)?.name || "Unknown location"}
+                                </p>
+
+                                <p style={{ margin: "6px 0", fontSize: 14, color: "#666" }}>
+                                    {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
+                                    {ev.end ? ` – ${new Date(ev.end).toLocaleString()}` : ""}
+                                </p>
+
+                                <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
+                                    Status: {ev.status} | Capacity: {ev.capacity || "N/A"}
+                                </p>
+
+                                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                                    <button
+                                        type="button"
+                                        disabled={editingEventId === ev.id}
+                                        onClick={() => {
+                                            setEditingEventId(ev.id);
+
+                                            const matchedLocation = allLocations.find(
+                                                (loc) => loc.id === ev.locationId
+                                            );
+
+                                            setLocationPicked(true);
+                                            setLocationResults([]);
+                                            setLocationQuery(matchedLocation?.name || "");
+
+                                            setForm({
+                                                title: ev.title,
+                                                description: ev.description || "",
+                                                location_id: ev.locationId,
+                                                start_date_time: ev.start ? ev.start.slice(0, 16) : "",
+                                                end_date_time: ev.end ? ev.end.slice(0, 16) : "",
+                                                event_type: ev.eventType,
+                                                capacity: ev.capacity || ""
+                                            });
+                                        }}
+                                        style={{
+                                            flex: 1,
+                                            padding: "10px 12px",
+                                            borderRadius: 10,
+                                            background: "#1d4ed8",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: editingEventId === ev.id ? "not-allowed" : "pointer",
+                                            opacity: editingEventId === ev.id ? 0.7 : 1,
+                                        }}
+                                    >
+                                        Edit
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDelete(ev.id)}
+                                        disabled={deletingEventId === ev.id || editingEventId === ev.id}
+                                        style={{
+                                            flex: 1,
+                                            padding: "10px 12px",
+                                            borderRadius: 10,
+                                            background: "#b42318",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor:
+                                                deletingEventId === ev.id || editingEventId === ev.id
+                                                    ? "not-allowed"
+                                                    : "pointer",
+                                            opacity:
+                                                deletingEventId === ev.id || editingEventId === ev.id
+                                                    ? 0.7
+                                                    : 1,
+                                        }}
+                                    >
+                                        {deletingEventId === ev.id
+                                            ? "Deleting..."
+                                            : editingEventId === ev.id
+                                                ? "Editing..."
+                                                : "Delete"}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
