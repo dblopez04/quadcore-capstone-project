@@ -1,7 +1,6 @@
 services:
   backend:
     build: ./backend
-    container_name: backend
     ports:
       - "4000:4000"
     env_file:
@@ -17,7 +16,6 @@ services:
 
   frontend:
     build: ./frontend
-    container_name: frontend
     ports:
      - "5173:5173"
     volumes:
@@ -29,7 +27,6 @@ services:
   db:
     image: postgis/postgis:16-3.4
     platform: linux/amd64 # won't work on my mac otherwise
-    container_name: db
     ports:
      - "5433:5432" # i was having issues with port 5432
     environment:
@@ -48,19 +45,18 @@ services:
   osrm:
     image: osrm/osrm-backend
     platform: linux/amd64 # won't work on my mac otherwise
-    container_name: osrm
     volumes: 
      - ./osrm-data:/data
     ports:
      - "5001:5000" # i was also having issues with this port
     command: >
       sh -c "
-      if [ ! -f /data/map.osrm ]; then
-      osrm-extract -p /opt/foot.lua /data/map.osm &&
-      osrm-partition /data/map.osrm &&
-      osrm-customize /data/map.osrm;
+      if [ ! -f /data/denton-map.osrm ]; then
+      osrm-extract -p /opt/foot.lua /data/denton-map.osm.pbf &&
+      osrm-partition /data/denton-map.osrm &&
+      osrm-customize /data/denton-map.osrm;
       fi;
-      osrm-routed --algorithm mld /data/map.osrm
+      osrm-routed --algorithm mld /data/denton-map.osrm
       "
     depends_on:
       - db

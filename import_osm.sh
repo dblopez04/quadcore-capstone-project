@@ -3,7 +3,8 @@
 set -euo pipefail
 
 if [ -f ".env" ]; then
-    export $(grep -v '^#' .env | xargs)
+    # Strip Windows CRLF to avoid values like "postgres\r" when run via bash on Windows.
+    export $(grep -v '^#' .env | sed 's/\r$//' | xargs)
 fi
 
 required_vars=(POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB)
@@ -16,13 +17,14 @@ done
 
 OSM_DIR="osrm-data"
 OSM_FILE_TEXAS="$OSM_DIR/texas-latest.osm.pbf"
-OSM_FILE="$OSM_DIR/map.osm"
+OSM_FILE="$OSM_DIR/denton-map.osm.pbf"
 OSM_DOWNLOAD_URL="https://download.geofabrik.de/north-america/us/texas-latest.osm.pbf"
 DB_SERVICE="db"
 DB_HOST="db"
 DB_USER="$POSTGRES_USER"
 DB_NAME="$POSTGRES_DB"
 DB_PASS="$POSTGRES_PASSWORD"
+DB_PORT="${POSTGRES_PORT:-5432}"
 
 if [ -n "${OSM2PGSQL_IMAGE:-}" ]; then
     OSM2PGSQL_IMAGES=("$OSM2PGSQL_IMAGE")
@@ -39,15 +41,31 @@ mkdir -p "$OSM_DIR"
 
 if [ ! -f "$OSM_FILE_TEXAS" ]; then
     echo "Downloading Texas data from Geofabrik"
-    wget -O "$OSM_FILE_TEXAS" "$OSM_DOWNLOAD_URL"
+    if command -v curl >/dev/null 2>&1; then
+        curl -L --fail -o "$OSM_FILE_TEXAS" "$OSM_DOWNLOAD_URL"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -O "$OSM_FILE_TEXAS" "$OSM_DOWNLOAD_URL"
+    else
+        echo "Error: need curl or wget to download $OSM_DOWNLOAD_URL"
+        exit 1
+    fi
 else
     echo "$OSM_FILE_TEXAS already exists"
 fi
 
 if [ ! -f "$OSM_FILE" ]; then
-    echo "Extracting Denton data from Texas file with compose osmium tool"
-    docker compose --profile tools run --rm osmium \
-        extract -b "$DENTON_COBOX" /data/texas-latest.osm.pbf -o /data/map.osm --overwrite
+    echo "Extracting Denton data from Texas file"
+    if command -v osmium >/dev/null 2>&1; then
+        osmium extract -b "$DENTON_COBOX" "$OSM_FILE_TEXAS" -o "$OSM_FILE" --overwrite
+    elif docker compose --profile tools run --rm osmium \
+        extract -b "$DENTON_COBOX" /data/texas-latest.osm.pbf -o /data/denton-map.osm.pbf --overwrite; then
+        true
+    else
+        echo "Compose osmium tool unavailable, using docker osmium image"
+        docker run --rm -v "$(pwd)/$OSM_DIR":/data \
+            ghcr.io/osmcode/osmium-tool:latest \
+            extract -b "$DENTON_COBOX" /data/texas-latest.osm.pbf -o /data/denton-map.osm.pbf --overwrite
+    fi
     echo "Denton area map extracted"
 else
     echo "$OSM_FILE already exists"
@@ -81,13 +99,14 @@ for image in "${OSM2PGSQL_IMAGES[@]}"; do
         -v "$(pwd)/$OSM_DIR":/data \
         "$image" \
         -H "$DB_HOST" \
+        -P "$DB_PORT" \
         -U "$DB_USER" \
         -d "$DB_NAME" \
         --create --slim \
         -G --hstore \
         --latlong \
         --cache 2000 \
-        /data/map.osm; then
+        /data/denton-map.osm.pbf; then
         imported=1
         break
     fi
