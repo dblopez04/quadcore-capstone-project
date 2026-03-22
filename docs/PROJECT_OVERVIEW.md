@@ -64,8 +64,8 @@ See `docs/REQUIREMENTS.md` for status.
 ## Known Gaps (observed)
 - OSRM is not yet wired into backend endpoints.
 - POI read endpoints are still missing for non-admin users.
-- Search and settings pages are still static UI.
-- Location bookmark API exists, but the bookmarks page is not wired to it yet.
+- Search page now performs live fuzzy location matching; settings remains static UI.
+- Bookmarks page now supports bookmark/list APIs, but history/recently viewed UI is still pending.
 - Role-based access is partial: admin and owner controls are enforced, but
   student/faculty/visitor-specific policy checks are still limited.
 

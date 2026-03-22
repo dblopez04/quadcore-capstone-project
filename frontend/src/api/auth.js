@@ -1,6 +1,5 @@
-﻿// frontend/src/api/auth.js
-
-export const API_BASE_URL = "http://localhost:4000"; // adjust if your backend uses a different port or prefix
+// frontend/src/api/auth.js
+import { API_BASE_URL } from "./client";
 
 async function handleResponse(response, defaultErrorMessage) {
     let data = {};
@@ -41,4 +40,34 @@ export async function registerRequest(payload) {
     });
 
     return handleResponse(response, "Registration failed");
+}
+
+export async function logoutRequest() {
+    const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+    });
+
+    let data = {};
+    try {
+        data = await response.json();
+    } catch {
+        // ignore JSON parse errors
+    }
+
+    // Backend currently requires auth on logout; treat unauthenticated
+    // responses as a no-op so "continue as guest" can proceed cleanly.
+    if (!response.ok && response.status !== 401 && response.status !== 403) {
+        throw new Error(data.message || "Logout failed");
+    }
+
+    return data;
+}
+
+export async function requestPasswordReset(email) {
+    console.log("Password reset requested for:", email);
+
+    await new Promise((res) => setTimeout(res, 600));
+
+    return { message: "Reset email sent (mock)." };
 }

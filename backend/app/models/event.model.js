@@ -20,7 +20,6 @@ module.exports = (sequelize, DataTypes) => {
             ),
             allowNull: false
         },
-        organizer_id: { type: DataTypes.UUID, allowNull: false },
         capacity: { type: DataTypes.INTEGER, allowNull: true },
         registered_count: { type: DataTypes.INTEGER, defaultValue: 0 },
         is_public: { type: DataTypes.BOOLEAN, defaultValue: true },

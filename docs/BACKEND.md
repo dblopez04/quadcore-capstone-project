@@ -32,11 +32,13 @@
 - `POST /api/auth/refresh` - issues a new access token from refresh cookie.
 
 Access tokens are stored in `accessToken` cookies and are validated by
-`verifyToken` middleware.
+`verifyToken` middleware. If `accessToken` is missing or expired but a valid
+`refreshToken` cookie exists (and matches the DB token), `verifyToken`
+automatically issues a new `accessToken` cookie and continues the request.
 
 Token timing (current):
 - Access token JWT expiry: 30 minutes.
-- Access cookie maxAge: 15 minutes.
+- Access cookie maxAge: 30 minutes.
 - Refresh token JWT expiry: 7 days.
 
 ## User Routes
@@ -45,13 +47,15 @@ Token timing (current):
 - `POST /api/user/search-history` - prepends a search string.
 - `DELETE /api/user/search-history` - clears search history.
 
-All user routes expect cookie auth (`accessToken` and `refreshToken`).
+All user routes expect cookie auth. `accessToken` is used primarily, with
+`refreshToken` as fallback via `verifyToken`.
 
 ## Event Bookmark Routes
 All event bookmark routes are prefixed with `/api/events` and require `verifyToken`.
 
 - `GET /api/events` - list/search events (filters: `q`, `start`, `end`, `status`,
-  `event_type`, `location_id`, `organizer_id`, `tags`).
+  `event_type`, `location_id`, `tags`). Search now also matches imported event
+  detail fields such as room detail, source location name, and address.
 - `GET /api/events/bookmarks` - list the current user's bookmarked events
   (supports `?start=`, `?end=`, `?status=`, `?event_type=`, `?tags=` filters).
 - `GET /api/events/bookmarks.ics` - export bookmarked events as ICS.
@@ -94,7 +98,10 @@ Recently viewed routes require `verifyToken`:
 
 Location bookmark routes require `verifyToken`:
 - `GET /api/locations/bookmarks` - list current user's bookmarked locations
-  (supports `?favorite=true|false` and `?search=` filters).
+  (supports `?favorite=true|false` and `?search=` filters). Each bookmark
+  includes both `location_id` and nested `location` summary data.
+- `DELETE /api/locations/bookmarks/:bookmarkId` - remove a location bookmark by
+  bookmark id (fallback-safe when clients only have bookmark ids).
 - `POST /api/locations/:locationId/bookmark` - bookmark a location (idempotent).
 - `PATCH /api/locations/:locationId/bookmark` - update bookmark metadata (`custom_name`,
   `notes`, `is_favorite`, `last_visited`).
@@ -145,6 +152,7 @@ All admin routes are prefixed with `/api/admin` and protected by `requireAdmin` 
 ## Models
 - `User` - main auth table with roles and `search_history`.
 - `Student`, `Faculty`, `Visitor` - role-specific tables (DB has `admin` too).
+- `EventDetail` - one-to-one structured metadata for imported event source fields.
 
 ## Role-Based Access
 - `verifyToken` enforces authenticated access for user-only routes.
@@ -181,8 +189,8 @@ npm run test:coverage # run tests with coverage report
 - `backend/tests/location.listing.test.js` - verifies `/api/locations` list behavior (non-search).
 
 ## CORS
-The API allows `http://localhost:5173` with credentials. Update `backend/server.js`
-if the frontend origin changes.
+The API allows credentials for local frontend origins and `FRONTEND_URL`
+(`http://localhost:5173` and `http://127.0.0.1:5173` are allowed by default).
 
 ## Known Gaps
 - There is no standalone public POI list/details endpoint yet; POI discovery is currently exposed via `/api/search`.

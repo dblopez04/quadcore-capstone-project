@@ -1,8 +1,8 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }
 
 .logo {
@@ -39,4 +39,61 @@
 
 .read-the-docs {
   color: #888;
+}
+/* --- Navbar base --- */
+.nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #006a31; /* UNT green */
+    color: white;
+}
+
+/* Desktop menu */
+.nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Hamburger button (hidden on desktop) */
+.hamburger {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+}
+
+/* --- Mobile styles --- */
+@media (max-width: 768px) {
+    .hamburger {
+        display: block;
+    }
+
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #006a31;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px;
+        gap: 10px;
+        z-index: 1000;
+    }
+
+        .nav-menu.open {
+            display: flex;
+        }
+
+        .nav-menu a,
+        .nav-menu button {
+            width: 100%;
+            text-align: left;
+        }
 }

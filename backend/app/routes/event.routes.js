@@ -27,6 +27,28 @@ const { verifyToken, requireAdmin } = require("../middleware/auth.middleware");
  *           format: uuid
  *         name:
  *           type: string
+ *     EventDetails:
+ *       type: object
+ *       properties:
+ *         event_detail_id:
+ *           type: string
+ *           format: uuid
+ *         source_url:
+ *           type: string
+ *         source_location_name:
+ *           type: string
+ *         source_location_url:
+ *           type: string
+ *         room_detail:
+ *           type: string
+ *         address:
+ *           type: string
+ *         image_url:
+ *           type: string
+ *         website_url:
+ *           type: string
+ *         metadata:
+ *           type: object
  *     EventSummary:
  *       type: object
  *       properties:
@@ -51,6 +73,8 @@ const { verifyToken, requireAdmin } = require("../middleware/auth.middleware");
  *           type: boolean
  *         location:
  *           $ref: '#/components/schemas/EventLocationSummary'
+ *         details:
+ *           $ref: '#/components/schemas/EventDetails'
  *         tags:
  *           type: array
  *           items:
@@ -145,7 +169,7 @@ const { verifyToken, requireAdmin } = require("../middleware/auth.middleware");
  *         name: q
  *         schema:
  *           type: string
- *         description: Search term for title or description
+ *         description: Search term for title, description, mapped location, or imported detail fields
  *       - in: query
  *         name: start
  *         schema:
@@ -169,11 +193,6 @@ const { verifyToken, requireAdmin } = require("../middleware/auth.middleware");
  *           type: string
  *       - in: query
  *         name: location_id
- *         schema:
- *           type: string
- *           format: uuid
- *       - in: query
- *         name: organizer_id
  *         schema:
  *           type: string
  *           format: uuid

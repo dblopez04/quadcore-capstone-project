@@ -4,26 +4,70 @@ const db = require("../models");
 const User = db.User;
 const Admin = db.Admin;
 
-const attachUserFromAccessToken = (req, res) => {
-    const token = req.cookies.accessToken;
+const ACCESS_COOKIE = {
+    httpOnly: true,
+    maxAge: 30 * 60 * 1000, // 30 minutes
+    path: "/"
+};
 
-    if (!token) {
-        res.status(403).send({ message: "No token provided" });
+const issueAccessToken = (res, userId) => {
+    const accessToken = jwt.sign(
+        { user_id: userId },
+        process.env.JWT_SECRET,
+        { expiresIn: "30m" }
+    );
+
+    res.cookie("accessToken", accessToken, ACCESS_COOKIE);
+};
+
+const attachUserFromCookies = async (req, res) => {
+    const accessToken = req.cookies.accessToken;
+
+    if (accessToken) {
+        try {
+            const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+            req.user_id = decoded.user_id;
+            return decoded;
+        } catch (_err) {
+            // Access token missing/expired falls back to refresh token.
+        }
+    }
+
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) {
+        if (!accessToken) {
+            res.status(403).send({ message: "No token provided" });
+        } else {
+            res.status(401).send({ message: "Invalid or expired token" });
+        }
         return null;
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user_id = decoded.user_id;
-        return decoded;
-    } catch (err) {
+        const decodedRefresh = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const user = await User.findOne({
+            where: {
+                user_id: decodedRefresh.user_id,
+                refresh_token: refreshToken
+            }
+        });
+
+        if (!user) {
+            res.status(401).send({ message: "Invalid or expired token" });
+            return null;
+        }
+
+        req.user_id = user.user_id;
+        issueAccessToken(res, user.user_id);
+        return { user_id: user.user_id };
+    } catch (_err) {
         res.status(401).send({ message: "Invalid or expired token" });
         return null;
     }
 };
 
-exports.verifyToken = (req, res, next) => {
-    const decoded = attachUserFromAccessToken(req, res);
+exports.verifyToken = async (req, res, next) => {
+    const decoded = await attachUserFromCookies(req, res);
     if (!decoded) {
         return;
     }
@@ -32,7 +76,7 @@ exports.verifyToken = (req, res, next) => {
 };
 
 exports.requireAdmin = async (req, res, next) => {
-    const decoded = attachUserFromAccessToken(req, res);
+    const decoded = await attachUserFromCookies(req, res);
     if (!decoded) {
         return;
     }
@@ -54,7 +98,7 @@ exports.requireAdmin = async (req, res, next) => {
 exports.requireOwner = async (req, res, next) => {
     try {
         if (!req.admin_id) {
-            const decoded = attachUserFromAccessToken(req, res);
+            const decoded = await attachUserFromCookies(req, res);
             if (!decoded) {
                 return;
             }

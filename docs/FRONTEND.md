@@ -25,17 +25,26 @@
 | `/register` | `Register` | Account creation |
 | `/home` | `Home` | Welcome copy |
 | `/map` | `MapPage` | Map view |
-| `/search` | `Search` | Static search UI + tabs |
-| `/bookmarks` | `Bookmarks` | Static list UI |
+| `/search` | `Search` | Live fuzzy location search + tabs |
+| `/bookmarks` | `Bookmarks` | API-backed bookmark and custom list management UI |
 | `/settings` | `Settings` | Static preferences UI |
 | `/about` | `About` | Project info |
 | `/help` | `Help` | Help text |
 
 ## API Integration
 - `frontend/src/api/auth.js` uses `credentials: "include"` for cookie auth.
-- `API_BASE_URL` is currently `http://localhost:4000`.
-- If running frontend inside Docker, update the base URL to `http://backend:4000`
-  or move it to a Vite env var (example: `VITE_API_BASE_URL`).
+- API helpers read `VITE_API_BASE_URL` (fallback: `http://localhost:4000`).
+- Keep `VITE_API_BASE_URL` in `frontend/.env` for local overrides.
+- Search uses `frontend/src/api/locationService.js` to fetch `/api/locations` and
+  apply client-side fuzzy ranking for location results.
+- Bookmarks UI strips the demo seed phrase (`Seeded from local OSM extract`)
+  from subtitle text before rendering.
+- Bookmarks UI now calls `/api/locations/bookmarks` and `/api/locations/lists`
+  for bookmark/list data and list item actions.
+- Guest mode (`Continue as Guest`) is tracked in `localStorage` (`authMode`).
+  Guests can browse map/search but cannot save or manage bookmarks in the UI.
+- Navbar auth action reflects mode: authenticated users see `Log Out`; guests or
+  unauthenticated users see `Log In`, which routes to the login page.
 - Planned APIs: POIs, routing, bookmarks, reporting, and events.
 
 ## Map UI Notes
@@ -88,5 +97,5 @@ npm run lint
 - Follow mobile-first layout rules and keep typography/colors consistent.
 
 ## Known Gaps
-- Search, bookmarks, and settings pages are static UI only.
+- Settings page is still static.
 - No POI layer, route drawing, or current location display yet.

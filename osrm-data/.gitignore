@@ -1,3 +1,5 @@
 *.osrm
 *.osrm*
 *.pbf*
+
+*map.osm*

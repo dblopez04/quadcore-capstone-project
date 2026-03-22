@@ -28,6 +28,17 @@ This document describes the backend event APIs used for calendar, bookmarks, reg
     "description": "Main union",
     "coordinates": { "type": "Point", "coordinates": [-97.1526, 33.2070] }
   },
+  "details": {
+    "event_detail_id": "uuid",
+    "source_url": "https://calendar.unt.edu/event/example",
+    "source_location_name": "Wooten Hall 322",
+    "source_location_url": "https://calendar.unt.edu/wooten-hall",
+    "room_detail": "322",
+    "address": "1501 Highland St, Denton, TX",
+    "image_url": "https://...",
+    "website_url": "https://...",
+    "metadata": { "Audience": ["Students"] }
+  },
   "tags": [{ "event_tag_id": "uuid", "name": "Career" }]
 }
 ```
@@ -70,7 +81,8 @@ This document describes the backend event APIs used for calendar, bookmarks, reg
 
 **GET `/api/events` — Search and filter events**
 - Auth required: No
-- Query params: `q`, `start`, `end`, `event_type`, `status`, `location_id`, `organizer_id`, `tags`
+- Query params: `q`, `start`, `end`, `event_type`, `status`, `location_id`, `tags`
+- `q` matches title, description, mapped location name, imported source location, room detail, and address
 - Response: `EventListResponse`
 
 **GET `/api/events/bookmarks.ics` — Export bookmarked events (ICS)**

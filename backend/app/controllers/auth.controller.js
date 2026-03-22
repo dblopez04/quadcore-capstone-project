@@ -9,12 +9,14 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
 const ACCESS_COOKIE = {
     httpOnly: true,
-    maxAge: 15 * 60 * 1000 // 15 minutes
+    maxAge: 30 * 60 * 1000, // 30 minutes
+    path: "/"
 };
 
 const REFRESH_COOKIE = {
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: "/"
 };
 
 const generateAccessToken = (user) => {

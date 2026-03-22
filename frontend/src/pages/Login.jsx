@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginRequest } from "../api/auth";
+import { loginRequest, logoutRequest } from "../api/auth";
+import { setAuthenticatedMode, setGuestMode } from "../utils/authMode";
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -10,6 +11,17 @@ export default function Login() {
 
     const navigate = useNavigate();
 
+    const handleGuest = async () => {
+        setGuestMode();
+        localStorage.removeItem("accessToken");
+        try {
+            await logoutRequest();
+        } catch (err) {
+            console.warn("Guest-mode logout request failed:", err);
+        }
+        navigate("/map");
+    };
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setError("");
@@ -18,6 +30,9 @@ export default function Login() {
         try {
             const result = await loginRequest(email, password);
             console.log("Login success:", result);
+
+            setAuthenticatedMode();
+            localStorage.setItem("user", JSON.stringify(result.user));
 
             // redirect after successful login
             navigate("/home");
@@ -167,17 +182,18 @@ export default function Login() {
                         >
                             Register
                         </a>
-                        <a
-                            href="/forgot"
-                            style={{ textDecoration: "none", color: "#666" }}
+                        <span
+                            onClick={() => navigate("/forgot-password")}
+                            style={{ textDecoration: "none", color: "#666", cursor: "pointer" }}
                         >
                             Forgot Password
-                        </a>
+                        </span>
+
                     </div>
 
                     <button
                         type="button"
-                        onClick={() => navigate("/map")}
+                        onClick={handleGuest}
                         className="btn btn-outline"
                         style={{
                             width: "100%",

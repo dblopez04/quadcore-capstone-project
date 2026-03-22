@@ -175,11 +175,7 @@ exports.getAllEvents = async (req, res) => {
 
 exports.createEvent = async (req, res) => {
     try {
-        const eventData = {
-            ...req.body,
-            organizer_id: req.user_id // Organizer is the admin creating it
-        };
-        const event = await Event.create(eventData);
+        const event = await Event.create(req.body);
         res.send(event);
     } catch (err) {
         res.status(500).send({ message: err.message || "Error creating event." });

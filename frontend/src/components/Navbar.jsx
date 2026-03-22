@@ -1,130 +1,92 @@
+﻿import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-
+import { logoutRequest } from "../api/auth";
+import { clearAuthMode, isAuthenticatedMode } from "../utils/authMode";
+import { clearStoredUser, isAdminUser } from "../utils/userSession";
 export default function Navbar() {
     const navigate = useNavigate();
+    const [isOpen, setIsOpen] = useState(false);
+    const isAuthenticated = isAuthenticatedMode();
+    const isAdmin = isAdminUser();
 
-    const handleLogout = () => {
+    const handleAuthAction = async () => {
+        setIsOpen(false);
+
+        if (!isAuthenticated) {
+            navigate("/");
+            return;
+        }
+
+        try {
+            await logoutRequest();
+        } catch (err) {
+            console.warn("Logout request failed:", err);
+        }
+        clearStoredUser();
+        clearAuthMode();
         navigate("/");
     };
 
+    const linkStyle = ({ isActive }) => ({
+        color: "#fff",
+        textDecoration: "none",
+        padding: "6px 10px",
+        borderRadius: 8,
+        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
+        fontWeight: 600,
+    });
+
     return (
         <header className="nav">
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <img
-                    src="/UNT-logo2.png"
-                    alt="UNT"
-                    style={{ height: 28 }}
-                />
+            <div className="nav-left" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <img src="/UNT-logo2.png" alt="UNT" style={{ height: 28 }} />
                 <span style={{ fontWeight: 800, letterSpacing: 0.2 }}>
                     Getting Around UNT
                 </span>
             </div>
 
-            <nav className="nav-menu">
-                <NavLink
-                    to="/home"
-                    style={({ isActive }) => ({
-                        color: "#fff",
-                        textDecoration: "none",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
-                        fontWeight: 600,
-                    })}
-                >
-                    Home
-                </NavLink>
+            <button
+                className="hamburger"
+                aria-label="Open menu"
+                aria-expanded={isOpen}
+                onClick={() => setIsOpen((v) => !v)}
+            >
+                ☰
+            </button>
 
-                <NavLink
-                    to="/map"
-                    style={({ isActive }) => ({
-                        color: "#fff",
-                        textDecoration: "none",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
-                        fontWeight: 600,
-                    })}
-                >
-                    Map
-                </NavLink>
+            {/* Desktop menu */}
+            <nav className="nav-menu desktop-menu">
+                <NavLink to="/home" style={linkStyle}>Home</NavLink>
+                <NavLink to="/map" style={linkStyle}>Map</NavLink>
+                <NavLink to="/search" style={linkStyle}>Search</NavLink>
+                <NavLink to="/bookmarks" style={linkStyle}>Bookmarks</NavLink>
+                <NavLink to="/about" style={linkStyle}>About</NavLink>
+                <NavLink to="/events" style={linkStyle}>Events</NavLink>
+                {isAdmin && <NavLink to="/admin" style={linkStyle}>Admin</NavLink>}
+                <NavLink to="/help" style={linkStyle}>Help</NavLink>
+                <NavLink to="/settings" style={linkStyle}>Settings</NavLink>
 
-                <NavLink
-                    to="/search"
-                    style={({ isActive }) => ({
-                        color: "#fff",
-                        textDecoration: "none",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
-                        fontWeight: 600,
-                    })}
-                >
-                    Search
-                </NavLink>
+                <button className="btn btn-outline" style={{ width: "auto" }} onClick={handleAuthAction}>
+                    {isAuthenticated ? "Log Out" : "Log In"}
+                </button>
+            </nav>
 
-                <NavLink
-                    to="/bookmarks"
-                    style={({ isActive }) => ({
-                        color: "#fff",
-                        textDecoration: "none",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
-                        fontWeight: 600,
-                    })}
-                >
-                    Bookmarks
-                </NavLink>
+            {/* Mobile drawer */}
+            {isOpen && <div className="drawer-backdrop" onClick={() => setIsOpen(false)} />}
 
-                <NavLink
-                    to="/about"
-                    style={({ isActive }) => ({
-                        color: "#fff",
-                        textDecoration: "none",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
-                        fontWeight: 600,
-                    })}
-                >
-                    About
-                </NavLink>
+            <nav className={`mobile-drawer ${isOpen ? "open" : ""}`}>
+                <NavLink to="/home" onClick={() => setIsOpen(false)}>Home</NavLink>
+                <NavLink to="/map" onClick={() => setIsOpen(false)}>Map</NavLink>
+                <NavLink to="/search" onClick={() => setIsOpen(false)}>Search</NavLink>
+                <NavLink to="/bookmarks" onClick={() => setIsOpen(false)}>Bookmarks</NavLink>
+                <NavLink to="/about" onClick={() => setIsOpen(false)}>About</NavLink>
+                <NavLink to="/events" onClick={() => setIsOpen(false)}>Events</NavLink>
+                {isAdmin && <NavLink to="/admin" onClick={() => setIsOpen(false)}>Admin</NavLink>}
+                <NavLink to="/help" onClick={() => setIsOpen(false)}>Help</NavLink>
+                <NavLink to="/settings" onClick={() => setIsOpen(false)}>Settings</NavLink>
 
-                <NavLink
-                    to="/help"
-                    style={({ isActive }) => ({
-                        color: "#fff",
-                        textDecoration: "none",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
-                        fontWeight: 600,
-                    })}
-                >
-                    Help
-                </NavLink>
-
-                <NavLink
-                    to="/settings"
-                    style={({ isActive }) => ({
-                        color: "#fff",
-                        textDecoration: "none",
-                        padding: "6px 10px",
-                        borderRadius: 8,
-                        background: isActive ? "rgba(255,255,255,0.12)" : "transparent",
-                        fontWeight: 600,
-                    })}
-                >
-                    Settings
-                </NavLink>
-
-                <button
-                    className="btn btn-outline"
-                    style={{ width: "auto" }}
-                    onClick={handleLogout}
-                >
-                    Log Out
+                <button className="drawer-logout" onClick={handleAuthAction}>
+                    {isAuthenticated ? "Log Out" : "Log In"}
                 </button>
             </nav>
         </header>
