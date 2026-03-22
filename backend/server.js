@@ -31,6 +31,7 @@ const userRoutes = require("./app/routes/user.routes");
 const adminRoutes = require("./app/routes/admin.routes");
 const eventRoutes = require("./app/routes/event.routes");
 const locationRoutes = require("./app/routes/location.routes");
+const osrmRoutes = require("./app/routes/osrm.routes");
 const searchRoutes = require("./app/routes/search.routes");
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -39,6 +40,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/osrm', osrmRoutes);
 app.use('/api/search', searchRoutes);
 
 app.get("/", (req, res) => {
