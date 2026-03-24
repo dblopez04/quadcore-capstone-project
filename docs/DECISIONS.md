@@ -18,6 +18,50 @@ Decision:
 
 Consequences:
 
+## 2026-03-24 - Keep Off-Campus Satellite Venues Out of Automatic Event Import
+Status: accepted
+
+Context:
+The event importer can auto-create `locations` rows for specific unmatched venues
+when UNT Localist provides exact coordinates. That behavior improved import
+coverage, but several of the newly imported venues were off the main campus map
+scope: `Discovery Park Building`, `UNT CoLab`, and `Frisco Landing -- UNT at
+Frisco`.
+
+Decision:
+Re-add those venue labels to the importer ignore list. Continue auto-creating
+specific unmatched venues with coordinates only when they are within the intended
+campus import scope and not explicitly excluded as off-campus venues.
+
+Consequences:
+Main-campus event imports still benefit from automatic venue creation, but
+off-campus satellite events stay out of the app until there is a deliberate
+product decision to support them.
+
+## 2026-03-24 - Auto-Create Specific Imported Event Venues From Source Coordinates
+Status: accepted
+
+Context:
+The UNT calendar importer was skipping several valid events because the source
+venue strings were either explicitly hidden (`UNT CoLab`) or absent from the
+campus `locations` seed (`Discovery Park Building`, `Frisco Landing -- UNT at
+Frisco`, `Community Garden`). The live event pages already expose stable venue
+coordinates for those specific locations, while broad labels like `University of
+North Texas` and `Any Dining Hall` remain too ambiguous to map safely.
+
+Decision:
+Narrow the importer ignore list to truly ambiguous venue labels only. Keep name
+and POI matching as the first choice, but when a specific venue still does not
+resolve and the source page includes coordinates, auto-create a `locations` row
+for that venue and attach the imported event to it. Preserve the existing skip
+behavior for broad campus-wide labels with no precise venue.
+
+Consequences:
+The importer now brings in specific off-seed UNT venues automatically instead of
+dropping those events, and repeated imports stay stable by reusing the
+auto-created `locations` row by name. Broad or multi-location events are still
+excluded from import to avoid bad map assignments.
+
 ## 2026-03-24 - Use `/map?place=` Deep Links for Event and Bookmark Map Opens
 Status: accepted
 

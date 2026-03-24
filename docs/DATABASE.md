@@ -66,3 +66,7 @@ container starts.
   `events.organizer_id` and add `event_details`.
 - There is no migration tool yet; update `database/init.sql` directly and document
   decisions in `docs/DECISIONS.md`.
+- `scripts/scrape_unt_events.py` may auto-create `locations` rows for specific UNT
+  calendar venues when the source page provides coordinates and no existing
+  location/POI match is available, except for explicitly ignored off-campus venue
+  labels.

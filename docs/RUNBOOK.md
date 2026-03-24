@@ -76,12 +76,16 @@ Useful flags:
 
 Behavior:
 - skips widget events whose location is `UNIVERSITY OF NORTH TEXAS` or `ALL DINING HALLS`
+- also skips off-campus venue labels such as `DISCOVERY PARK BUILDING`, `UNT COLAB`,
+  and `FRISCO LANDING -- UNT AT FRISCO`
 - matches against both `locations.name` and `points_of_interest.name`
-- also skips `DISCOVERY PARK BUILDING`, `UNT COLAB`, and `FRISCO LANDING -- UNT AT FRISCO`
 - applies explicit venue overrides such as `University Union South Lawn -> University Union`
   , `Library Mall -> Willis Library`, and `14C - Sagemore Lawn C -> Sage Hall`
 - collapses room-style venue strings to the parent building when possible
-- never inserts new `locations`; unresolved venues are skipped
+- auto-creates a `locations` row for specific unmatched venues when the source page
+  includes venue coordinates
+- still skips broad/ambiguous venue labels such as `UNIVERSITY OF NORTH TEXAS` and
+  `ANY DINING HALL`, plus explicitly ignored off-campus venues
 - stores source metadata in `event_details` instead of inflating `events.description`
 - writes room/source venue search tags onto imported events
 - applies the generated SQL to the configured Postgres database by default
