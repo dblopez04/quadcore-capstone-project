@@ -7,9 +7,13 @@ const { swaggerUi, swaggerSpec } = require("./app/config/swagger.config");
 const PORT = Number(process.env.PORT || 4000);
 const DB_CONNECT_MAX_ATTEMPTS = Number(process.env.DB_CONNECT_MAX_ATTEMPTS || 20);
 const DB_CONNECT_RETRY_DELAY_MS = Number(process.env.DB_CONNECT_RETRY_DELAY_MS || 3000);
+const trustProxyDefault = String(process.env.NODE_ENV || "").toLowerCase() === "production" ? 1 : 0;
+const TRUST_PROXY_HOPS = Number(process.env.TRUST_PROXY_HOPS || trustProxyDefault);
 
 const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
 const allowedOrigins = new Set([frontendUrl, "http://localhost:5173", "http://127.0.0.1:5173"]);
+
+app.set("trust proxy", Number.isFinite(TRUST_PROXY_HOPS) ? TRUST_PROXY_HOPS : trustProxyDefault);
 
 app.use(
     cors({
@@ -46,6 +50,10 @@ app.use('/api/search', searchRoutes);
 
 app.get("/", (req, res) => {
     res.json({ message: "Hello!" })
+});
+
+app.get("/healthz", (_req, res) => {
+    res.status(200).json({ ok: true });
 });
 
 function sleep(ms) {

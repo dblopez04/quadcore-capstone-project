@@ -1,14 +1,9 @@
 const { Op } = require('sequelize');
 const jwt = require("jsonwebtoken");
 const db = require("../models");
+const { getAccessCookieOptions } = require("../config/cookie.config");
 const User = db.User;
 const Admin = db.Admin;
-
-const ACCESS_COOKIE = {
-    httpOnly: true,
-    maxAge: 30 * 60 * 1000, // 30 minutes
-    path: "/"
-};
 
 const issueAccessToken = (res, userId) => {
     const accessToken = jwt.sign(
@@ -17,7 +12,7 @@ const issueAccessToken = (res, userId) => {
         { expiresIn: "30m" }
     );
 
-    res.cookie("accessToken", accessToken, ACCESS_COOKIE);
+    res.cookie("accessToken", accessToken, getAccessCookieOptions());
 };
 
 const attachUserFromCookies = async (req, res) => {

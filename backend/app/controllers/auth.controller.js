@@ -1,23 +1,16 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../models");
+const {
+    getAccessCookieOptions,
+    getRefreshCookieOptions,
+    getClearCookieOptions
+} = require("../config/cookie.config");
 const User = db.User;
 const REGISTERABLE_ROLES = new Set(["STUDENT", "FACULTY", "VISITOR"]);
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
-
-const ACCESS_COOKIE = {
-    httpOnly: true,
-    maxAge: 30 * 60 * 1000, // 30 minutes
-    path: "/"
-};
-
-const REFRESH_COOKIE = {
-    httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    path: "/"
-};
 
 const generateAccessToken = (user) => {
     return jwt.sign(
@@ -58,8 +51,8 @@ exports.register = async (req, res) => {
 
         await user.update({ refresh_token: refreshToken });
 
-        res.cookie('accessToken', accessToken, ACCESS_COOKIE);
-        res.cookie('refreshToken', refreshToken, REFRESH_COOKIE);
+        res.cookie("accessToken", accessToken, getAccessCookieOptions());
+        res.cookie("refreshToken", refreshToken, getRefreshCookieOptions());
 
         res.status(201).send({
             message: "User registered successfully!",
@@ -107,8 +100,8 @@ exports.login = async (req, res) => {
 
     await user.update({ refresh_token: refreshToken });
 
-    res.cookie('accessToken', accessToken, ACCESS_COOKIE);
-    res.cookie('refreshToken', refreshToken, REFRESH_COOKIE);
+    res.cookie("accessToken", accessToken, getAccessCookieOptions());
+    res.cookie("refreshToken", refreshToken, getRefreshCookieOptions());
 
     res.status(200).send({
         message: "Login successful",
@@ -152,7 +145,7 @@ exports.refreshToken = async (req, res) => {
 
         const newAccessToken = generateAccessToken(user);
 
-        res.cookie('accessToken', newAccessToken, ACCESS_COOKIE);
+        res.cookie("accessToken", newAccessToken, getAccessCookieOptions());
         res.status(200).json({ message: "Token refreshed successfully" });
     } catch (err) {
         return res.status(403).json({ message: "Invalid or expired refresh token" });
@@ -170,8 +163,8 @@ exports.logout = async (req, res) => {
             );
         }
 
-        res.clearCookie('accessToken');
-        res.clearCookie('refreshToken');
+        res.clearCookie("accessToken", getClearCookieOptions());
+        res.clearCookie("refreshToken", getClearCookieOptions());
         res.status(200).json({ message: "Logout successful" });
     } catch (err) {
         res.status(500).json({ message: err.message });
