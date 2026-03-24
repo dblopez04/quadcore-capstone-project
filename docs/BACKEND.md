@@ -133,8 +133,8 @@ All admin routes are prefixed with `/api/admin` and protected by `requireAdmin` 
 
 **Events:**
 - `GET /api/admin/events` - list all events (optional `?status=` filter)
-- `POST /api/admin/events` - create an event
-- `PUT /api/admin/events/:id` - update an event
+- `POST /api/admin/events` - create an event; `location_id` must reference an existing row in `locations`
+- `PUT /api/admin/events/:id` - update an event; replacement `location_id` values are validated against `locations`
 - `DELETE /api/admin/events/:id` - delete an event
 
 **Reports:**
@@ -180,6 +180,7 @@ npm run test:coverage # run tests with coverage report
 ```
 
 ### Test Files
+- `backend/tests/admin.event-location.test.js` - validates admin event create/update behavior around `location_id` references.
 - `backend/tests/admin.rbac.test.js` - owner/admin delegation safety and prior-role restoration tests.
 - `backend/tests/auth.register-rbac.test.js` - self-registration role restriction tests.
 - `backend/tests/auth.middleware.owner.test.js` - `requireOwner` middleware behavior, including bootstrap mode.

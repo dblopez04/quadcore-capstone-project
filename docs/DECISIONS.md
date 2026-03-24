@@ -18,6 +18,27 @@ Decision:
 
 Consequences:
 
+## 2026-03-21 - Validate Admin Event `location_id` Against `locations`
+Status: accepted
+
+Context:
+The database schema already requires `events.location_id` to reference
+`locations(location_id)`, and the UNT event importer resolves venues to that key
+before inserting rows. The admin event create/update controller, however, passed
+request payloads directly into Sequelize and only relied on the database to catch
+bad references.
+
+Decision:
+Keep the existing foreign key constraint and add application-level validation in
+the admin event write path. `POST /api/admin/events` now requires `location_id`,
+and both create/update reject unknown location ids with a clear response before
+issuing the write query.
+
+Consequences:
+Admin event writes now fail earlier with explicit messages instead of surfacing a
+generic database error for bad location references. This does not change the
+schema; it aligns controller behavior with the existing FK contract.
+
 ## 2026-03-18 - Drop Event Organizer and Store Import Metadata in `event_details`
 Status: accepted
 
