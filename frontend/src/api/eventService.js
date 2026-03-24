@@ -28,3 +28,8 @@ export async function registerForEvent(eventId) {
         method: "POST",
     });
 }
+export async function fetchRegisteredEvents() {
+    return apiRequest("/api/events/registrations", {
+        method: "GET",
+    });
+}

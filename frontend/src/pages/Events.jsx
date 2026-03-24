@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchEvents, registerForEvent } from "../api/eventService";
-
+import { fetchEvents, registerForEvent, fetchRegisteredEvents } from "../api/eventService";
 function pad2(n) {
     return String(n).padStart(2, "0");
 }
 
 function toDateStr(d) {
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+function eventDateStr(value) {
+    if (!value) return "";
+    const d = new Date(value);
+    return toDateStr(d);
 }
 
 function monthLabel(d) {
@@ -54,8 +58,8 @@ function normalizeEvent(ev) {
         ev.end_date ||
         ev.endDate;
 
-    const start = startRaw ? new Date(startRaw).toISOString() : null;
-    const end = endRaw ? new Date(endRaw).toISOString() : null;
+    const start = startRaw || null;
+    const end = endRaw || null;
 
     return {
         id: ev.event_id || ev.id || ev._id,
@@ -93,6 +97,10 @@ export default function Events() {
     const [error, setError] = useState("");
     const [selectedDate, setSelectedDate] = useState(""); // YYYY-MM-DD
     const [viewDate, setViewDate] = useState(() => new Date());
+    const [registeringId, setRegisteringId] = useState(null);
+    const [feedback, setFeedback] = useState("");
+    const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
+    const [registeredEvents, setRegisteredEvents] = useState([]);
 
     const navigate = useNavigate();
 
@@ -100,10 +108,16 @@ export default function Events() {
         const s = new Set();
         for (const e of allEvents) {
             if (!e.start) continue;
-            s.add(e.start.slice(0, 10)); // "YYYY-MM-DD"
+            s.add(eventDateStr(e.start));
         }
         return s;
     }, [allEvents]);
+
+    const selectedDateEvents = useMemo(() => {
+        if (!selectedDate) return [];
+
+        return allEvents.filter((ev) => eventDateStr(ev.start) === selectedDate);
+    }, [allEvents, selectedDate]);
 
     async function loadEvents(filters = {}) {
         try {
@@ -114,36 +128,8 @@ export default function Events() {
             const raw = Array.isArray(data?.events) ? data.events : [];
             const normalized = raw.map(normalizeEvent);
 
-            const demo = [
-                {
-                    id: "demo-1",
-                    title: "UNT Career Fair",
-                    description: "Meet employers and bring your resume.",
-                    category: "Career",
-                    locationName: "Union Ballroom",
-                    lat: 33.2090,
-                    lng: -97.1490,
-                    start: new Date().toISOString(),
-                    end: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-                    isDemo: true,
-                },
-                {
-                    id: "demo-2",
-                    title: "Study Jam: CSCE Review",
-                    description: "Group study session for upcoming exam.",
-                    category: "Academic",
-                    locationName: "Willis Library",
-                    lat: 33.2106,
-                    lng: -97.1503,
-                    start: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-                    end: new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString(),
-                    isDemo: true,
-                },
-            ];
-
-            // If backend returns no events, show demo events so UI is not empty for sprint demo
-            const finalEvents = normalized.length === 0 ? demo : normalized;
-
+            const finalEvents = normalized;
+            
             setAllEvents(finalEvents);
 
             // if a date filter is active, keep it applied
@@ -162,28 +148,61 @@ export default function Events() {
         }
     }
 
+    async function loadRegisteredEvents() {
+        try {
+            const data = await fetchRegisteredEvents();
+
+            const raw = Array.isArray(data?.events)
+                ? data.events
+                : Array.isArray(data)
+                    ? data
+                    : [];
+
+            const normalized = raw
+                .map((item) => normalizeEvent(item.event || item))
+                .filter((ev) => ev.id);
+
+            setRegisteredEvents(normalized);
+
+            const ids = new Set(
+                normalized.map((ev) => ev.id).filter(Boolean)
+            );
+
+            setRegisteredEventIds(ids);
+        } catch (e) {
+            console.error("Failed to load registrations:", e);
+            setRegisteredEvents([]);
+            setRegisteredEventIds(new Set());
+        }
+    }
+
     async function handleRegister(eventId) {
         try {
+            setRegisteringId(eventId);
+            setFeedback("");
+
             await registerForEvent(eventId);
-            alert("Registered for event!");
-            // Optional refresh so the UI stays in sync later
-            // await loadEvents({ q });
+            setRegisteredEventIds((prev) => new Set([...prev, eventId]));
+            await loadRegisteredEvents();
+            setFeedback("Registered for event successfully.");
         } catch (e) {
             console.error(e);
 
-            // If backend returns useful codes, you can show nicer messages
             const msg =
                 e?.status === 409
                     ? "This event is full."
                     : e?.status === 404
                         ? "Event not found."
-                        : "Register failed (are you logged in?).";
+                        : "Register failed. Please make sure you are logged in.";
 
-            alert(msg);
+            setFeedback(msg);
+        } finally {
+            setRegisteringId(null);
         }
     }
     useEffect(() => {
-        loadEvents(); // GET /api/events
+        loadEvents();
+        loadRegisteredEvents();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -196,18 +215,31 @@ export default function Events() {
     return (
         <div style={{ padding: "24px" }}>
             <h2>Campus Events</h2>
+            <p style={{ fontSize: 14, color: "#666" }}>
+                Registered events count: {registeredEvents.length}
+            </p>
+        <div
+            style={{
+                 margin: "16px 0 20px 0",
+                 padding: "16px",
+                 border: "1px solid #e5e5e5",
+                 borderRadius: "16px",
+                 background: "#fff",
+                 boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+            }}
+        >
 
             {/* Calendar */}
             <div
-                style={{
-                    margin: "16px 0",
-                    padding: "12px",
-                    border: "1px solid #e5e5e5",
-                    borderRadius: "12px",
-                    background: "#fff",
-                }}
+                    style={{
+                        padding: "12px",
+                        border: "1px solid #e5e5e5",
+                        borderRadius: "12px",
+                        background: "#fafafa",
+                    }}
             >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    
                     <button
                         onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
                         style={{ padding: "6px 10px", borderRadius: 8 }}
@@ -225,6 +257,47 @@ export default function Events() {
                     </button>
                 </div>
 
+                    {selectedDate && (
+                        <div
+                            style={{
+                                marginTop: 14,
+                                padding: "12px",
+                                border: "1px solid #e5e5e5",
+                                borderRadius: 12,
+                                background: "#f9fbf9",
+                            }}
+                        >
+                            <div style={{ fontWeight: 700, marginBottom: 8 }}>
+                                Events on {selectedDate}
+                            </div>
+
+                            {selectedDateEvents.length === 0 ? (
+                                <div style={{ fontSize: 14, color: "#666" }}>
+                                    No events scheduled for this date.
+                                </div>
+                            ) : (
+                                <div style={{ display: "grid", gap: 8 }}>
+                                    {selectedDateEvents.map((ev) => (
+                                        <div
+                                            key={`calendar-${ev.id}`}
+                                            style={{
+                                                padding: "10px 12px",
+                                                borderRadius: 10,
+                                                background: "#fff",
+                                                border: "1px solid #e5e5e5",
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: 600 }}>{ev.title}</div>
+                                            <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+                                                {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
+                                                {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 <div
                     style={{
                         display: "grid",
@@ -250,9 +323,9 @@ export default function Events() {
                         return (
                             <button
                                 key={idx}
-                                onClick={async () => {
+                                onClick={() => {
                                     setSelectedDate(dStr);
-                                    await loadEvents({ start: dStr, end: dStr, q });
+                                    setEvents(allEvents.filter((ev) => eventDateStr(ev.start) === dStr));
                                 }}
                                 style={{
                                     padding: "10px 0",
@@ -275,10 +348,10 @@ export default function Events() {
 
                 <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center" }}>
                     <button
-                        onClick={async () => {
-                            setSelectedDate("");
-                            await loadEvents(q ? { q } : {});
-                        }}
+                            onClick={() => {
+                                setSelectedDate("");
+                                setEvents(allEvents);
+                            }}
                         style={{ padding: "6px 10px", borderRadius: 8 }}
                     >
                         Clear Filter
@@ -292,7 +365,15 @@ export default function Events() {
                 </div>
             </div>
 
-            <form onSubmit={onSearch} style={{ margin: "12px 0", display: "flex", gap: "8px" }}>
+                <form
+                    onSubmit={onSearch}
+                    style={{
+                        marginTop: "14px",
+                        display: "flex",
+                        gap: "8px",
+                        flexWrap: "wrap",
+                    }}
+                >
                 <input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
@@ -307,23 +388,108 @@ export default function Events() {
                 <button type="submit" style={{ padding: "10px 14px", borderRadius: "8px" }}>
                     Search
                 </button>
-            </form>
+                </form>
+            </div>
 
-            {events.length > 0 && events.every((ev) => ev.isDemo) && (
+            {feedback && (
                 <div
                     style={{
                         margin: "12px 0",
                         padding: "10px 12px",
-                        borderRadius: "10px",
-                        background: "#fff8e1",
-                        border: "1px solid #f0d98c",
-                        color: "#6b5b00",
-                        fontSize: "14px",
+                        borderRadius: 10,
+                        background: feedback.toLowerCase().includes("failed") || feedback.toLowerCase().includes("full")
+                            ? "#fdecec"
+                            : "#edf7ed",
+                        border: feedback.toLowerCase().includes("failed") || feedback.toLowerCase().includes("full")
+                            ? "1px solid #f5c2c7"
+                            : "1px solid #b7dfb9",
+                        color: feedback.toLowerCase().includes("failed") || feedback.toLowerCase().includes("full")
+                            ? "#842029"
+                            : "#1e4620",
+                        fontSize: 14,
                     }}
                 >
-                    Showing demo events because no real events are currently available from the backend.
+                    {feedback}
                 </div>
             )}
+
+            {registeredEvents.length > 0 && (
+                <div
+                    style={{
+                        margin: "16px 0 20px 0",
+                        padding: "16px",
+                        border: "1px solid #e5e5e5",
+                        borderRadius: "16px",
+                        background: "#fff",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                    }}
+                >
+                    <h3 style={{ marginTop: 0, marginBottom: 12 }}>My Registered Events</h3>
+
+                    <div style={{ display: "grid", gap: "12px" }}>
+                        {registeredEvents.map((ev) => (
+                            <div
+                                key={`registered-${ev.id}`}
+                                style={{
+                                    border: "1px solid #e5e5e5",
+                                    borderRadius: "12px",
+                                    padding: "14px",
+                                    background: "#f9fbf9",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "flex-start",
+                                        gap: "12px",
+                                        flexWrap: "wrap",
+                                    }}
+                                >
+                                    <div>
+                                        <h4 style={{ margin: 0, marginBottom: 6 }}>{ev.title}</h4>
+                                        <div
+                                            style={{
+                                                display: "inline-block",
+                                                padding: "4px 10px",
+                                                borderRadius: "999px",
+                                                background: "#edf7ed",
+                                                border: "1px solid #b7dfb9",
+                                                color: "#1e4620",
+                                                fontSize: "12px",
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            Registered
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {ev.description && (
+                                    <p style={{ margin: "10px 0 8px 0", color: "#444", lineHeight: 1.6 }}>
+                                        {ev.description}
+                                    </p>
+                                )}
+
+                                <div style={{ display: "grid", gap: 6 }}>
+                                    <div style={{ fontSize: "14px", color: "#555" }}>
+                                        <strong>When:</strong>{" "}
+                                        {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
+                                        {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                    </div>
+
+                                    <div style={{ fontSize: "14px", color: "#555" }}>
+                                        <strong>Location:</strong> {ev.locationName || "Location not provided"}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <h3 style={{ margin: "20px 0 12px 0" }}>All Events</h3>
+
             {loading ? (
                 <p>Loading events...</p>
             ) : error ? (
@@ -334,95 +500,143 @@ export default function Events() {
                 <div style={{ display: "grid", gap: "12px" }}>
                     {events.map((ev) => {
                         const canMap = ev.lat != null && ev.lng != null;
+                        const isRegistered = registeredEventIds.has(ev.id);
 
                         return (
                             <div
                                 key={ev.id}
                                 style={{
                                     border: "1px solid #e5e5e5",
-                                    borderRadius: "12px",
-                                    padding: "14px",
+                                    borderRadius: "16px",
+                                    padding: "18px",
                                     background: "white",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                                 }}
                             >
-                                
-                                <h3 style={{ margin: 0 }}>{ev.title}</h3>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "flex-start",
+                                        gap: "12px",
+                                        flexWrap: "wrap",
+                                    }}
+                                >
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: "28px", lineHeight: 1.2 }}>
+                                            {ev.title}
+                                        </h3>
 
-                                {ev.isDemo && (
-                                    <div
+                                        <div
+                                            style={{
+                                                display: "inline-block",
+                                                marginTop: 10,
+                                                padding: "4px 10px",
+                                                borderRadius: "999px",
+                                                background: "#eef6ff",
+                                                color: "#1d4ed8",
+                                                fontSize: "12px",
+                                                fontWeight: 700,
+                                                letterSpacing: "0.3px",
+                                            }}
+                                        >
+                                            {ev.category}
+                                        </div>
+                                    </div>
+
+                                    {isRegistered && (
+                                        <div
+                                            style={{
+                                                padding: "6px 10px",
+                                                borderRadius: "999px",
+                                                background: "#edf7ed",
+                                                border: "1px solid #b7dfb9",
+                                                color: "#1e4620",
+                                                fontSize: "12px",
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            Registered
+                                        </div>
+                                    )}
+                                </div>
+
+                                {ev.description && (
+                                    <p
                                         style={{
-                                            display: "inline-block",
-                                            marginTop: 6,
-                                            padding: "2px 8px",
-                                            borderRadius: 999,
-                                            fontSize: 12,
-                                            border: "1px solid #ddd",
-                                            background: "#f7f7f7",
+                                            margin: "14px 0 10px 0",
                                             color: "#444",
+                                            lineHeight: 1.7,
+                                            fontSize: "15px",
                                         }}
                                     >
-                                        Demo Data
-                                    </div>
+                                        {ev.description}
+                                    </p>
                                 )}
 
-                                <p style={{ margin: "6px 0" }}>
-                                    <strong>{ev.category}</strong>
-                                    {ev.locationName ? ` - ${ev.locationName}` : ""}
-                                </p>
+                                <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+                                    <div style={{ fontSize: "14px", color: "#555" }}>
+                                        <strong>When:</strong>{" "}
+                                        {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
+                                        {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                    </div>
 
-                                {ev.description && <p style={{ margin: "6px 0", color: "#444" }}>{ev.description}</p>}
+                                    <div style={{ fontSize: "14px", color: "#555" }}>
+                                        <strong>Location:</strong> {ev.locationName || "Location not provided"}
+                                    </div>
+                                </div>
 
-                                <p style={{ margin: "6px 0", fontSize: "14px", color: "#666" }}>
-                                    {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                    {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
-                                </p>
+                                <div style={{ display: "flex", gap: "10px", marginTop: 16, flexWrap: "wrap" }}>
+                                    <button
+                                        onClick={() => handleRegister(ev.id)}
+                                        disabled={registeringId === ev.id || isRegistered}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background:
+                                                registeringId === ev.id || isRegistered ? "#aaa" : "#0b5",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor:
+                                                registeringId === ev.id || isRegistered
+                                                    ? "not-allowed"
+                                                    : "pointer",
+                                        }}
+                                    >
+                                        {registeringId === ev.id
+                                            ? "Registering..."
+                                            : isRegistered
+                                                ? "Registered"
+                                                : "Register"}
+                                    </button>
 
-
-                                {/* REGISTER BUTTON */}
-                                <button
-                                    onClick={() => handleRegister(ev.id)}
-                                    disabled={ev.isDemo}
-                                    style={{
-                                        marginTop: 10,
-                                        marginRight: 10,
-                                        padding: "8px 10px",
-                                        borderRadius: 8,
-                                        background: ev.isDemo ? "#aaa" : "#0b5",
-                                        color: "white",
-                                        border: "none",
-                                        cursor: ev.isDemo ? "not-allowed" : "pointer",
-                                    }}
-                                >
-                                    Register
-                                </button>
-
-                                {/* VIEW ON MAP BUTTON */}
-                                <button
-                                    disabled={!canMap}
-                                    onClick={() => {
-                                        const params = new URLSearchParams({
-                                            lat: String(ev.lat),
-                                            lng: String(ev.lng),
-                                            name: ev.title,
-                                        });
-                                        navigate(`/map?${params.toString()}`);
-                                    }}
-                                    style={{
-                                        marginTop: 10,
-                                        padding: "8px 10px",
-                                        borderRadius: 8,
-                                        background: canMap ? "#0a5" : "#aaa",
-                                        color: "white",
-                                        border: "none",
-                                        cursor: canMap ? "pointer" : "not-allowed",
-                                    }}
-                                >
-                                    View on Map
-                                </button>
-                                
+                                    <button
+                                        disabled={!canMap}
+                                        onClick={() => {
+                                            const params = new URLSearchParams({
+                                                lat: String(ev.lat),
+                                                lng: String(ev.lng),
+                                                name: ev.title,
+                                            });
+                                            navigate(`/map?${params.toString()}`);
+                                        }}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: canMap ? "#0a5" : "#aaa",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: canMap ? "pointer" : "not-allowed",
+                                        }}
+                                    >
+                                        View on Map
+                                    </button>
+                                </div>
 
                                 {!canMap && (
-                                    <div style={{ marginTop: 6, fontSize: 12, color: "#777" }}>
+                                    <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>
                                         Map coordinates not provided by backend.
                                     </div>
                                 )}
