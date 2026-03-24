@@ -36,6 +36,34 @@ function buildMonthGrid(viewDate) {
     return cells;
 }
 
+function parseEventCoords(locationValue) {
+    const coordinates = locationValue?.coordinates;
+
+    if (Array.isArray(coordinates?.coordinates) && coordinates.coordinates.length >= 2) {
+        return {
+            lng: coordinates.coordinates[0],
+            lat: coordinates.coordinates[1],
+        };
+    }
+
+    return {
+        lat:
+            locationValue?.lat ??
+            locationValue?.latitude ??
+            coordinates?.lat ??
+            coordinates?.latitude ??
+            null,
+        lng:
+            locationValue?.lng ??
+            locationValue?.lon ??
+            locationValue?.longitude ??
+            coordinates?.lng ??
+            coordinates?.lon ??
+            coordinates?.longitude ??
+            null,
+    };
+}
+
 // Try to support both your old mock shape + backend shape
 function normalizeEvent(ev) {
     const startRaw =
@@ -56,30 +84,34 @@ function normalizeEvent(ev) {
 
     const start = startRaw ? new Date(startRaw).toISOString() : null;
     const end = endRaw ? new Date(endRaw).toISOString() : null;
+    const eventLocation = typeof ev.location === "object" && ev.location !== null ? ev.location : null;
+    const parsedCoords = parseEventCoords(eventLocation);
 
     return {
         id: ev.event_id || ev.id || ev._id,
         title: ev.title || ev.name || "Untitled Event",
         description: ev.description || ev.details || "",
         category: ev.category || ev.event_type || ev.type || "Event",
+        locationId:
+            ev.location_id ||
+            ev.locationId ||
+            eventLocation?.location_id ||
+            eventLocation?.id ||
+            null,
         locationName:
             ev.locationName ||
             ev.location_name ||
-            ev.location?.name ||
+            eventLocation?.name ||
             ev.location ||
             "",
         lat:
             ev.lat ??
             ev.latitude ??
-            ev.location?.lat ??
-            ev.location?.latitude ??
-            null,
+            parsedCoords.lat,
         lng:
             ev.lng ??
             ev.longitude ??
-            ev.location?.lng ??
-            ev.location?.longitude ??
-            null,
+            parsedCoords.lng,
         start,
         end,
     };
@@ -192,6 +224,24 @@ export default function Events() {
         setSelectedDate(""); // clear date filter when searching
         await loadEvents({ q });
     };
+
+    function handleViewOnMap(ev) {
+        if (ev.locationId) {
+            navigate(`/map?place=${encodeURIComponent(ev.locationId)}`);
+            return;
+        }
+
+        if (ev.lat == null || ev.lng == null) {
+            return;
+        }
+
+        const params = new URLSearchParams({
+            lat: String(ev.lat),
+            lng: String(ev.lng),
+            name: ev.locationName || ev.title,
+        });
+        navigate(`/map?${params.toString()}`);
+    }
 
     return (
         <div style={{ padding: "24px" }}>
@@ -333,7 +383,7 @@ export default function Events() {
             ) : (
                 <div style={{ display: "grid", gap: "12px" }}>
                     {events.map((ev) => {
-                        const canMap = ev.lat != null && ev.lng != null;
+                        const canMap = Boolean(ev.locationId) || (ev.lat != null && ev.lng != null);
 
                         return (
                             <div
@@ -367,14 +417,14 @@ export default function Events() {
 
                                 <p style={{ margin: "6px 0" }}>
                                     <strong>{ev.category}</strong>
-                                    {ev.locationName ? ` • ${ev.locationName}` : ""}
+                                    {ev.locationName ? ` - ${ev.locationName}` : ""}
                                 </p>
 
                                 {ev.description && <p style={{ margin: "6px 0", color: "#444" }}>{ev.description}</p>}
 
                                 <p style={{ margin: "6px 0", fontSize: "14px", color: "#666" }}>
                                     {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                    {ev.end ? ` – ${new Date(ev.end).toLocaleString()}` : ""}
+                                    {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
                                 </p>
 
 
@@ -399,14 +449,7 @@ export default function Events() {
                                 {/* VIEW ON MAP BUTTON */}
                                 <button
                                     disabled={!canMap}
-                                    onClick={() => {
-                                        const params = new URLSearchParams({
-                                            lat: String(ev.lat),
-                                            lng: String(ev.lng),
-                                            name: ev.title,
-                                        });
-                                        navigate(`/map?${params.toString()}`);
-                                    }}
+                                    onClick={() => handleViewOnMap(ev)}
                                     style={{
                                         marginTop: 10,
                                         padding: "8px 10px",
@@ -423,7 +466,7 @@ export default function Events() {
 
                                 {!canMap && (
                                     <div style={{ marginTop: 6, fontSize: 12, color: "#777" }}>
-                                        Map coordinates not provided by backend.
+                                        Event location is not linked to a mappable campus location yet.
                                     </div>
                                 )}
                             </div>

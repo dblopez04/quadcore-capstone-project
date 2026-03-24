@@ -18,6 +18,26 @@ Decision:
 
 Consequences:
 
+## 2026-03-24 - Use `/map?place=` Deep Links for Event and Bookmark Map Opens
+Status: accepted
+
+Context:
+The frontend already had a backend-supported location deep-link format
+(`/map?place=<location_id>`), but the events page only tried to open the map from
+raw `lat`/`lng` fields. Real event payloads carry nested location objects with
+`location_id` plus GeoJSON coordinates, so the button stayed disabled even when
+the event was tied to a valid campus location.
+
+Decision:
+Normalize event payloads to read nested location ids and GeoJSON coordinates, and
+update the map page to resolve `place` query params through `/api/locations/:id`.
+The events page now navigates to `/map?place=<location_id>` when possible and
+falls back to `lat`/`lng` query params for demo or legacy event data.
+
+Consequences:
+`View on Map` works for real events backed by `locations`, and the same deep-link
+flow also supports bookmark/share-link navigation consistently.
+
 ## 2026-03-21 - Validate Admin Event `location_id` Against `locations`
 Status: accepted
 

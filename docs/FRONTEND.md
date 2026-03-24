@@ -24,7 +24,7 @@
 | `/` | `Login` | Auth login form |
 | `/register` | `Register` | Account creation |
 | `/home` | `Home` | Welcome copy |
-| `/map` | `MapPage` | Map view |
+| `/map` | `MapPage` | Map view; supports deep links via `?place=<location_id>` and coordinate fallback via `?lat=&lng=` |
 | `/search` | `Search` | Live fuzzy location search + tabs |
 | `/bookmarks` | `Bookmarks` | API-backed bookmark and custom list management UI |
 | `/settings` | `Settings` | Static preferences UI |
@@ -49,6 +49,7 @@
 
 ## Map UI Notes
 - `frontend/src/MapView.jsx` currently renders a static Leaflet map and marker.
+- `frontend/src/pages/MapPage.jsx` resolves location deep links (`/map?place=<location_id>`) through the locations API so bookmarks and events can open an existing campus place on the map.
 - Planned: add user location using the Geolocation API (with permission prompts).
 - Planned: draw route polylines and step-by-step directions from OSRM responses.
 
