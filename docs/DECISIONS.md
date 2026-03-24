@@ -18,6 +18,27 @@ Decision:
 
 Consequences:
 
+## 2026-03-24 - Add One-Command Rebuild Flow and Backend DB Startup Retries
+Status: accepted
+
+Context:
+Local rebuilds currently require multiple manual steps (`compose down`, volume
+cleanup, rebuild, map import, and event scrape). During full rebuilds, backend
+startup can race Postgres initialization and exit on the first `ECONNREFUSED`,
+which requires a manual backend restart.
+
+Decision:
+Add `scripts/rebuild_stack.sh` to automate destructive rebuild + reseed flow in
+one command, including compose teardown, build cache prune, `compose up --build`,
+`import_osm_macos.sh`, and `scripts/scrape_unt_events.py`. Update backend startup
+to retry database authentication with configurable retry count and delay before
+failing process startup. Update `import_osm_macos.sh` to wait for database
+readiness and retry `osm2pgsql` imports to handle transient startup races.
+
+Consequences:
+Rebuilds are consistent and faster to run, and backend no longer requires a
+manual restart when Postgres is still warming up after a fresh compose rebuild.
+
 ## 2026-03-24 - Keep Off-Campus Satellite Venues Out of Automatic Event Import
 Status: accepted
 

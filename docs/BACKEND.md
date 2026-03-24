@@ -19,6 +19,11 @@
 
 ## Environment Variables
 - `DATABASE_URL` - Postgres connection string (used by Sequelize).
+- `PORT` - optional API bind port (defaults to `4000`).
+- `DB_CONNECT_MAX_ATTEMPTS` - startup retries for initial DB connection
+  (defaults to `20`).
+- `DB_CONNECT_RETRY_DELAY_MS` - delay between DB startup retries in milliseconds
+  (defaults to `3000`).
 - `JWT_SECRET` - access token secret.
 - `JWT_REFRESH_SECRET` - refresh token secret.
 - `OSRM_URL` - OSRM base URL (defined in `compose.yaml`).
