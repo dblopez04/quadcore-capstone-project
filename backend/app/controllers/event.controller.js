@@ -69,11 +69,12 @@ const buildTimestampRange = (field, start, end) => {
 };
 
 const buildEventResponse = (event, sources) => {
-    const location = event && event.Location ? {
-        location_id: event.Location.location_id,
-        name: event.Location.name,
-        description: event.Location.description,
-        coordinates: event.Location.coordinates
+    const rawLocation = event?.location || event?.Location || null;
+    const location = rawLocation ? {
+        location_id: rawLocation.location_id,
+        name: rawLocation.name,
+        description: rawLocation.description,
+        coordinates: rawLocation.coordinates
     } : null;
 
     const tags = event && event.EventTags
@@ -106,6 +107,7 @@ const buildEventResponse = (event, sources) => {
         event_type: event.event_type,
         status: event.status,
         is_public: event.is_public,
+        location_id: location?.location_id || event.location_id || null,
         location,
         details,
         tags

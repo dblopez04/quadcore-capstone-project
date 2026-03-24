@@ -18,6 +18,112 @@ Decision:
 
 Consequences:
 
+## 2026-03-24 - Add One-Command Rebuild Flow and Backend DB Startup Retries
+Status: accepted
+
+Context:
+Local rebuilds currently require multiple manual steps (`compose down`, volume
+cleanup, rebuild, map import, and event scrape). During full rebuilds, backend
+startup can race Postgres initialization and exit on the first `ECONNREFUSED`,
+which requires a manual backend restart.
+
+Decision:
+Add `scripts/rebuild_stack.sh` to automate destructive rebuild + reseed flow in
+one command, including compose teardown, build cache prune, `compose up --build`,
+`import_osm_macos.sh`, and `scripts/scrape_unt_events.py`. Update backend startup
+to retry database authentication with configurable retry count and delay before
+failing process startup. Update `import_osm_macos.sh` to wait for database
+readiness and retry `osm2pgsql` imports to handle transient startup races.
+
+Consequences:
+Rebuilds are consistent and faster to run, and backend no longer requires a
+manual restart when Postgres is still warming up after a fresh compose rebuild.
+
+## 2026-03-24 - Keep Off-Campus Satellite Venues Out of Automatic Event Import
+Status: accepted
+
+Context:
+The event importer can auto-create `locations` rows for specific unmatched venues
+when UNT Localist provides exact coordinates. That behavior improved import
+coverage, but several of the newly imported venues were off the main campus map
+scope: `Discovery Park Building`, `UNT CoLab`, and `Frisco Landing -- UNT at
+Frisco`.
+
+Decision:
+Re-add those venue labels to the importer ignore list. Continue auto-creating
+specific unmatched venues with coordinates only when they are within the intended
+campus import scope and not explicitly excluded as off-campus venues.
+
+Consequences:
+Main-campus event imports still benefit from automatic venue creation, but
+off-campus satellite events stay out of the app until there is a deliberate
+product decision to support them.
+
+## 2026-03-24 - Auto-Create Specific Imported Event Venues From Source Coordinates
+Status: accepted
+
+Context:
+The UNT calendar importer was skipping several valid events because the source
+venue strings were either explicitly hidden (`UNT CoLab`) or absent from the
+campus `locations` seed (`Discovery Park Building`, `Frisco Landing -- UNT at
+Frisco`, `Community Garden`). The live event pages already expose stable venue
+coordinates for those specific locations, while broad labels like `University of
+North Texas` and `Any Dining Hall` remain too ambiguous to map safely.
+
+Decision:
+Narrow the importer ignore list to truly ambiguous venue labels only. Keep name
+and POI matching as the first choice, but when a specific venue still does not
+resolve and the source page includes coordinates, auto-create a `locations` row
+for that venue and attach the imported event to it. Preserve the existing skip
+behavior for broad campus-wide labels with no precise venue.
+
+Consequences:
+The importer now brings in specific off-seed UNT venues automatically instead of
+dropping those events, and repeated imports stay stable by reusing the
+auto-created `locations` row by name. Broad or multi-location events are still
+excluded from import to avoid bad map assignments.
+
+## 2026-03-24 - Use `/map?place=` Deep Links for Event and Bookmark Map Opens
+Status: accepted
+
+Context:
+The frontend already had a backend-supported location deep-link format
+(`/map?place=<location_id>`), but the events page only tried to open the map from
+raw `lat`/`lng` fields. Real event payloads carry nested location objects with
+`location_id` plus GeoJSON coordinates, so the button stayed disabled even when
+the event was tied to a valid campus location.
+
+Decision:
+Normalize event payloads to read nested location ids and GeoJSON coordinates, and
+update the map page to resolve `place` query params through `/api/locations/:id`.
+The events page now navigates to `/map?place=<location_id>` when possible and
+falls back to `lat`/`lng` query params for demo or legacy event data.
+
+Consequences:
+`View on Map` works for real events backed by `locations`, and the same deep-link
+flow also supports bookmark/share-link navigation consistently.
+
+## 2026-03-21 - Validate Admin Event `location_id` Against `locations`
+Status: accepted
+
+Context:
+The database schema already requires `events.location_id` to reference
+`locations(location_id)`, and the UNT event importer resolves venues to that key
+before inserting rows. The admin event create/update controller, however, passed
+request payloads directly into Sequelize and only relied on the database to catch
+bad references.
+
+Decision:
+Keep the existing foreign key constraint and add application-level validation in
+the admin event write path. `POST /api/admin/events` now requires `location_id`,
+and both create/update reject unknown location ids with a clear response before
+issuing the write query.
+
+Consequences:
+Admin event writes now fail earlier with explicit messages instead of surfacing a
+generic database error for bad location references. This does not change the
+schema; it aligns controller behavior with the existing FK contract.
+
 ## 2026-03-18 - Drop Event Organizer and Store Import Metadata in `event_details`
 Status: accepted
 

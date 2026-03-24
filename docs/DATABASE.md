@@ -26,7 +26,7 @@ container starts.
 - `students`, `faculty`, `visitors`, `admin` - role-specific tables.
 - `locations` - named points with PostGIS `geometry(Point, 4326)`.
 - `points_of_interest` - POIs linked to `locations`.
-- `events` - campus events with timing and status.
+- `events` - campus events with timing and status; `location_id` is a required foreign key to `locations(location_id)`.
 - `event_details` - imported/source metadata for events (room details, source URLs, address, image, and JSON metadata).
 - `event_registrations` - user registrations for events.
 - `event_bookmarks` - user bookmarks for events.
@@ -66,3 +66,7 @@ container starts.
   `events.organizer_id` and add `event_details`.
 - There is no migration tool yet; update `database/init.sql` directly and document
   decisions in `docs/DECISIONS.md`.
+- `scripts/scrape_unt_events.py` may auto-create `locations` rows for specific UNT
+  calendar venues when the source page provides coordinates and no existing
+  location/POI match is available, except for explicitly ignored off-campus venue
+  labels.

@@ -21,6 +21,17 @@
 docker compose up --build
 ```
 
+## Full rebuild + reseed (destructive)
+```bash
+./scripts/rebuild_stack.sh
+```
+This script runs the full reset flow in one command:
+- `docker compose down --volumes --remove-orphans --rmi local`
+- `docker builder prune -af`
+- `docker compose up --build -d`
+- `./import_osm_macos.sh`
+- `python3 scripts/scrape_unt_events.py`
+
 ## Docker Compose (single service)
 ```bash
 docker compose up backend
@@ -47,6 +58,8 @@ On macOS, prefer:
 The macOS script validates source files, imports named features from both
 `planet_osm_point` and `planet_osm_polygon`, inserts missing `locations`
 idempotently, and updates/inserts `points_of_interest` with tag-based categories.
+It now waits for Postgres readiness before `osm2pgsql` import and retries
+`osm2pgsql` connection attempts automatically.
 Set `FORCE_MAP_REFRESH=1` to force a re-download and re-extract before import.
 Default extraction box is tuned for UNT main campus:
 `-97.165,33.198,-97.142,33.217`.
@@ -54,6 +67,10 @@ Override with `DENTON_COBOX=<min_lon,min_lat,max_lon,max_lat>` if needed.
 If your machine cannot pull the default osmium image, override it:
 `OSMIUM_IMAGE=<image> ./import_osm_macos.sh`
 Current default osmium image: `iboates/osmium:latest`.
+Optional retry tuning:
+- `DB_READY_MAX_ATTEMPTS` (default `60`)
+- `DB_READY_RETRY_DELAY_SEC` (default `2`)
+- `OSM2PGSQL_RETRIES` (default `3`)
 
 ## Seed demo locations (non-destructive)
 ```bash
@@ -76,12 +93,16 @@ Useful flags:
 
 Behavior:
 - skips widget events whose location is `UNIVERSITY OF NORTH TEXAS` or `ALL DINING HALLS`
+- also skips off-campus venue labels such as `DISCOVERY PARK BUILDING`, `UNT COLAB`,
+  and `FRISCO LANDING -- UNT AT FRISCO`
 - matches against both `locations.name` and `points_of_interest.name`
-- also skips `DISCOVERY PARK BUILDING`, `UNT COLAB`, and `FRISCO LANDING -- UNT AT FRISCO`
 - applies explicit venue overrides such as `University Union South Lawn -> University Union`
   , `Library Mall -> Willis Library`, and `14C - Sagemore Lawn C -> Sage Hall`
 - collapses room-style venue strings to the parent building when possible
-- never inserts new `locations`; unresolved venues are skipped
+- auto-creates a `locations` row for specific unmatched venues when the source page
+  includes venue coordinates
+- still skips broad/ambiguous venue labels such as `UNIVERSITY OF NORTH TEXAS` and
+  `ANY DINING HALL`, plus explicitly ignored off-campus venues
 - stores source metadata in `event_details` instead of inflating `events.description`
 - writes room/source venue search tags onto imported events
 - applies the generated SQL to the configured Postgres database by default

@@ -161,6 +161,7 @@ EXPLICIT_LOCATION_OVERRIDES = {
     "SAGEMORE LAWN C": "Sage Hall",
     "SAGEMORE LAWN": "Sage Hall",
 }
+AUTO_CREATED_LOCATION_DESCRIPTION = "Auto-created from UNT calendar event import."
 
 
 @dataclass(frozen=True)
@@ -548,6 +549,10 @@ def first_present(*values: str) -> str:
         if clean_text(value):
             return clean_text(value)
     return ""
+
+
+def source_location_name(event: ScrapedEvent) -> str:
+    return clean_text(first_present(event.location_name, event.widget_location_name))
 
 
 def load_database_url(cli_value: str) -> str:
@@ -1049,7 +1054,7 @@ def build_event_tags(event: ScrapedEvent) -> List[str]:
     tag_names.extend(event.metadata.get("Tags", []))
     if event.room_hint:
         tag_names.append(f"room:{event.room_hint}")
-    source_location = clean_text(first_present(event.location_name, event.widget_location_name))
+    source_location = source_location_name(event)
     if source_location:
         tag_names.append(f"source-location:{source_location}")
     for value in event.metadata.get("Audience", []):
@@ -1078,18 +1083,69 @@ def build_event_tags(event: ScrapedEvent) -> List[str]:
     return sorted(dedupe_preserving_order(truncated), key=str.lower)
 
 
+def can_auto_create_location(event: ScrapedEvent) -> bool:
+    return (
+        bool(source_location_name(event))
+        and event.latitude is not None
+        and event.longitude is not None
+    )
+
+
 def render_location_ctes(event: ScrapedEvent) -> List[str]:
-    if event.match is None:
+    if event.match is not None:
+        return [
+            "\n".join(
+                [
+                    "resolved_location AS (",
+                    f"    SELECT {sql_literal(event.match.location_id)}::uuid AS location_id",
+                    ")",
+                ]
+            )
+        ]
+
+    if not can_auto_create_location(event):
         raise ValueError(f"Cannot render event SQL without a resolved location for {event.title}")
 
+    location_name = source_location_name(event)
     return [
         "\n".join(
             [
-                "resolved_location AS (",
-                f"    SELECT {sql_literal(event.match.location_id)}::uuid AS location_id",
+                "existing_import_location AS (",
+                "    SELECT location_id",
+                "    FROM locations",
+                f"    WHERE lower(name) = lower({sql_literal(location_name)})",
+                "    LIMIT 1",
                 ")",
             ]
-        )
+        ),
+        "\n".join(
+            [
+                "inserted_import_location AS (",
+                "    INSERT INTO locations (name, description, coordinates)",
+                "    SELECT",
+                f"        {sql_literal(location_name)},",
+                f"        {sql_literal(AUTO_CREATED_LOCATION_DESCRIPTION)},",
+                "        ST_SetSRID(",
+                f"            ST_MakePoint({event.longitude:.6f}, {event.latitude:.6f}),",
+                "            4326",
+                "        )",
+                "    WHERE NOT EXISTS (",
+                "        SELECT 1 FROM existing_import_location",
+                "    )",
+                "    RETURNING location_id",
+                ")",
+            ]
+        ),
+        "\n".join(
+            [
+                "resolved_location AS (",
+                "    SELECT location_id FROM existing_import_location",
+                "    UNION ALL",
+                "    SELECT location_id FROM inserted_import_location",
+                "    LIMIT 1",
+                ")",
+            ]
+        ),
     ]
 
 
@@ -1097,7 +1153,7 @@ def render_event_sql(event: ScrapedEvent) -> str:
     description = build_event_description(event)
     tags = build_event_tags(event)
     cte_blocks = render_location_ctes(event)
-    source_location_name = clean_text(first_present(event.location_name, event.widget_location_name))
+    event_source_location_name = source_location_name(event)
 
     statements = [
         f"-- {event.title}",
@@ -1106,6 +1162,12 @@ def render_event_sql(event: ScrapedEvent) -> str:
     if event.match is not None:
         statements.append(
             f"-- Location match: {event.location_name} -> {event.match.location_name} ({event.match.location_id})"
+        )
+        if event.match_reason:
+            statements.append(f"-- Match reason: {event.match_reason}")
+    elif can_auto_create_location(event):
+        statements.append(
+            f"-- Auto-created location: {event_source_location_name} ({event.latitude:.6f}, {event.longitude:.6f})"
         )
         if event.match_reason:
             statements.append(f"-- Match reason: {event.match_reason}")
@@ -1208,7 +1270,7 @@ def render_event_sql(event: ScrapedEvent) -> str:
                 "    SELECT",
                 "        (SELECT event_id FROM resolved_event),",
                 f"        {sql_text_or_null(event.source_url)},",
-                f"        {sql_text_or_null(source_location_name)},",
+                f"        {sql_text_or_null(event_source_location_name)},",
                 f"        {sql_text_or_null(event.location_url)},",
                 f"        {sql_text_or_null(event.room_hint)},",
                 f"        {sql_text_or_null(event.address)},",
@@ -1483,12 +1545,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         match, reason, room_hint = match_event_location(scraped_event, candidates)
         scraped_event.room_hint = room_hint
         if match is None:
+            if can_auto_create_location(scraped_event):
+                scraped_event.match_reason = "auto-created location from source coordinates"
+                imported_events.append(scraped_event)
+                continue
             skipped_events.append(
                 SkippedEvent(
                     title=scraped_event.title,
-                    reason=f"unmatched location: {first_present(scraped_event.location_name, scraped_event.widget_location_name)}",
+                    reason=f"unmatched location: {source_location_name(scraped_event)}",
                     source_url=scraped_event.source_url,
-                    source_location=first_present(scraped_event.location_name, scraped_event.widget_location_name),
+                    source_location=source_location_name(scraped_event),
                     address=scraped_event.address,
                     room_hint=scraped_event.room_hint,
                     priority="MEDIUM",
