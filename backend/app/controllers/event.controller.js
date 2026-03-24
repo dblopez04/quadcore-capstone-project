@@ -118,6 +118,14 @@ const buildEventResponse = (event, sources) => {
     return response;
 };
 
+const getIncludedEvent = (record) => (
+    record?.Event
+    || record?.event
+    || record?.dataValues?.Event
+    || record?.dataValues?.event
+    || null
+);
+
 const buildEventInclude = (tagNames) => {
     const include = [
         { model: Location },
@@ -226,7 +234,10 @@ exports.getBookmarkedEvents = async (req, res) => {
             distinct: true
         });
 
-        const events = bookmarks.map((bookmark) => buildEventResponse(bookmark.Event));
+        const events = bookmarks
+            .map((bookmark) => getIncludedEvent(bookmark))
+            .filter(Boolean)
+            .map((event) => buildEventResponse(event));
 
         res.send({ events });
     } catch (err) {
@@ -265,7 +276,8 @@ exports.exportBookmarkedEventsIcs = async (req, res) => {
         const stamp = formatIcsDate(new Date());
 
         bookmarks.forEach((bookmark) => {
-            const event = bookmark.Event;
+            const event = getIncludedEvent(bookmark);
+            if (!event) return;
             const locationName = event.Location ? event.Location.name : "";
 
             lines.push("BEGIN:VEVENT");
@@ -448,7 +460,10 @@ exports.getRegistrations = async (req, res) => {
             distinct: true
         });
 
-        const events = registrations.map((registration) => buildEventResponse(registration.Event));
+        const events = registrations
+            .map((registration) => getIncludedEvent(registration))
+            .filter(Boolean)
+            .map((event) => buildEventResponse(event));
 
         res.send({ events });
     } catch (err) {
@@ -484,7 +499,7 @@ exports.getConflicts = async (req, res) => {
             });
 
             bookmarks.forEach((bookmark) => {
-                const event = bookmark.Event;
+                const event = getIncludedEvent(bookmark);
                 if (!event) return;
                 const existing = eventMap.get(event.event_id);
                 if (existing) {
@@ -512,7 +527,7 @@ exports.getConflicts = async (req, res) => {
             });
 
             registrations.forEach((registration) => {
-                const event = registration.Event;
+                const event = getIncludedEvent(registration);
                 if (!event) return;
                 const existing = eventMap.get(event.event_id);
                 if (existing) {
@@ -676,12 +691,19 @@ exports.getReminders = async (req, res) => {
             order: [["remind_at", "ASC"]]
         });
 
-        const response = reminders.map((reminder) => ({
-            event_reminder_id: reminder.event_reminder_id,
-            remind_at: reminder.remind_at,
-            channel: reminder.channel,
-            event: buildEventResponse(reminder.Event)
-        }));
+        const response = reminders
+            .map((reminder) => {
+                const event = getIncludedEvent(reminder);
+                if (!event) return null;
+
+                return {
+                    event_reminder_id: reminder.event_reminder_id,
+                    remind_at: reminder.remind_at,
+                    channel: reminder.channel,
+                    event: buildEventResponse(event)
+                };
+            })
+            .filter(Boolean);
 
         res.send({ reminders: response });
     } catch (err) {
