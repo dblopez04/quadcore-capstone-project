@@ -367,14 +367,14 @@ export default function Events() {
 
                                 <p style={{ margin: "6px 0" }}>
                                     <strong>{ev.category}</strong>
-                                    {ev.locationName ? ` • ${ev.locationName}` : ""}
+                                    {ev.locationName ? ` - ${ev.locationName}` : ""}
                                 </p>
 
                                 {ev.description && <p style={{ margin: "6px 0", color: "#444" }}>{ev.description}</p>}
 
                                 <p style={{ margin: "6px 0", fontSize: "14px", color: "#666" }}>
                                     {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                    {ev.end ? ` – ${new Date(ev.end).toLocaleString()}` : ""}
+                                    {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
                                 </p>
 
 

@@ -274,6 +274,161 @@ export default function Admin() {
                 Welcome, {user?.first_name || "Admin"}.
             </p>
 
+            {message && (
+                <div
+                    style={{
+                        marginBottom: 16,
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        background: message.toLowerCase().includes("error")
+                            ? "#fdecec"
+                            : "#edf7ed",
+                        border: message.toLowerCase().includes("error")
+                            ? "1px solid #f5c2c7"
+                            : "1px solid #b7dfb9",
+                        color: message.toLowerCase().includes("error")
+                            ? "#842029"
+                            : "#1e4620",
+                        fontSize: 14,
+                    }}
+                >
+                    {message}
+                </div>
+            )}
+
+            <div
+                style={{
+                    background: "#fff",
+                    border: "1px solid #e5e5e5",
+                    borderRadius: 16,
+                    padding: 20,
+                    boxShadow: "0 6px 16px rgba(0,0,0,0.04)",
+                    marginBottom: 24,
+                }}
+            >
+                <h2 style={{ marginTop: 0, marginBottom: 12 }}>Manage Events</h2>
+
+                {loadingEvents ? (
+                    <p>Loading admin events...</p>
+                ) : adminEvents.length === 0 ? (
+                    <p>No events found.</p>
+                ) : (
+                    <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+                        {adminEvents.map((ev) => (
+                            <div
+                                key={ev.id}
+                                style={{
+                                    border: "1px solid #e5e5e5",
+                                    borderRadius: 16,
+                                    padding: 16,
+                                    background: "#fff",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                                    transition: "transform 0.15s ease, box-shadow 0.15s ease",
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = "translateY(-2px)";
+                                    e.currentTarget.style.boxShadow = "0 8px 18px rgba(0,0,0,0.08)";
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = "translateY(0)";
+                                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05)";
+                                }}
+                            >
+                                <h3 style={{ margin: 0, marginBottom: 6 }}>{ev.title}</h3>
+
+                                <p style={{ margin: "6px 0", color: "#444", lineHeight: 1.5 }}>
+                                    <strong>{ev.eventType}</strong>
+                                    {ev.description ? ` - ${ev.description}` : ""}
+                                </p>
+
+                                <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
+                                    Location: {allLocations.find((loc) => loc.id === ev.locationId)?.name || "Unknown location"}
+                                </p>
+
+                                <p style={{ margin: "6px 0", fontSize: 14, color: "#666" }}>
+                                    {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
+                                    {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                </p>
+
+                                <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
+                                    Status: {ev.status} | Capacity: {ev.capacity || "N/A"}
+                                </p>
+
+                                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                                    <button
+                                        type="button"
+                                        disabled={editingEventId === ev.id}
+                                        onClick={() => {
+                                            setEditingEventId(ev.id);
+
+                                            const matchedLocation = allLocations.find(
+                                                (loc) => loc.id === ev.locationId
+                                            );
+
+                                            setLocationPicked(true);
+                                            setLocationResults([]);
+                                            setLocationQuery(matchedLocation?.name || "");
+
+                                            setForm({
+                                                title: ev.title,
+                                                description: ev.description || "",
+                                                location_id: ev.locationId,
+                                                start_date_time: ev.start ? ev.start.slice(0, 16) : "",
+                                                end_date_time: ev.end ? ev.end.slice(0, 16) : "",
+                                                event_type: ev.eventType,
+                                                capacity: ev.capacity || "",
+                                            });
+                                        }}
+                                        style={{
+                                            flex: 1,
+                                            padding: "10px 12px",
+                                            borderRadius: 10,
+                                            background: "#1d4ed8",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: editingEventId === ev.id ? "not-allowed" : "pointer",
+                                            opacity: editingEventId === ev.id ? 0.7 : 1,
+                                        }}
+                                    >
+                                        Edit
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDelete(ev.id)}
+                                        disabled={deletingEventId === ev.id || editingEventId === ev.id}
+                                        style={{
+                                            flex: 1,
+                                            padding: "10px 12px",
+                                            borderRadius: 10,
+                                            background: "#b42318",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor:
+                                                deletingEventId === ev.id || editingEventId === ev.id
+                                                    ? "not-allowed"
+                                                    : "pointer",
+                                            opacity:
+                                                deletingEventId === ev.id || editingEventId === ev.id
+                                                    ? 0.7
+                                                    : 1,
+                                        }}
+                                    >
+                                        {deletingEventId === ev.id
+                                            ? "Deleting..."
+                                            : editingEventId === ev.id
+                                                ? "Editing..."
+                                                : "Delete"}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
             <div
                 style={{
                     background: "#fff",
@@ -302,7 +457,7 @@ export default function Admin() {
                         maxWidth: 560,
                         display: "flex",
                         flexDirection: "column",
-                        gap: 12
+                        gap: 12,
                     }}
                 >
                     <input
@@ -336,7 +491,7 @@ export default function Admin() {
                                 setLocationQuery(e.target.value);
                                 setForm((prev) => ({
                                     ...prev,
-                                    location_id: ""
+                                    location_id: "",
                                 }));
                             }}
                             onFocus={handleFieldFocus}
@@ -370,7 +525,7 @@ export default function Admin() {
                                     zIndex: 20,
                                     maxHeight: 220,
                                     overflowY: "auto",
-                                    boxShadow: "0 8px 18px rgba(0,0,0,0.08)"
+                                    boxShadow: "0 8px 18px rgba(0,0,0,0.08)",
                                 }}
                             >
                                 {locationResults.map((loc) => (
@@ -498,160 +653,6 @@ export default function Admin() {
                         )}
                     </div>
                 </form>
-            </div>
-
-            {message && (
-                <div
-                    style={{
-                        marginBottom: 16,
-                        padding: "10px 12px",
-                        borderRadius: 10,
-                        background: message.toLowerCase().includes("error")
-                            ? "#fdecec"
-                            : "#edf7ed",
-                        border: message.toLowerCase().includes("error")
-                            ? "1px solid #f5c2c7"
-                            : "1px solid #b7dfb9",
-                        color: message.toLowerCase().includes("error")
-                            ? "#842029"
-                            : "#1e4620",
-                        fontSize: 14,
-                    }}
-                >
-                    {message}
-                </div>
-            )}
-
-            <div
-                style={{
-                    background: "#fff",
-                    border: "1px solid #e5e5e5",
-                    borderRadius: 16,
-                    padding: 20,
-                    boxShadow: "0 6px 16px rgba(0,0,0,0.04)",
-                }}
-            >
-                <h2 style={{ marginTop: 0, marginBottom: 12 }}>Manage Events</h2>
-
-                {loadingEvents ? (
-                    <p>Loading admin events...</p>
-                ) : adminEvents.length === 0 ? (
-                    <p>No events found.</p>
-                ) : (
-                    <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-                        {adminEvents.map((ev) => (
-                            <div
-                                key={ev.id}
-                                style={{
-                                    border: "1px solid #e5e5e5",
-                                    borderRadius: 16,
-                                    padding: 16,
-                                    background: "#fff",
-                                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                                    transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.transform = "translateY(-2px)";
-                                    e.currentTarget.style.boxShadow = "0 8px 18px rgba(0,0,0,0.08)";
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.transform = "translateY(0)";
-                                    e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05)";
-                                }}
-                            >
-                                <h3 style={{ margin: 0, marginBottom: 6 }}>{ev.title}</h3>
-
-                                <p style={{ margin: "6px 0", color: "#444", lineHeight: 1.5 }}>
-                                    <strong>{ev.eventType}</strong>
-                                    {ev.description ? ` • ${ev.description}` : ""}
-                                </p>
-
-                                <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
-                                    Location: {allLocations.find((loc) => loc.id === ev.locationId)?.name || "Unknown location"}
-                                </p>
-
-                                <p style={{ margin: "6px 0", fontSize: 14, color: "#666" }}>
-                                    {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                    {ev.end ? ` – ${new Date(ev.end).toLocaleString()}` : ""}
-                                </p>
-
-                                <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
-                                    Status: {ev.status} | Capacity: {ev.capacity || "N/A"}
-                                </p>
-
-                                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                                    <button
-                                        type="button"
-                                        disabled={editingEventId === ev.id}
-                                        onClick={() => {
-                                            setEditingEventId(ev.id);
-
-                                            const matchedLocation = allLocations.find(
-                                                (loc) => loc.id === ev.locationId
-                                            );
-
-                                            setLocationPicked(true);
-                                            setLocationResults([]);
-                                            setLocationQuery(matchedLocation?.name || "");
-
-                                            setForm({
-                                                title: ev.title,
-                                                description: ev.description || "",
-                                                location_id: ev.locationId,
-                                                start_date_time: ev.start ? ev.start.slice(0, 16) : "",
-                                                end_date_time: ev.end ? ev.end.slice(0, 16) : "",
-                                                event_type: ev.eventType,
-                                                capacity: ev.capacity || ""
-                                            });
-                                        }}
-                                        style={{
-                                            flex: 1,
-                                            padding: "10px 12px",
-                                            borderRadius: 10,
-                                            background: "#1d4ed8",
-                                            color: "white",
-                                            border: "none",
-                                            fontWeight: 600,
-                                            cursor: editingEventId === ev.id ? "not-allowed" : "pointer",
-                                            opacity: editingEventId === ev.id ? 0.7 : 1,
-                                        }}
-                                    >
-                                        Edit
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => handleDelete(ev.id)}
-                                        disabled={deletingEventId === ev.id || editingEventId === ev.id}
-                                        style={{
-                                            flex: 1,
-                                            padding: "10px 12px",
-                                            borderRadius: 10,
-                                            background: "#b42318",
-                                            color: "white",
-                                            border: "none",
-                                            fontWeight: 600,
-                                            cursor:
-                                                deletingEventId === ev.id || editingEventId === ev.id
-                                                    ? "not-allowed"
-                                                    : "pointer",
-                                            opacity:
-                                                deletingEventId === ev.id || editingEventId === ev.id
-                                                    ? 0.7
-                                                    : 1,
-                                        }}
-                                    >
-                                        {deletingEventId === ev.id
-                                            ? "Deleting..."
-                                            : editingEventId === ev.id
-                                                ? "Editing..."
-                                                : "Delete"}
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
             </div>
         </div>
     );
