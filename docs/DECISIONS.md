@@ -18,6 +18,27 @@ Decision:
 
 Consequences:
 
+## 2026-03-24 - Add Proxmox Deployment Stack with Caddy + Cloudflare Tunnel
+Status: accepted
+
+Context:
+The repository had a development compose stack but did not include committed
+deployment assets for a Proxmox-hosted environment that keeps services private
+behind Cloudflare Tunnel. Cookie defaults were also development-oriented.
+
+Decision:
+Add a deployment compose file (`compose.proxmox.yaml`) that runs backend, db,
+osrm, caddy, and cloudflared on an internal Docker network with no direct
+service port publishing. Add `deploy/Caddyfile` and `deploy/Dockerfile.caddy`
+for same-origin frontend + API routing. Add backend cookie configuration for
+proxy-aware secure defaults (`NODE_ENV`, `COOKIE_*`) and trust proxy controls
+(`TRUST_PROXY_HOPS`), plus a `/healthz` endpoint.
+
+Consequences:
+The app can be deployed on Proxmox with a single hostname through Cloudflare
+Tunnel and same-origin browser traffic, while keeping DB/OSRM/API internals off
+the public network and hardening auth cookie behavior in production.
+
 ## 2026-03-24 - Add One-Command Rebuild Flow and Backend DB Startup Retries
 Status: accepted
 

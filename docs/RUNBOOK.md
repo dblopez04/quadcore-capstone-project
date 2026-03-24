@@ -21,6 +21,19 @@
 docker compose up --build
 ```
 
+## Docker Compose (Proxmox deployment stack)
+```bash
+docker compose -f compose.proxmox.yaml up -d --build
+```
+Services:
+- `cloudflared` forwards tunnel traffic to `caddy`
+- `caddy` serves frontend and proxies `/api/*` and `/docs/*` to backend
+- backend, db, and osrm stay on internal Docker networking only
+
+Production verification endpoints (through your public hostname):
+- `/healthz`
+- `/docs`
+
 ## Full rebuild + reseed (destructive)
 ```bash
 ./scripts/rebuild_stack.sh

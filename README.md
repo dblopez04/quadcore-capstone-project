@@ -66,4 +66,5 @@ Attached [here](example_transcript_antigravity.md) is a transcript of a conversa
 ### Resources
 - `AGENTS.md` - Rules and doc update expectations
 - `docs/README.md` - Documentation index
+- `docs/DEPLOYMENT.md` - Proxmox + Cloudflare Tunnel deployment guide
 - `docs/feature-plan/` - Implementation plans for new features
