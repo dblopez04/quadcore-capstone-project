@@ -8,6 +8,7 @@
 - `docs/DATABASE.md` - schema summary and PostGIS notes
 - `docs/MAP.md` - OSRM data and map pipeline notes
 - `docs/RUNBOOK.md` - common commands, ports, and local dev notes
+- `docs/DEPLOYMENT.md` - Proxmox deployment and pull-based auto-update flow
 - `docs/DECISIONS.md` - lightweight decision log
 - `docs/feature-plan/` - implementation plans for new features (see below)
 

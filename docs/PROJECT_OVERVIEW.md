@@ -38,6 +38,9 @@ See `docs/REQUIREMENTS.md` for status.
 - `database/` - Postgres/PostGIS schema
 - `osrm-data/` - campus OSM extract + OSRM artifacts
 - `compose.yaml` - dev orchestration
+- `compose.proxmox.yaml` - Proxmox deployment orchestration
+- `compose.proxmox.images.yaml` - registry image override for pull-based deploys
+- `.github/workflows/deploy-prod.yml` - production image build workflow
 - `requirements.md` - project requirements (source of truth)
 
 ## Service URLs (local)

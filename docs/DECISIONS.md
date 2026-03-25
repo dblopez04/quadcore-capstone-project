@@ -18,6 +18,25 @@ Decision:
 
 Consequences:
 
+## 2026-03-24 - Switch Production Deploys to Pull-Based Host Rollouts
+Status: accepted
+
+Context:
+The production workflow attempted SSH/SCP deploys from GitHub-hosted runners.
+The deployment host does not expose inbound SSH, so remote push-based deployment
+is brittle and requires extra tunnel/access setup.
+
+Decision:
+Change `.github/workflows/deploy-prod.yml` to build and publish images only on
+`production` pushes. Add `scripts/prod_pull_deploy.sh` plus systemd unit
+templates so the host periodically pulls `prod-latest` images from GHCR and
+applies `docker compose ... up -d --no-build` locally.
+
+Consequences:
+Deployments no longer require inbound SSH access from GitHub. Image publication
+and host rollout are decoupled, and production updates happen automatically as
+the timer polls for new image tags.
+
 ## 2026-03-24 - Add One-Command Rebuild Flow and Backend DB Startup Retries
 Status: accepted
 

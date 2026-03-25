@@ -21,9 +21,57 @@
 docker compose up --build
 ```
 
+## Docker Compose (Proxmox deployment stack)
+```bash
+docker compose -f compose.proxmox.yaml up -d --build
+```
+Services:
+- `cloudflared` forwards tunnel traffic to `caddy`
+- `caddy` serves frontend and proxies `/api/*` and `/docs/*` to backend
+- backend, db, and osrm stay on internal Docker networking only
+
+Production verification endpoints (through your public hostname):
+- `/healthz`
+- `/docs`
+
+## Docker Compose (Proxmox registry-based deploy)
+Use this for pull-based deploys:
+```bash
+BACKEND_IMAGE=ghcr.io/<owner>/<repo>-backend:prod-latest \
+CADDY_IMAGE=ghcr.io/<owner>/<repo>-caddy:prod-latest \
+docker compose -f compose.proxmox.yaml -f compose.proxmox.images.yaml up -d --no-build backend caddy cloudflared
+```
+
+## CI/CD (build-only on `production`)
+- Workflow: `.github/workflows/deploy-prod.yml`
+- Trigger: push to `production` (and manual `workflow_dispatch`)
+- Output: pushes backend and caddy images to GHCR
+- Host rollout: handled by `scripts/prod_pull_deploy.sh` + systemd timer on server
+
+## Pull-based auto deploy (server)
+One-time setup:
+```bash
+cp .env.deploy.example .env.deploy
+sudo cp deploy/systemd/quadcore-prod-pull-deploy.service /etc/systemd/system/
+sudo cp deploy/systemd/quadcore-prod-pull-deploy.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now quadcore-prod-pull-deploy.timer
+```
+
+Manual run:
+```bash
+sudo systemctl start quadcore-prod-pull-deploy.service
+```
+
+Timer/log checks:
+```bash
+systemctl list-timers quadcore-prod-pull-deploy.timer
+journalctl -u quadcore-prod-pull-deploy.service -n 100 --no-pager
+```
+
 ## Full rebuild + reseed (destructive)
 ```bash
-./scripts/rebuild_stack.sh
+./scripts/rebuild.sh
 ```
 This script runs the full reset flow in one command:
 - `docker compose down --volumes --remove-orphans --rmi local`
