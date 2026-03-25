@@ -49,12 +49,16 @@ startup can race Postgres initialization and exit on the first `ECONNREFUSED`,
 which requires a manual backend restart.
 
 Decision:
-Add `scripts/rebuild_stack.sh` to automate destructive rebuild + reseed flow in
-one command, including compose teardown, build cache prune, `compose up --build`,
-`import_osm_macos.sh`, and `scripts/scrape_unt_events.py`. Update backend startup
-to retry database authentication with configurable retry count and delay before
-failing process startup. Update `import_osm_macos.sh` to wait for database
-readiness and retry `osm2pgsql` imports to handle transient startup races.
+Add `scripts/rebuild.sh` to automate destructive rebuild + reseed flow in one
+command, including compose teardown, build cache prune, `compose up --build`,
+`import_osm_macos.sh`, and `scripts/scrape_unt_events.py`. Extend the script
+with `--prod` support so Proxmox deployments can rebuild against
+`compose.proxmox.yaml`, with event scraping disabled by default in prod mode.
+Update backend startup to retry database authentication with configurable retry
+count and delay before failing process startup. Update `import_osm_macos.sh` to
+wait for database readiness, retry `osm2pgsql` imports, and resolve DB
+credentials from the running compose service so special characters in `.env`
+values do not break shell parsing.
 
 Consequences:
 Rebuilds are consistent and faster to run, and backend no longer requires a

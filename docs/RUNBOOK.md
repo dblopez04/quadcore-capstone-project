@@ -36,7 +36,7 @@ Production verification endpoints (through your public hostname):
 
 ## Full rebuild + reseed (destructive)
 ```bash
-./scripts/rebuild_stack.sh
+./scripts/rebuild.sh --dev
 ```
 This script runs the full reset flow in one command:
 - `docker compose down --volumes --remove-orphans --rmi local`
@@ -44,6 +44,15 @@ This script runs the full reset flow in one command:
 - `docker compose up --build -d`
 - `./import_osm_macos.sh`
 - `python3 scripts/scrape_unt_events.py`
+
+## Full rebuild (destructive, Proxmox/prod)
+```bash
+./scripts/rebuild.sh --prod
+```
+Default prod behavior:
+- uses `compose.proxmox.yaml`
+- runs map import
+- skips event scrape unless `--events` is provided
 
 ## Docker Compose (single service)
 ```bash
