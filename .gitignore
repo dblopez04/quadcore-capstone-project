@@ -1,5 +1,6 @@
 .DS_STORE
 .env
+.env.deploy
 .vscode/settings.json
 .vs/
 *.pbf

@@ -1,0 +1,8 @@
+services:
+  backend:
+    image: ${BACKEND_IMAGE:?set BACKEND_IMAGE}
+    pull_policy: always
+
+  caddy:
+    image: ${CADDY_IMAGE:?set CADDY_IMAGE}
+    pull_policy: always
