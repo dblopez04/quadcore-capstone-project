@@ -6,12 +6,23 @@
 :80 {
     encode gzip zstd
 
-    @api path /api/* /docs /docs/* /healthz
-    reverse_proxy @api backend:4000
+    handle /api/* {
+        reverse_proxy backend:4000
+    }
 
-    root * /srv/frontend
-    try_files {path} /index.html
-    file_server
+    handle /docs* {
+        reverse_proxy backend:4000
+    }
+
+    handle /healthz {
+        reverse_proxy backend:4000
+    }
+
+    handle {
+        root * /srv/frontend
+        try_files {path} /index.html
+        file_server
+    }
 
     header {
         X-Content-Type-Options nosniff
