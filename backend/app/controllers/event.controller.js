@@ -10,6 +10,7 @@ const EventTagAssignment = db.EventTagAssignment;
 const EventReminder = db.EventReminder;
 const Location = db.Location;
 const User = db.User;
+const { sendEventRegistrationEmail } = require("../services/notifications/emailService");
 
 const REMINDER_CHANNELS = new Set(["IN_APP", "EMAIL"]);
 
@@ -382,6 +383,20 @@ exports.registerForEvent = async (req, res) => {
 
         await event.increment("registered_count", { by: 1, transaction });
         await transaction.commit();
+
+        const user = await User.findByPk(req.user_id);
+        if (user && user.email && process.env.RESEND_API_KEY && process.env.EMAIL_FROM) {
+            const eventForEmail = await Event.findByPk(eventId, {
+                include: [{ model: Location }]
+            });
+
+            sendEventRegistrationEmail({
+                to: user.email,
+                event: eventForEmail || event
+            }).catch((error) => {
+                console.error("Failed to send registration email:", error.message || error);
+            });
+        }
 
         return res.status(201).send({
             message: "Registered for event.",
