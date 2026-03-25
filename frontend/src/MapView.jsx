@@ -1,6 +1,20 @@
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet'
+import { useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import UserLocationMarker from "./components/UserLocationMarker";
 
+function MapCenterController({ position }) {
+    const map = useMap();
+
+    useEffect(() => {
+        if (!Array.isArray(position) || position.length < 2) {
+            return;
+        }
+
+        map.setView(position, map.getZoom(), { animate: false });
+    }, [map, position]);
+
+    return null;
+}
 
 export default function MapView({ target, route, onUserLocation }) {
 
@@ -19,7 +33,7 @@ export default function MapView({ target, route, onUserLocation }) {
             : null;
 
 
-    // Full viewport so it’s visible
+    // Full viewport so it's visible
     return (
         <div style={{ height: "calc(100vh - 60px)", width: "100%", display: "block"}}>
             <MapContainer
@@ -31,6 +45,7 @@ export default function MapView({ target, route, onUserLocation }) {
                     attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                <MapCenterController position={position} />
                 {routePositions && <Polyline positions={routePositions} />}
 
 

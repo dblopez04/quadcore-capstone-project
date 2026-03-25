@@ -19,6 +19,11 @@
 
 ## Environment Variables
 - `DATABASE_URL` - Postgres connection string (used by Sequelize).
+- `PORT` - optional API bind port (defaults to `4000`).
+- `DB_CONNECT_MAX_ATTEMPTS` - startup retries for initial DB connection
+  (defaults to `20`).
+- `DB_CONNECT_RETRY_DELAY_MS` - delay between DB startup retries in milliseconds
+  (defaults to `3000`).
 - `JWT_SECRET` - access token secret.
 - `JWT_REFRESH_SECRET` - refresh token secret.
 - `OSRM_URL` - OSRM base URL (defined in `compose.yaml`).
@@ -133,8 +138,8 @@ All admin routes are prefixed with `/api/admin` and protected by `requireAdmin` 
 
 **Events:**
 - `GET /api/admin/events` - list all events (optional `?status=` filter)
-- `POST /api/admin/events` - create an event
-- `PUT /api/admin/events/:id` - update an event
+- `POST /api/admin/events` - create an event; `location_id` must reference an existing row in `locations`
+- `PUT /api/admin/events/:id` - update an event; replacement `location_id` values are validated against `locations`
 - `DELETE /api/admin/events/:id` - delete an event
 
 **Reports:**
@@ -180,6 +185,7 @@ npm run test:coverage # run tests with coverage report
 ```
 
 ### Test Files
+- `backend/tests/admin.event-location.test.js` - validates admin event create/update behavior around `location_id` references.
 - `backend/tests/admin.rbac.test.js` - owner/admin delegation safety and prior-role restoration tests.
 - `backend/tests/auth.register-rbac.test.js` - self-registration role restriction tests.
 - `backend/tests/auth.middleware.owner.test.js` - `requireOwner` middleware behavior, including bootstrap mode.

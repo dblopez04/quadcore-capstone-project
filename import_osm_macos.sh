@@ -30,8 +30,9 @@ DB_PASS="$POSTGRES_PASSWORD"
 if [ -n "${OSM2PGSQL_IMAGE:-}" ]; then
     OSM2PGSQL_IMAGES=("$OSM2PGSQL_IMAGE")
 else
-    OSM2PGSQL_IMAGES=("osm2pgsql/osm2pgsql:latest" "iboates/osm2pgsql:latest")
+    OSM2PGSQL_IMAGES=("iboates/osm2pgsql:latest")
 fi
+OSM2PGSQL_RETRIES="${OSM2PGSQL_RETRIES:-3}"
 
 if [ -n "${OSMIUM_IMAGE:-}" ]; then
     OSMIUM_IMAGES=("$OSMIUM_IMAGE")
@@ -76,6 +77,26 @@ extract_map_with_osmium() {
     return 1
 }
 
+wait_for_database() {
+    local max_attempts="${DB_READY_MAX_ATTEMPTS:-60}"
+    local delay_seconds="${DB_READY_RETRY_DELAY_SEC:-2}"
+
+    echo "Waiting for database readiness..."
+    for attempt in $(seq 1 "$max_attempts"); do
+        if docker compose exec -T "$DB_SERVICE" pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
+            echo "Database is ready."
+            return 0
+        fi
+
+        if [ "$attempt" -eq "$max_attempts" ]; then
+            echo "Database did not become ready after ${max_attempts} attempts."
+            return 1
+        fi
+
+        sleep "$delay_seconds"
+    done
+}
+
 if [ "$FORCE_MAP_REFRESH" = "1" ] || ! is_valid_osm_pbf "$OSM_FILE_TEXAS"; then
     echo "Downloading Texas data from Geofabrik"
     rm -f "$OSM_FILE_TEXAS"
@@ -98,6 +119,7 @@ fi
 
 echo "Ensuring database service is running..."
 docker compose up -d "$DB_SERVICE"
+wait_for_database
 
 DB_CONTAINER_ID="$(docker compose ps -q "$DB_SERVICE")"
 if [ -z "$DB_CONTAINER_ID" ]; then
@@ -117,23 +139,29 @@ docker compose exec -T "$DB_SERVICE" psql -U "$DB_USER" -d "$DB_NAME" -c "CREATE
 echo "Importing into PostGIS db..."
 imported=0
 for image in "${OSM2PGSQL_IMAGES[@]}"; do
-    echo "Trying osm2pgsql image: $image"
-    if docker run --rm \
-        --network "$NETWORK" \
-        -e PGPASSWORD="$DB_PASS" \
-        -v "$(pwd)/$OSM_DIR":/data \
-        "$image" \
-        -H "$DB_HOST" \
-        -U "$DB_USER" \
-        -d "$DB_NAME" \
-        --create --slim \
-        -G --hstore \
-        --latlong \
-        --cache 2000 \
-        /data/map.osm; then
-        imported=1
-        break
-    fi
+    for attempt in $(seq 1 "$OSM2PGSQL_RETRIES"); do
+        echo "Trying osm2pgsql image: $image (attempt $attempt/$OSM2PGSQL_RETRIES)"
+        if docker run --rm \
+            --network "$NETWORK" \
+            -e PGPASSWORD="$DB_PASS" \
+            -v "$(pwd)/$OSM_DIR":/data \
+            "$image" \
+            -H "$DB_HOST" \
+            -U "$DB_USER" \
+            -d "$DB_NAME" \
+            --create --slim \
+            -G --hstore \
+            --latlong \
+            --cache 2000 \
+            /data/map.osm; then
+            imported=1
+            break 2
+        fi
+
+        if [ "$attempt" -lt "$OSM2PGSQL_RETRIES" ]; then
+            sleep 2
+        fi
+    done
     echo "Failed with image: $image"
 done
 

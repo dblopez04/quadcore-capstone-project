@@ -15,6 +15,20 @@ function parseCoords(geom) {
     return { lng: coords[0], lat: coords[1] };
 }
 
+function mapLocationRecord(loc) {
+    const { lat, lng } = parseCoords(loc.coordinates);
+
+    return {
+        id: loc.location_id || loc.id,
+        location_id: loc.location_id || loc.id,
+        name: loc.name,
+        lat,
+        lng,
+        coordinates: loc.coordinates,
+        share_url: loc.share_url || null,
+    };
+}
+
 function normalizeText(value) {
     return String(value || "")
         .toLowerCase()
@@ -149,15 +163,7 @@ function mapLocations(payload) {
     const locations = Array.isArray(payload?.locations) ? payload.locations : [];
 
     return locations
-        .map((loc) => {
-            const { lat, lng } = parseCoords(loc.coordinates);
-            return {
-                id: loc.location_id || loc.id,
-                name: loc.name,
-                lat,
-                lng,
-            };
-        })
+        .map(mapLocationRecord)
         .filter((loc) => loc.id && loc.name && loc.lat !== null && loc.lng !== null);
 }
 
@@ -213,9 +219,27 @@ export async function searchLocations(query) {
             return a.name.localeCompare(b.name);
         })
         .slice(0, MAX_RESULTS)
-        .map(({ score, ...location }) => location);
+        .map((location) => {
+            const nextLocation = { ...location };
+            delete nextLocation.score;
+            return nextLocation;
+        });
 }
 
 export async function getAllLocations() {
     return await getSearchableLocations();
+}
+
+export async function getLocationById(locationId) {
+    const id = String(locationId || "").trim();
+    if (!id) {
+        throw new Error("locationId is required");
+    }
+
+    const data = await apiRequest(`/api/locations/${encodeURIComponent(id)}`);
+    if (!data?.location) {
+        throw new Error("Location not found.");
+    }
+
+    return mapLocationRecord(data.location);
 }
