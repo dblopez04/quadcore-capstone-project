@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchEvents, registerForEvent, fetchRegisteredEvents } from "../api/eventService";
+import {
+    fetchEvents,
+    registerForEvent,
+    fetchRegisteredEvents,
+    unregisterFromEvent,
+} from "../api/eventService";
+
 function pad2(n) {
     return String(n).padStart(2, "0");
 }
@@ -101,6 +107,7 @@ export default function Events() {
     const [feedback, setFeedback] = useState("");
     const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
     const [registeredEvents, setRegisteredEvents] = useState([]);
+    const [unregisteringId, setUnregisteringId] = useState(null);
 
     const navigate = useNavigate();
 
@@ -198,6 +205,29 @@ export default function Events() {
             setFeedback(msg);
         } finally {
             setRegisteringId(null);
+        }
+    }
+
+    async function handleUnregister(eventId) {
+        try {
+            setUnregisteringId(eventId);
+            setFeedback("");
+
+            await unregisterFromEvent(eventId);
+
+            setRegisteredEventIds((prev) => {
+                const next = new Set(prev);
+                next.delete(eventId);
+                return next;
+            });
+
+            setRegisteredEvents((prev) => prev.filter((ev) => ev.id !== eventId));
+            setFeedback("Unregistered from event successfully.");
+        } catch (e) {
+            console.error(e);
+            setFeedback("Failed to unregister from event.");
+        } finally {
+            setUnregisteringId(null);
         }
     }
     useEffect(() => {
@@ -481,6 +511,23 @@ export default function Events() {
                                     <div style={{ fontSize: "14px", color: "#555" }}>
                                         <strong>Location:</strong> {ev.locationName || "Location not provided"}
                                     </div>
+                                </div>
+                                <div style={{ marginTop: 12 }}>
+                                    <button
+                                        onClick={() => handleUnregister(ev.id)}
+                                        disabled={unregisteringId === ev.id}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: unregisteringId === ev.id ? "#aaa" : "#b42318",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: unregisteringId === ev.id ? "not-allowed" : "pointer",
+                                        }}
+                                    >
+                                        {unregisteringId === ev.id ? "Unregistering..." : "Unregister"}
+                                    </button>
                                 </div>
                             </div>
                         ))}
