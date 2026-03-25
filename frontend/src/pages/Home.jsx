@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+ï»¿import { useNavigate } from "react-router-dom";
 
 const cardStyle = {
     padding: "1.5rem",
@@ -66,7 +66,7 @@ export default function Home() {
                     Getting Around UNT
                 </h1>
                 <p style={{ fontSize: "1.1rem", color: "#555" }}>
-                    Find buildings, events, routes, and more — all in one place.
+                    Find buildings, events, routes, and more ðŸ˜Š all in one place.
                 </p>
 
                 <div style={{ marginTop: "1.5rem", display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
@@ -145,7 +145,7 @@ export default function Home() {
                         }}
                     >
                         <div style={actionTitle}>Today's Events</div>
-                        <div style={actionSub}>See what’s happening today</div>
+                        <div style={actionSub}>See what's happening today</div>
                     </div>
 
                     <div

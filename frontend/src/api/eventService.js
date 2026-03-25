@@ -33,3 +33,8 @@ export async function fetchRegisteredEvents() {
         method: "GET",
     });
 }
+export async function unregisterFromEvent(eventId) {
+    return apiRequest(`/api/events/${eventId}/register`, {
+        method: "DELETE",
+    });
+}
