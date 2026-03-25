@@ -5,6 +5,15 @@ const { getAccessCookieOptions } = require("../config/cookie.config");
 const User = db.User;
 const Admin = db.Admin;
 
+function normalizeOptionalString(value) {
+    if (typeof value !== "string") {
+        return value;
+    }
+
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+}
+
 const issueAccessToken = (res, userId) => {
     const accessToken = jwt.sign(
         { user_id: userId },
@@ -133,12 +142,20 @@ exports.requireOwner = async (req, res, next) => {
 
 exports.duplicateRegistration = async (req, res, next) => {
     try {
+        const email = typeof req.body.email === "string" ? req.body.email.trim() : req.body.email;
+        const phoneNumber = normalizeOptionalString(req.body.phone_number);
+
+        req.body.email = email;
+        req.body.phone_number = phoneNumber;
+
+        const orConditions = [{ email }];
+        if (phoneNumber) {
+            orConditions.push({ phone_number: phoneNumber });
+        }
+
         const user = await User.findOne({
             where: {
-                [Op.or]: [
-                    { email: req.body.email },
-                    { phone_number: req.body.phone_number },
-                ]
+                [Op.or]: orConditions
             }
         });
 
@@ -152,7 +169,7 @@ exports.duplicateRegistration = async (req, res, next) => {
             });
         }
 
-        if (user.phone_number === req.body.phone_number) {
+        if (phoneNumber && user.phone_number === phoneNumber) {
             return res.status(400).send({
                 message: "Phone number already in use"
             });
