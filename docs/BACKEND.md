@@ -24,6 +24,9 @@
 - `OSRM_URL` - OSRM base URL (defined in `compose.yaml`).
 - `FRONTEND_URL` - optional base URL used to generate shareable location deep links
   (defaults to `http://localhost:5173`).
+- `RESEND_API_KEY` - API key used to send reminder emails through Resend.
+- `EMAIL_FROM` - verified sender address for reminder emails.
+- `REMINDER_POLL_INTERVAL_MS` - optional reminder dispatcher poll interval.
 
 ## Auth Flow
 - `POST /api/auth/register` - creates a user (`STUDENT`/`FACULTY`/`VISITOR` only) and sets `accessToken` and `refreshToken` cookies.
@@ -43,6 +46,7 @@ Token timing (current):
 
 ## User Routes
 - `POST /api/user/profile` - returns the current user profile.
+- `PATCH /api/user/profile/email` - updates the current user's email address.
 - `GET /api/user/search-history` - returns search history array.
 - `POST /api/user/search-history` - prepends a search string.
 - `DELETE /api/user/search-history` - clears search history.
@@ -67,8 +71,9 @@ All event bookmark routes are prefixed with `/api/events` and require `verifyTok
 - `GET /api/events/conflicts` - detect scheduling conflicts among bookmarked
   and/or registered events.
 - `GET /api/events/reminders` - list event reminders for the current user.
-- `POST /api/events/:eventId/reminders` - create a reminder for an event.
+- `POST /api/events/:eventId/reminders` - create a reminder for an event (`EMAIL` reminders are scheduled 24 hours before the event starts and require the event to be bookmarked).
 - `DELETE /api/events/reminders/:reminderId` - delete a reminder.
+- Reminder delivery is handled by `backend/app/jobs/reminderDispatcher.js`, which polls due `EMAIL` reminders and sends them through Resend when `RESEND_API_KEY` and `EMAIL_FROM` are configured.
 - `GET /api/events/tags` - list event tags.
 - `POST /api/events/tags` - create a tag (admin only).
 - `POST /api/events/:eventId/tags` - assign tags to an event (admin only).

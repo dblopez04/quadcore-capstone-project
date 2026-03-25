@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchEvents, registerForEvent } from "../api/eventService";
+import {
+    bookmarkEvent,
+    createReminder,
+    deleteReminder,
+    fetchBookmarkedEvents,
+    fetchEvents,
+    fetchReminders,
+    registerForEvent,
+    removeBookmarkedEvent,
+} from "../api/eventService";
+import { fetchProfile } from "../api/userService";
+import { isGuestMode } from "../utils/authMode";
+import { useToast } from "../components/ToastProvider";
 
 function pad2(n) {
     return String(n).padStart(2, "0");
@@ -21,7 +33,7 @@ function buildMonthGrid(viewDate) {
     const first = new Date(year, month, 1);
     const last = new Date(year, month + 1, 0);
 
-    const startDay = first.getDay(); // 0=Sun
+    const startDay = first.getDay();
     const daysInMonth = last.getDate();
 
     const cells = [];
@@ -36,7 +48,6 @@ function buildMonthGrid(viewDate) {
     return cells;
 }
 
-// Try to support both your old mock shape + backend shape
 function normalizeEvent(ev) {
     const startRaw =
         ev.start_date_time ||
@@ -82,76 +93,94 @@ function normalizeEvent(ev) {
             null,
         start,
         end,
+        isDemo: Boolean(ev.isDemo),
     };
+}
+
+function buildDemoEvents() {
+    return [
+        {
+            id: "demo-1",
+            title: "UNT Career Fair",
+            description: "Meet employers and bring your resume.",
+            category: "Career",
+            locationName: "Union Ballroom",
+            lat: 33.2090,
+            lng: -97.1490,
+            start: new Date().toISOString(),
+            end: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+            isDemo: true,
+        },
+        {
+            id: "demo-2",
+            title: "Study Jam: CSCE Review",
+            description: "Group study session for upcoming exam.",
+            category: "Academic",
+            locationName: "Willis Library",
+            lat: 33.2106,
+            lng: -97.1503,
+            start: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+            end: new Date(Date.now() + 49 * 60 * 60 * 1000).toISOString(),
+            isDemo: true,
+        },
+    ];
+}
+
+function getReminderCutoff(start) {
+    return new Date(new Date(start).getTime() - 24 * 60 * 60 * 1000);
+}
+
+function formatEventWindow(event) {
+    const startText = event.start ? new Date(event.start).toLocaleString() : "Start: N/A";
+    const endText = event.end ? new Date(event.end).toLocaleString() : "";
+    return endText ? `${startText} - ${endText}` : startText;
 }
 
 export default function Events() {
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
+    const [savedEvents, setSavedEvents] = useState([]);
+    const [profileEmail, setProfileEmail] = useState("");
+    const [emailReminders, setEmailReminders] = useState({});
     const [q, setQ] = useState("");
     const [loading, setLoading] = useState(true);
+    const [savedLoading, setSavedLoading] = useState(false);
     const [error, setError] = useState("");
-    const [selectedDate, setSelectedDate] = useState(""); // YYYY-MM-DD
+    const [selectedDate, setSelectedDate] = useState("");
     const [viewDate, setViewDate] = useState(() => new Date());
+    const [activeEventId, setActiveEventId] = useState("");
 
     const navigate = useNavigate();
+    const { showToast } = useToast();
+    const guestMode = isGuestMode();
 
     const eventDays = useMemo(() => {
         const s = new Set();
         for (const e of allEvents) {
             if (!e.start) continue;
-            s.add(e.start.slice(0, 10)); // "YYYY-MM-DD"
+            s.add(e.start.slice(0, 10));
         }
         return s;
     }, [allEvents]);
 
-    async function loadEvents(filters = {}) {
+    const savedEventIds = useMemo(() => {
+        return new Set(savedEvents.map((event) => event.id));
+    }, [savedEvents]);
+
+    async function loadEvents(filters = {}, nextSelectedDate = selectedDate) {
         try {
             setLoading(true);
             setError("");
 
-            const data = await fetchEvents(filters); // expects { events: [] }
+            const data = await fetchEvents(filters);
             const raw = Array.isArray(data?.events) ? data.events : [];
             const normalized = raw.map(normalizeEvent);
-
-            const demo = [
-                {
-                    id: "demo-1",
-                    title: "UNT Career Fair",
-                    description: "Meet employers and bring your resume.",
-                    category: "Career",
-                    locationName: "Union Ballroom",
-                    lat: 33.2090,
-                    lng: -97.1490,
-                    start: new Date().toISOString(),
-                    end: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-                    isDemo: true,
-                },
-                {
-                    id: "demo-2",
-                    title: "Study Jam: CSCE Review",
-                    description: "Group study session for upcoming exam.",
-                    category: "Academic",
-                    locationName: "Willis Library",
-                    lat: 33.2106,
-                    lng: -97.1503,
-                    start: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-                    end: new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString(),
-                    isDemo: true,
-                },
-            ];
-
-            // If backend returns no events, show demo events so UI is not empty for sprint demo
-            const finalEvents = normalized.length === 0 ? demo : normalized;
+            const finalEvents = normalized.length === 0 ? buildDemoEvents() : normalized;
 
             setAllEvents(finalEvents);
-
-            // if a date filter is active, keep it applied
-            if (selectedDate) {
-                setEvents(finalEvents.filter((ev) => ev.start?.startsWith(selectedDate)));
-            } else {
-                setEvents(finalEvents);
-            }
+            setEvents(nextSelectedDate
+                ? finalEvents.filter((event) => event.start?.startsWith(nextSelectedDate))
+                : finalEvents);
         } catch (e) {
             console.error(e);
             setError(e?.message || "Failed to load events.");
@@ -162,16 +191,60 @@ export default function Events() {
         }
     }
 
+    async function loadSavedContext() {
+        if (guestMode) {
+            setSavedEvents([]);
+            setProfileEmail("");
+            setEmailReminders({});
+            return;
+        }
+
+        try {
+            setSavedLoading(true);
+            const [profileData, bookmarkData, reminderData] = await Promise.all([
+                fetchProfile(),
+                fetchBookmarkedEvents(),
+                fetchReminders(),
+            ]);
+
+            const bookmarkEvents = Array.isArray(bookmarkData?.events)
+                ? bookmarkData.events.map(normalizeEvent)
+                : [];
+
+            const reminders = Array.isArray(reminderData?.reminders) ? reminderData.reminders : [];
+            const emailReminderMap = reminders.reduce((acc, reminder) => {
+                if (reminder.channel === "EMAIL" && reminder.event?.event_id) {
+                    acc[reminder.event.event_id] = reminder;
+                }
+                return acc;
+            }, {});
+
+            setSavedEvents(bookmarkEvents);
+            setEmailReminders(emailReminderMap);
+            setProfileEmail(profileData?.user?.email || "");
+        } catch (e) {
+            console.error("Failed to load saved event data:", e);
+            setSavedEvents([]);
+            setEmailReminders({});
+            setProfileEmail("");
+        } finally {
+            setSavedLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        loadEvents();
+        loadSavedContext();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [guestMode]);
+
     async function handleRegister(eventId) {
         try {
             await registerForEvent(eventId);
-            alert("Registered for event!");
-            // Optional refresh so the UI stays in sync later
-            // await loadEvents({ q });
+            showToast("Registered for event.", "success");
         } catch (e) {
             console.error(e);
 
-            // If backend returns useful codes, you can show nicer messages
             const msg =
                 e?.status === 409
                     ? "This event is full."
@@ -179,25 +252,85 @@ export default function Events() {
                         ? "Event not found."
                         : "Register failed (are you logged in?).";
 
-            alert(msg);
+            showToast(msg, "error");
         }
     }
-    useEffect(() => {
-        loadEvents(); // GET /api/events
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+
+    async function handleBookmarkToggle(event) {
+        if (guestMode) {
+            showToast("Sign in to save events and manage reminders.", "error");
+            return;
+        }
+
+        if (event.isDemo) {
+            showToast("Demo events cannot be saved.", "error");
+            return;
+        }
+
+        setActiveEventId(event.id);
+
+        try {
+            if (savedEventIds.has(event.id)) {
+                await removeBookmarkedEvent(event.id);
+                showToast("Removed from saved events.", "success");
+            } else {
+                await bookmarkEvent(event.id);
+                showToast("Event saved.", "success");
+            }
+
+            await loadSavedContext();
+        } catch (e) {
+            console.error(e);
+            showToast(e?.message || "Unable to update saved events.", "error");
+        } finally {
+            setActiveEventId("");
+        }
+    }
+
+    async function handleEmailReminderToggle(event) {
+        if (guestMode) {
+            showToast("Sign in to manage email reminders.", "error");
+            return;
+        }
+
+        const existingReminder = emailReminders[event.id];
+        const cutoff = getReminderCutoff(event.start);
+
+        if (!existingReminder && cutoff <= new Date()) {
+            showToast("This event starts too soon for a 24-hour reminder.", "error");
+            return;
+        }
+
+        setActiveEventId(event.id);
+
+        try {
+            if (existingReminder) {
+                await deleteReminder(existingReminder.event_reminder_id);
+                showToast("Email reminder removed.", "success");
+            } else {
+                await createReminder(event.id, { channel: "EMAIL" });
+                showToast("You'll get an email 24 hours before this event starts.", "success");
+            }
+
+            await loadSavedContext();
+        } catch (e) {
+            console.error(e);
+            showToast(e?.message || "Unable to update email reminder.", "error");
+        } finally {
+            setActiveEventId("");
+        }
+    }
 
     const onSearch = async (e) => {
         e.preventDefault();
-        setSelectedDate(""); // clear date filter when searching
-        await loadEvents({ q });
+        setSelectedDate("");
+        await loadEvents({ q }, "");
     };
 
     return (
         <div style={{ padding: "24px" }}>
             <h2>Campus Events</h2>
 
-            {/* Calendar */}
             <div
                 style={{
                     margin: "16px 0",
@@ -252,7 +385,7 @@ export default function Events() {
                                 key={idx}
                                 onClick={async () => {
                                     setSelectedDate(dStr);
-                                    await loadEvents({ start: dStr, end: dStr, q });
+                                    await loadEvents({ start: dStr, end: dStr, q }, dStr);
                                 }}
                                 style={{
                                     padding: "10px 0",
@@ -277,7 +410,7 @@ export default function Events() {
                     <button
                         onClick={async () => {
                             setSelectedDate("");
-                            await loadEvents(q ? { q } : {});
+                            await loadEvents(q ? { q } : {}, "");
                         }}
                         style={{ padding: "6px 10px", borderRadius: 8 }}
                     >
@@ -309,6 +442,109 @@ export default function Events() {
                 </button>
             </form>
 
+            {!guestMode && (
+                <div
+                    style={{
+                        margin: "0 0 16px",
+                        padding: "12px 14px",
+                        borderRadius: "12px",
+                        background: "#f5fbf7",
+                        border: "1px solid #d6eadc",
+                    }}
+                >
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>Reminder email</div>
+                    <div style={{ color: "#35594a", fontSize: 14 }}>
+                        {profileEmail ? profileEmail : "No email on file."}
+                    </div>
+                    <button
+                        onClick={() => navigate("/settings")}
+                        style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8 }}
+                    >
+                        Update email in Settings
+                    </button>
+                </div>
+            )}
+
+            <div
+                style={{
+                    marginBottom: "18px",
+                    padding: "14px",
+                    borderRadius: "12px",
+                    border: "1px solid #d9e3dd",
+                    background: "#ffffff",
+                }}
+            >
+                <h3 style={{ marginTop: 0 }}>Saved Events</h3>
+                <p style={{ marginTop: 0, color: "#53645b", fontSize: 14 }}>
+                    Save an event, then opt in to one email reminder sent 24 hours before it starts.
+                </p>
+
+                {guestMode ? (
+                    <p style={{ marginBottom: 0, color: "#53645b" }}>
+                        Sign in to save events and turn on reminder emails.
+                    </p>
+                ) : savedLoading ? (
+                    <p style={{ marginBottom: 0, color: "#53645b" }}>Loading saved events...</p>
+                ) : savedEvents.length === 0 ? (
+                    <p style={{ marginBottom: 0, color: "#53645b" }}>No saved events yet.</p>
+                ) : (
+                    <div style={{ display: "grid", gap: 12 }}>
+                        {savedEvents.map((event) => {
+                            const reminder = emailReminders[event.id];
+                            const reminderCutoff = event.start ? getReminderCutoff(event.start) : null;
+                            const canEnableReminder = reminderCutoff && reminderCutoff > new Date();
+
+                            return (
+                                <div
+                                    key={`saved-${event.id}`}
+                                    style={{
+                                        border: "1px solid #e5e5e5",
+                                        borderRadius: "12px",
+                                        padding: "14px",
+                                        background: "#fbfdfb",
+                                    }}
+                                >
+                                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                                        <div>
+                                            <h4 style={{ margin: "0 0 6px" }}>{event.title}</h4>
+                                            <div style={{ color: "#53645b", fontSize: 14 }}>{formatEventWindow(event)}</div>
+                                            {event.locationName && (
+                                                <div style={{ color: "#53645b", fontSize: 14 }}>{event.locationName}</div>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => handleBookmarkToggle(event)}
+                                            disabled={activeEventId === event.id}
+                                            style={{ padding: "8px 10px", borderRadius: 8 }}
+                                        >
+                                            Unsave
+                                        </button>
+                                    </div>
+
+                                    <label style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 12 }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={Boolean(reminder)}
+                                            disabled={activeEventId === event.id || (!reminder && !canEnableReminder)}
+                                            onChange={() => handleEmailReminderToggle(event)}
+                                        />
+                                        <span>Email me 24 hours before this event</span>
+                                    </label>
+
+                                    <div style={{ marginTop: 8, fontSize: 13, color: "#53645b" }}>
+                                        {reminder
+                                            ? `Reminder scheduled for ${new Date(reminder.remind_at).toLocaleString()}`
+                                            : canEnableReminder
+                                                ? "No email reminder scheduled yet."
+                                                : "This event starts in less than 24 hours, so a 24-hour reminder can no longer be scheduled."}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
             {events.length > 0 && events.every((ev) => ev.isDemo) && (
                 <div
                     style={{
@@ -334,6 +570,7 @@ export default function Events() {
                 <div style={{ display: "grid", gap: "12px" }}>
                     {events.map((ev) => {
                         const canMap = ev.lat != null && ev.lng != null;
+                        const isSaved = savedEventIds.has(ev.id);
 
                         return (
                             <div
@@ -345,7 +582,6 @@ export default function Events() {
                                     background: "white",
                                 }}
                             >
-                                
                                 <h3 style={{ margin: 0 }}>{ev.title}</h3>
 
                                 {ev.isDemo && (
@@ -367,18 +603,15 @@ export default function Events() {
 
                                 <p style={{ margin: "6px 0" }}>
                                     <strong>{ev.category}</strong>
-                                    {ev.locationName ? ` • ${ev.locationName}` : ""}
+                                    {ev.locationName ? ` - ${ev.locationName}` : ""}
                                 </p>
 
                                 {ev.description && <p style={{ margin: "6px 0", color: "#444" }}>{ev.description}</p>}
 
                                 <p style={{ margin: "6px 0", fontSize: "14px", color: "#666" }}>
-                                    {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                    {ev.end ? ` – ${new Date(ev.end).toLocaleString()}` : ""}
+                                    {formatEventWindow(ev)}
                                 </p>
 
-
-                                {/* REGISTER BUTTON */}
                                 <button
                                     onClick={() => handleRegister(ev.id)}
                                     disabled={ev.isDemo}
@@ -396,7 +629,23 @@ export default function Events() {
                                     Register
                                 </button>
 
-                                {/* VIEW ON MAP BUTTON */}
+                                <button
+                                    onClick={() => handleBookmarkToggle(ev)}
+                                    disabled={activeEventId === ev.id || ev.isDemo}
+                                    style={{
+                                        marginTop: 10,
+                                        marginRight: 10,
+                                        padding: "8px 10px",
+                                        borderRadius: 8,
+                                        background: isSaved ? "#245c3f" : "#1f7a4b",
+                                        color: "white",
+                                        border: "none",
+                                        cursor: ev.isDemo ? "not-allowed" : "pointer",
+                                    }}
+                                >
+                                    {isSaved ? "Saved" : "Save Event"}
+                                </button>
+
                                 <button
                                     disabled={!canMap}
                                     onClick={() => {
@@ -419,7 +668,6 @@ export default function Events() {
                                 >
                                     View on Map
                                 </button>
-                                
 
                                 {!canMap && (
                                     <div style={{ marginTop: 6, fontSize: 12, color: "#777" }}>

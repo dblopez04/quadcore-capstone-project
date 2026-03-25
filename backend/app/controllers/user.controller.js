@@ -22,6 +22,48 @@ exports.getProfile = async (req, res) => {
     })
 };
 
+exports.updateEmail = async (req, res) => {
+    try {
+        const email = String(req.body.email || "").trim().toLowerCase();
+
+        if (!email) {
+            return res.status(400).send({ message: "email is required" });
+        }
+
+        const user = await User.findOne({
+            where: { user_id: req.user_id }
+        });
+
+        if (!user) {
+            return res.status(404).send({ message: "User not found" });
+        }
+
+        const existingUser = await User.findOne({
+            where: { email }
+        });
+
+        if (existingUser && existingUser.user_id !== user.user_id) {
+            return res.status(400).send({ message: "Email already in use" });
+        }
+
+        await user.update({ email });
+
+        res.status(200).send({
+            message: "Email updated successfully",
+            user: {
+                id: user.user_id,
+                email: user.email,
+                first_name: user.first_name,
+                last_name: user.last_name,
+                phone_number: user.phone_number,
+                user_role: user.user_role
+            }
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error updating email" });
+    }
+};
+
 exports.getSearchHistory = async (req, res) => {
     try{
         const accessToken = req.cookies.accessToken;

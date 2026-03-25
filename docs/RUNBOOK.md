@@ -7,7 +7,7 @@
   (`postgres://...@localhost:5433/...`).
 - Database schema is initialized from `database/init.sql` on first container start.
 - For existing databases, apply incremental SQL migrations manually (for example:
-  `database/migration_location_qol.sql` for custom lists/recently viewed tables).
+  `database/migration_event_email_reminders.sql` for email reminder delivery state).
 
 ## Service Ports (local)
 - Frontend: `http://localhost:5173`
@@ -102,6 +102,10 @@ cd backend
 npm install
 npm run dev
 ```
+Set reminder env vars before starting the backend if you want delivery enabled:
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+- optional `REMINDER_POLL_INTERVAL_MS` (defaults to `60000`)
 
 ## Tests (backend)
 ```bash

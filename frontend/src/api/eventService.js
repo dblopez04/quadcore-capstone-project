@@ -28,3 +28,60 @@ export async function registerForEvent(eventId) {
         method: "POST",
     });
 }
+
+export async function fetchBookmarkedEvents(filters = {}) {
+    const params = new URLSearchParams();
+
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+        const v = String(value).trim();
+        if (!v) return;
+        params.set(key, v);
+    });
+
+    const qs = params.toString();
+    const url = qs ? `/api/events/bookmarks?${qs}` : `/api/events/bookmarks`;
+
+    return apiRequest(url, { method: "GET" });
+}
+
+export async function bookmarkEvent(eventId) {
+    return apiRequest(`/api/events/${eventId}/bookmark`, {
+        method: "POST",
+    });
+}
+
+export async function removeBookmarkedEvent(eventId) {
+    return apiRequest(`/api/events/${eventId}/bookmark`, {
+        method: "DELETE",
+    });
+}
+
+export async function fetchReminders(filters = {}) {
+    const params = new URLSearchParams();
+
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+        const v = String(value).trim();
+        if (!v) return;
+        params.set(key, v);
+    });
+
+    const qs = params.toString();
+    const url = qs ? `/api/events/reminders?${qs}` : `/api/events/reminders`;
+
+    return apiRequest(url, { method: "GET" });
+}
+
+export async function createReminder(eventId, payload) {
+    return apiRequest(`/api/events/${eventId}/reminders`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function deleteReminder(reminderId) {
+    return apiRequest(`/api/events/reminders/${reminderId}`, {
+        method: "DELETE",
+    });
+}

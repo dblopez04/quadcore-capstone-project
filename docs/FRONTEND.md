@@ -27,7 +27,7 @@
 | `/map` | `MapPage` | Map view |
 | `/search` | `Search` | Live fuzzy location search + tabs |
 | `/bookmarks` | `Bookmarks` | API-backed bookmark and custom list management UI |
-| `/settings` | `Settings` | Static preferences UI |
+| `/settings` | `Settings` | Theme preferences + reminder email update form |
 | `/about` | `About` | Project info |
 | `/help` | `Help` | Help text |
 
@@ -39,6 +39,7 @@
   apply client-side fuzzy ranking for location results.
 - Bookmarks UI strips the demo seed phrase (`Seeded from local OSM extract`)
   from subtitle text before rendering.
+- Events UI now supports event save/unsave actions plus opt-in email reminders for saved events.
 - Bookmarks UI now calls `/api/locations/bookmarks` and `/api/locations/lists`
   for bookmark/list data and list item actions.
 - Guest mode (`Continue as Guest`) is tracked in `localStorage` (`authMode`).
@@ -97,5 +98,4 @@ npm run lint
 - Follow mobile-first layout rules and keep typography/colors consistent.
 
 ## Known Gaps
-- Settings page is still static.
 - No POI layer, route drawing, or current location display yet.

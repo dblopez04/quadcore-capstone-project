@@ -9,6 +9,9 @@ const EventTag = db.EventTag;
 const EventTagAssignment = db.EventTagAssignment;
 const EventReminder = db.EventReminder;
 const Location = db.Location;
+const User = db.User;
+
+const REMINDER_CHANNELS = new Set(["IN_APP", "EMAIL"]);
 
 const parseList = (value) => {
     if (!value) return [];
@@ -66,6 +69,11 @@ const buildTimestampRange = (field, start, end) => {
     }
 
     return { where: { [field]: { [Op.lte]: endDate } } };
+};
+
+const buildDefaultEmailReminderTime = (event) => {
+    const startDate = new Date(event.start_date_time);
+    return new Date(startDate.getTime() - (24 * 60 * 60 * 1000));
 };
 
 const buildEventResponse = (event, sources) => {
@@ -330,6 +338,10 @@ exports.removeBookmark = async (req, res) => {
         if (deleted === 0) {
             return res.status(404).send({ message: "Bookmark not found." });
         }
+
+        await EventReminder.destroy({
+            where: { user_id: req.user_id, event_id: eventId, channel: "EMAIL" }
+        });
 
         res.send({ message: "Bookmark removed." });
     } catch (err) {
@@ -680,6 +692,7 @@ exports.getReminders = async (req, res) => {
             event_reminder_id: reminder.event_reminder_id,
             remind_at: reminder.remind_at,
             channel: reminder.channel,
+            sent_at: reminder.sent_at,
             event: buildEventResponse(reminder.Event)
         }));
 
@@ -692,16 +705,10 @@ exports.getReminders = async (req, res) => {
 exports.createReminder = async (req, res) => {
     try {
         const eventId = req.params.eventId;
-        const remindAt = req.body.remind_at;
-        const channel = req.body.channel || "IN_APP";
+        const channel = String(req.body.channel || "IN_APP").trim().toUpperCase();
 
-        if (!remindAt) {
-            return res.status(400).send({ message: "remind_at is required." });
-        }
-
-        const remindDate = new Date(remindAt);
-        if (isNaN(remindDate)) {
-            return res.status(400).send({ message: "Invalid remind_at value." });
+        if (!REMINDER_CHANNELS.has(channel)) {
+            return res.status(400).send({ message: "channel must be IN_APP or EMAIL." });
         }
 
         const event = await Event.findByPk(eventId);
@@ -709,12 +716,69 @@ exports.createReminder = async (req, res) => {
             return res.status(404).send({ message: "Event not found." });
         }
 
-        const reminder = await EventReminder.create({
-            user_id: req.user_id,
-            event_id: eventId,
-            remind_at: remindDate,
-            channel
-        });
+        let reminder;
+
+        if (channel === "EMAIL") {
+            const bookmark = await EventBookmark.findOne({
+                where: { user_id: req.user_id, event_id: eventId }
+            });
+
+            if (!bookmark) {
+                return res.status(400).send({ message: "Save the event before enabling email reminders." });
+            }
+
+            const user = await User.findByPk(req.user_id);
+            if (!user || !user.email) {
+                return res.status(400).send({ message: "Add an email address before enabling reminders." });
+            }
+
+            const remindDate = buildDefaultEmailReminderTime(event);
+            if (remindDate <= new Date()) {
+                return res.status(400).send({ message: "Email reminders must be enabled at least 24 hours before the event starts." });
+            }
+
+            reminder = await EventReminder.findOne({
+                where: {
+                    user_id: req.user_id,
+                    event_id: eventId,
+                    channel: "EMAIL"
+                }
+            });
+
+            if (reminder) {
+                await reminder.update({
+                    remind_at: remindDate,
+                    sent_at: null,
+                    failed_at: null,
+                    last_error: null
+                });
+            } else {
+                reminder = await EventReminder.create({
+                    user_id: req.user_id,
+                    event_id: eventId,
+                    remind_at: remindDate,
+                    channel: "EMAIL"
+                });
+            }
+        } else {
+            const remindAt = req.body.remind_at;
+
+            if (!remindAt) {
+                return res.status(400).send({ message: "remind_at is required." });
+            }
+
+            const remindDate = new Date(remindAt);
+            if (isNaN(remindDate)) {
+                return res.status(400).send({ message: "Invalid remind_at value." });
+            }
+
+            reminder = await EventReminder.create({
+                user_id: req.user_id,
+                event_id: eventId,
+                remind_at: remindDate,
+                channel
+            });
+        }
 
         res.status(201).send({
             event_reminder_id: reminder.event_reminder_id,

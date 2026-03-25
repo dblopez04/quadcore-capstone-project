@@ -111,6 +111,9 @@ const { verifyToken, requireAdmin } = require("../middleware/auth.middleware");
  *           format: date-time
  *         channel:
  *           type: string
+ *         sent_at:
+ *           type: string
+ *           format: date-time
  *         event:
  *           $ref: '#/components/schemas/EventSummary'
  *     EventReminderListResponse:
@@ -146,15 +149,14 @@ const { verifyToken, requireAdmin } = require("../middleware/auth.middleware");
  *             type: string
  *     CreateReminderRequest:
  *       type: object
- *       required:
- *         - remind_at
  *       properties:
  *         remind_at:
  *           type: string
  *           format: date-time
+ *           description: Required for IN_APP reminders. EMAIL reminders are always scheduled 24 hours before the event starts.
  *         channel:
  *           type: string
- *           description: IN_APP, EMAIL, or SMS
+ *           description: IN_APP or EMAIL
  */
 
 /**

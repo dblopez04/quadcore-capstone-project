@@ -23,7 +23,7 @@ Status legend:
 | 11 | POI filtering | R2 | Partial (UI) | Frontend/Backend | Filter pills only |
 | 12 | User reporting | R2 | Not started | Backend/DB/Frontend | Enums exist, no tables |
 | 13 | Temporary closures | R3 | Not started | Backend/DB/Map | No data model yet |
-| 14 | Calendar | R3 | Partial (API) | Backend/DB/Frontend | Event bookmarks, search, tags, reminders, registrations, conflicts, and ICS export added; public UNT calendar SQL seeding now available through `scripts/scrape_unt_events.py`, imported source metadata is stored in `event_details`, but no UI yet |
+| 14 | Calendar | R3 | Partial (UI) | Backend/DB/Frontend | Event search, save/unsave actions, reminder opt-in UI, registrations, tags, conflicts, reminders, and ICS export exist; email reminders send through Resend when configured, but there is still no full calendar view |
 | 15 | Administrator access | R3 | Partial (API) | Backend/Frontend | Owner-gated admin delegation API exists (`grant/revoke admin`, `grant/revoke owner`), but no admin UI yet |
 | 16 | Accessibility | R3 | Not started | Map/Frontend | No data or filters |
 | 17 | Safety | R3 | Not started | Map/Frontend | No well-lit routing data |

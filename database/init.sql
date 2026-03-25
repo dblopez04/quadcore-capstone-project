@@ -196,8 +196,11 @@ CREATE TABLE event_reminders (
     event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
     remind_at TIMESTAMP NOT NULL,
     channel VARCHAR(50) DEFAULT 'IN_APP',
+    sent_at TIMESTAMP,
+    failed_at TIMESTAMP,
+    last_error TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, event_id, remind_at)
+    UNIQUE(user_id, event_id, remind_at, channel)
 );
 
 CREATE TABLE location_bookmarks (

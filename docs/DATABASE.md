@@ -32,7 +32,7 @@ container starts.
 - `event_bookmarks` - user bookmarks for events.
 - `event_tags` - tag catalog for events.
 - `event_tag_assignments` - join table linking events to tags.
-- `event_reminders` - user reminders for events.
+- `event_reminders` - user reminders for events, including email delivery state.
 - `location_bookmarks` - user saved locations with optional notes/favorites.
 - `location_lists` - user-owned custom lists of saved places.
 - `location_list_items` - join table linking custom lists to locations.
@@ -64,5 +64,7 @@ container starts.
   `location_lists`, `location_list_items`, and `recently_viewed_locations`.
 - Existing environments can apply `database/migration_event_details.sql` to drop
   `events.organizer_id` and add `event_details`.
+- Existing environments can apply `database/migration_event_email_reminders.sql`
+  to add email reminder delivery fields and the reminder-channel uniqueness update.
 - There is no migration tool yet; update `database/init.sql` directly and document
   decisions in `docs/DECISIONS.md`.

@@ -4,6 +4,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const db = require("./app/models/index");
 const { swaggerUi, swaggerSpec } = require("./app/config/swagger.config");
+const { startReminderDispatcher } = require("./app/jobs/reminderDispatcher");
 
 const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
 const allowedOrigins = new Set([frontendUrl, "http://localhost:5173", "http://127.0.0.1:5173"]);
@@ -48,6 +49,7 @@ app.get("/", (req, res) => {
 db.sequelize.authenticate()
     .then(() => {
         console.log("Database connection has been established successfully.");
+        startReminderDispatcher();
         app.listen(4000, () => {
             console.log(`server is running on port 4000.`);
         });

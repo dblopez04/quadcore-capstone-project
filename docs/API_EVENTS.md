@@ -144,6 +144,7 @@ This document describes the backend event APIs used for calendar, bookmarks, reg
 ```json
 { "remind_at": "2026-02-10T09:00:00Z", "channel": "IN_APP" }
 ```
+- For `EMAIL` reminders, send `{ "channel": "EMAIL" }`. The backend schedules the reminder for 24 hours before the event starts and requires the event to already be bookmarked.
 - Response 201:
 ```json
 { "event_reminder_id": "uuid", "remind_at": "2026-02-10T09:00:00Z", "channel": "IN_APP" }

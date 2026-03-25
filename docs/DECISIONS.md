@@ -18,6 +18,28 @@ Decision:
 
 Consequences:
 
+## 2026-03-24 - Event Email Reminders Use Resend and Saved-Event Opt-In
+Status: accepted
+
+Context:
+The app already stored event reminders, but only as passive rows with no delivery
+mechanism and no frontend flow for saved-event reminder opt-in. Users also needed
+to manage the email address used for those reminders.
+
+Decision:
+Keep event reminders in `event_reminders`, add delivery-state columns
+(`sent_at`, `failed_at`, `last_error`), and use a backend poller plus Resend API
+calls to deliver `EMAIL` reminders. Email reminders are opt-in per saved event,
+always scheduled for 24 hours before the current event start time, and are
+removed when the user unsaves the event. Add a user email update endpoint and
+surface email reminder controls in the events/settings UI.
+
+Consequences:
+Existing databases need `database/migration_event_email_reminders.sql` before the
+dispatcher can track delivery state safely. Reminder delivery now depends on
+`RESEND_API_KEY` and `EMAIL_FROM`, and the calendar requirement gains partial UI
+coverage instead of remaining API-only.
+
 ## 2026-03-18 - Drop Event Organizer and Store Import Metadata in `event_details`
 Status: accepted
 
