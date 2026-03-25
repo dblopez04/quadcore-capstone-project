@@ -5,6 +5,7 @@ export default function About() {
             <p>
                 This is a Sprint-2 static prototype using React + Vite,
                 Leaflet, and OpenStreetMap tiles. Functionality comes later.
+                This is a CI/CD test
             </p>
         </section>
     );

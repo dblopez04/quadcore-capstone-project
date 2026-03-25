@@ -18,6 +18,27 @@ Decision:
 
 Consequences:
 
+## 2026-03-24 - Add Proxmox Deployment Stack with Caddy + Cloudflare Tunnel
+Status: accepted
+
+Context:
+The repository had a development compose stack but did not include committed
+deployment assets for a Proxmox-hosted environment that keeps services private
+behind Cloudflare Tunnel. Cookie defaults were also development-oriented.
+
+Decision:
+Add a deployment compose file (`compose.proxmox.yaml`) that runs backend, db,
+osrm, caddy, and cloudflared on an internal Docker network with no direct
+service port publishing. Add `deploy/Caddyfile` and `deploy/Dockerfile.caddy`
+for same-origin frontend + API routing. Add backend cookie configuration for
+proxy-aware secure defaults (`NODE_ENV`, `COOKIE_*`) and trust proxy controls
+(`TRUST_PROXY_HOPS`), plus a `/healthz` endpoint.
+
+Consequences:
+The app can be deployed on Proxmox with a single hostname through Cloudflare
+Tunnel and same-origin browser traffic, while keeping DB/OSRM/API internals off
+the public network and hardening auth cookie behavior in production.
+
 ## 2026-03-24 - Switch Production Deploys to Pull-Based Host Rollouts
 Status: accepted
 
@@ -28,9 +49,9 @@ is brittle and requires extra tunnel/access setup.
 
 Decision:
 Change `.github/workflows/deploy-prod.yml` to build and publish images only on
-`production` pushes. Add `scripts/prod_pull_deploy.sh` plus systemd unit
-templates so the host periodically pulls `prod-latest` images from GHCR and
-applies `docker compose ... up -d --no-build` locally.
+`main` pushes. Add `scripts/prod_pull_deploy.sh` plus systemd unit templates so
+the host periodically pulls `prod-latest` images from GHCR and applies
+`docker compose ... up -d --no-build` locally.
 
 Consequences:
 Deployments no longer require inbound SSH access from GitHub. Image publication
@@ -47,12 +68,16 @@ startup can race Postgres initialization and exit on the first `ECONNREFUSED`,
 which requires a manual backend restart.
 
 Decision:
-Add `scripts/rebuild_stack.sh` to automate destructive rebuild + reseed flow in
-one command, including compose teardown, build cache prune, `compose up --build`,
-`import_osm_macos.sh`, and `scripts/scrape_unt_events.py`. Update backend startup
-to retry database authentication with configurable retry count and delay before
-failing process startup. Update `import_osm_macos.sh` to wait for database
-readiness and retry `osm2pgsql` imports to handle transient startup races.
+Add `scripts/rebuild.sh` to automate destructive rebuild + reseed flow in one
+command, including compose teardown, build cache prune, `compose up --build`,
+`import_osm_macos.sh`, and `scripts/scrape_unt_events.py`. Extend the script
+with `--prod` support so Proxmox deployments can rebuild against
+`compose.proxmox.yaml`, with event scraping disabled by default in prod mode.
+Update backend startup to retry database authentication with configurable retry
+count and delay before failing process startup. Update `import_osm_macos.sh` to
+wait for database readiness, retry `osm2pgsql` imports, and resolve DB
+credentials from the running compose service so special characters in `.env`
+values do not break shell parsing.
 
 Consequences:
 Rebuilds are consistent and faster to run, and backend no longer requires a

@@ -3,7 +3,7 @@ name: Build Prod Images
 on:
   push:
     branches:
-      - production
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -17,7 +17,7 @@ permissions:
 jobs:
   build_and_push:
     name: Build and Push Images
-    if: github.ref_name == 'production'
+    if: github.ref_name == 'main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

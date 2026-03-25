@@ -42,9 +42,9 @@ CADDY_IMAGE=ghcr.io/<owner>/<repo>-caddy:prod-latest \
 docker compose -f compose.proxmox.yaml -f compose.proxmox.images.yaml up -d --no-build backend caddy cloudflared
 ```
 
-## CI/CD (build-only on `production`)
+## CI/CD (build-only on `main`)
 - Workflow: `.github/workflows/deploy-prod.yml`
-- Trigger: push to `production` (and manual `workflow_dispatch`)
+- Trigger: push to `main` (and manual `workflow_dispatch`)
 - Output: pushes backend and caddy images to GHCR
 - Host rollout: handled by `scripts/prod_pull_deploy.sh` + systemd timer on server
 
@@ -71,7 +71,7 @@ journalctl -u quadcore-prod-pull-deploy.service -n 100 --no-pager
 
 ## Full rebuild + reseed (destructive)
 ```bash
-./scripts/rebuild.sh
+./scripts/rebuild.sh --dev
 ```
 This script runs the full reset flow in one command:
 - `docker compose down --volumes --remove-orphans --rmi local`
@@ -79,6 +79,15 @@ This script runs the full reset flow in one command:
 - `docker compose up --build -d`
 - `./import_osm_macos.sh`
 - `python3 scripts/scrape_unt_events.py`
+
+## Full rebuild (destructive, Proxmox/prod)
+```bash
+./scripts/rebuild.sh --prod
+```
+Default prod behavior:
+- uses `compose.proxmox.yaml`
+- runs map import
+- skips event scrape unless `--events` is provided
 
 ## Docker Compose (single service)
 ```bash

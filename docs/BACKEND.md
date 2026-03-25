@@ -29,6 +29,12 @@
 - `OSRM_URL` - OSRM base URL (defined in `compose.yaml`).
 - `FRONTEND_URL` - optional base URL used to generate shareable location deep links
   (defaults to `http://localhost:5173`).
+- `NODE_ENV` - when set to `production`, cookie security defaults are hardened.
+- `TRUST_PROXY_HOPS` - Express proxy trust hop count (default `1` in production,
+  `0` otherwise).
+- `COOKIE_SAMESITE` - cookie SameSite mode (`lax`, `strict`, or `none`).
+- `COOKIE_SECURE` - force cookie `Secure` flag (`true`/`false`).
+- `COOKIE_DOMAIN` - optional cookie domain override.
 
 ## Auth Flow
 - `POST /api/auth/register` - creates a user (`STUDENT`/`FACULTY`/`VISITOR` only) and sets `accessToken` and `refreshToken` cookies.
@@ -46,11 +52,19 @@ Token timing (current):
 - Access cookie maxAge: 30 minutes.
 - Refresh token JWT expiry: 7 days.
 
+Cookie behavior:
+- Cookies are always `httpOnly` and path-scoped to `/`.
+- In production (`NODE_ENV=production`), cookies default to `Secure`.
+- SameSite defaults to `lax` unless overridden by `COOKIE_SAMESITE`.
+
 ## User Routes
 - `POST /api/user/profile` - returns the current user profile.
 - `GET /api/user/search-history` - returns search history array.
 - `POST /api/user/search-history` - prepends a search string.
 - `DELETE /api/user/search-history` - clears search history.
+
+## Health Route
+- `GET /healthz` - liveness endpoint for reverse proxy/tunnel health checks.
 
 All user routes expect cookie auth. `accessToken` is used primarily, with
 `refreshToken` as fallback via `verifyToken`.
@@ -197,6 +211,8 @@ npm run test:coverage # run tests with coverage report
 ## CORS
 The API allows credentials for local frontend origins and `FRONTEND_URL`
 (`http://localhost:5173` and `http://127.0.0.1:5173` are allowed by default).
+Same-origin proxy deployments (for example Caddy + Cloudflare Tunnel) avoid most
+cross-origin browser traffic by routing frontend and API under one hostname.
 
 ## Known Gaps
 - There is no standalone public POI list/details endpoint yet; POI discovery is currently exposed via `/api/search`.

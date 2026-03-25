@@ -14,7 +14,7 @@ No app ports are exposed directly on the Proxmox VM.
 - `deploy/Dockerfile.caddy` - builds frontend assets and packages Caddy
 - `deploy/Caddyfile` - same-origin frontend + API proxy rules
 - `deploy/cloudflared.config.yml.example` - optional local config template (if not using tunnel token mode)
-- `.github/workflows/deploy-prod.yml` - builds and publishes production images on `production` pushes
+- `.github/workflows/deploy-prod.yml` - builds and publishes production images on `main` pushes
 - `scripts/prod_pull_deploy.sh` - pull latest app images and apply rollout on host
 - `deploy/systemd/quadcore-prod-pull-deploy.service` - one-shot deploy service
 - `deploy/systemd/quadcore-prod-pull-deploy.timer` - recurring deploy timer
@@ -64,12 +64,12 @@ docker compose -f compose.proxmox.yaml logs -f cloudflared caddy backend
 ## 4) Configure image build workflow (GitHub)
 
 The workflow builds and pushes backend/caddy images to GHCR on pushes to
-`production`.
+`main`.
 
 Required repository setup:
 - Ensure `.github/workflows/deploy-prod.yml` exists on the default branch for
   Actions UI visibility.
-- Ensure branch trigger matches your deploy branch (`production`).
+- Ensure branch trigger matches your deploy branch (`main`).
 
 Required repository permissions:
 - GitHub Actions must have permission to write packages.
