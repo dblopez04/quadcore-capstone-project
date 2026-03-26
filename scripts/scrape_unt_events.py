@@ -525,6 +525,72 @@ def alias_variants(value: str) -> Set[str]:
     return normalized
 
 
+def room_alias_variants(building_name: str, room_number: str, location_name: str = "") -> Set[str]:
+    room_number = clean_text(room_number)
+    if not room_number:
+        return set()
+
+    variants: Set[str] = set()
+    for base_name in dedupe_preserving_order([building_name, location_name]):
+        base_name = clean_text(base_name)
+        if not base_name:
+            continue
+        variants.update(alias_variants(f"{base_name} {room_number}"))
+        variants.update(alias_variants(f"{base_name}, {room_number}"))
+        variants.update(alias_variants(f"{base_name} room {room_number}"))
+    return variants
+
+
+def extract_room_number(value: str) -> str:
+    cleaned = clean_text(value)
+    if not cleaned:
+        return ""
+
+    room_number_match = re.search(
+        r"\broom\s+(?P<room>[A-Za-z]?\d[\w-]*)\b",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    if room_number_match:
+        return clean_text(room_number_match.group("room"))
+
+    standalone_match = re.fullmatch(r"[A-Za-z]?\d[\w-]*", cleaned)
+    if standalone_match:
+        return cleaned
+
+    embedded_match = re.search(r"\b(?P<room>[A-Za-z]?\d[\w-]*)\b", cleaned)
+    if embedded_match:
+        return clean_text(embedded_match.group("room"))
+
+    return ""
+
+
+def select_room_hint(*values: str) -> str:
+    for value in values:
+        room_number = extract_room_number(value)
+        if room_number:
+            return room_number
+    return ""
+
+
+def room_hint_priority(value: str) -> int:
+    cleaned = clean_text(value)
+    if not cleaned:
+        return 0
+    if re.fullmatch(r"[A-Za-z]?\d[\w-]*", cleaned):
+        return 3
+    if re.search(r"\b[A-Za-z]?\d[\w-]*\b", cleaned):
+        return 2
+    return 1
+
+
+def alias_priority(value: str) -> Tuple[int, int, int, str]:
+    cleaned = clean_text(value)
+    token_count = len(cleaned.split())
+    has_room_number = 1 if re.search(r"\b[A-Za-z]?\d[\w-]*\b", cleaned) else 0
+    return (has_room_number, token_count, len(cleaned), cleaned)
+
+
 def slug_alias(url: str) -> Set[str]:
     if not url:
         return set()
@@ -649,6 +715,7 @@ def load_candidates(database_url: str, psql_bin: str) -> List[Candidate]:
         aliases.update(alias_variants(source_name))
         aliases.update(alias_variants(location_name))
         aliases.update(alias_variants(building_name))
+        aliases.update(room_alias_variants(building_name, room_number, location_name))
         candidates.append(
             Candidate(
                 location_id=location_id,
@@ -766,11 +833,29 @@ def parse_room_location(raw_location: str) -> Tuple[str, str]:
         flags=re.IGNORECASE,
     )
     if at_match:
-        room_parts = [clean_text(at_match.group("room"))]
-        if at_match.group("paren"):
-            room_parts.append(clean_text(at_match.group("paren")))
-        room_hint = " / ".join(part for part in room_parts if part)
+        room_hint = select_room_hint(
+            clean_text(at_match.group("paren") or ""),
+            clean_text(at_match.group("room")),
+        )
         return clean_text(at_match.group("building")), room_hint
+
+    paren_match = re.match(
+        r"^(?P<building>.+?)\s*\((?P<room>[^)]+)\)$",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    if paren_match:
+        room_hint = select_room_hint(clean_text(paren_match.group("room")))
+        return clean_text(paren_match.group("building")), room_hint
+
+    comma_match = re.match(
+        r"^(?P<building>.+?),\s*(?P<room>[^,]+)$",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    if comma_match:
+        room_hint = select_room_hint(clean_text(comma_match.group("room")))
+        return clean_text(comma_match.group("building")), room_hint
 
     room_match = re.match(
         r"^(?P<building>.+?)\s+(?:room\s+)?(?P<room>[A-Za-z]?\d[\w-]*)$",
@@ -778,7 +863,7 @@ def parse_room_location(raw_location: str) -> Tuple[str, str]:
         flags=re.IGNORECASE,
     )
     if room_match:
-        return clean_text(room_match.group("building")), clean_text(room_match.group("room"))
+        return clean_text(room_match.group("building")), select_room_hint(clean_text(room_match.group("room")))
 
     return "", ""
 
@@ -924,14 +1009,27 @@ def event_source_aliases(event: ScrapedEvent) -> Tuple[Set[str], str]:
         aliases.update(alias_variants(override_target))
 
     room_hint = ""
+    room_alias_bases: List[str] = []
     for raw_location in dedupe_preserving_order(
         [event.location_name, event.widget_location_name]
     ):
         building_name, parsed_room_hint = parse_room_location(raw_location)
+        room_alias_base = clean_text(first_present(building_name, raw_location))
+        if room_alias_base:
+            room_alias_bases.append(room_alias_base)
         if building_name:
             aliases.update(alias_variants(building_name))
-        if parsed_room_hint and not room_hint:
+            if room_hint_priority(parsed_room_hint) >= 2:
+                aliases.update(room_alias_variants(building_name, parsed_room_hint, building_name))
+        if room_hint_priority(parsed_room_hint) > room_hint_priority(room_hint):
             room_hint = parsed_room_hint
+
+    address_room_hint = select_room_hint(event.address)
+    if room_hint_priority(address_room_hint) >= 2:
+        for room_alias_base in dedupe_preserving_order(room_alias_bases):
+            aliases.update(room_alias_variants(room_alias_base, address_room_hint, room_alias_base))
+    if room_hint_priority(address_room_hint) > room_hint_priority(room_hint):
+        room_hint = address_room_hint
 
     return aliases, room_hint
 
@@ -978,7 +1076,7 @@ def match_event_location(event: ScrapedEvent, candidates: Sequence[Candidate]) -
         return None, "missing source aliases", room_hint
 
     exact_alias_map = build_exact_alias_map(candidates)
-    for alias in sorted(source_aliases):
+    for alias in sorted(source_aliases, key=alias_priority, reverse=True):
         options = exact_alias_map.get(alias, [])
         if options:
             best = pick_best_candidate(event, options)
