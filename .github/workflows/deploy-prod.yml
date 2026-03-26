@@ -56,8 +56,6 @@ jobs:
         with:
           context: .
           file: ./deploy/Dockerfile.caddy
-          build-args: |
-            VITE_API_BASE_URL=/api
           push: true
           tags: |
             ${{ steps.image_names.outputs.caddy_image }}:${{ github.sha }}
