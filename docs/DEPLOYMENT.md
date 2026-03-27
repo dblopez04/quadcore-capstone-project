@@ -48,6 +48,16 @@ sudo systemctl start quadcore-prod-pull-deploy.service
 - `https://<host>/docs` loads Swagger
 - Auth cookies work over HTTPS
 
+## Admin Bootstrap
+- Register the initial user through the app first.
+- Promote that user with `./scripts/make-admin.sh <email> --owner` from the repo root on the host.
+- The script reads `.env`, defaults to `compose.proxmox.yaml`, and updates both the `admin` table and `users.user_role`.
+- For local compose usage, override the compose file:
+
+```bash
+COMPOSE_FILE=compose.yaml ./scripts/make-admin.sh <email> --owner
+```
+
 ## Rollback
 - Pin older `BACKEND_IMAGE` and `CADDY_IMAGE` values in `.env.deploy`
 - Re-run `quadcore-prod-pull-deploy.service`
