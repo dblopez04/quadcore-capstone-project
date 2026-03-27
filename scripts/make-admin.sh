@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Promote a user to admin privileges in a Docker Compose environment.
-# Defaults to the production compose file; override with COMPOSE_FILE=compose.yaml for local use.
+# Defaults to the local compose file; override with COMPOSE_FILE=compose.proxmox.yaml for production use.
 # Usage: ./scripts/make-admin.sh <email> [--owner]
 # Example: ./scripts/make-admin.sh test@example.com --owner
 
@@ -23,7 +23,7 @@ fi
 
 EMAIL="$1"
 OWNER_FLAG="${2:-}"
-COMPOSE_FILE="${COMPOSE_FILE:-compose.proxmox.yaml}"
+COMPOSE_FILE="${COMPOSE_FILE:-compose.yaml}"
 export COMPOSE_FILE
 
 if [ -f ".env" ]; then

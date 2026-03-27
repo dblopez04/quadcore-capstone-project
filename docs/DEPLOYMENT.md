@@ -50,12 +50,12 @@ sudo systemctl start quadcore-prod-pull-deploy.service
 
 ## Admin Bootstrap
 - Register the initial user through the app first.
-- Promote that user with `./scripts/make-admin.sh <email> --owner` from the repo root on the host.
-- The script reads `.env`, defaults to `compose.proxmox.yaml`, and updates both the `admin` table and `users.user_role`.
-- For local compose usage, override the compose file:
+- Promote that user with `COMPOSE_FILE=compose.proxmox.yaml ./scripts/make-admin.sh <email> --owner` from the repo root on the host.
+- The script reads `.env` and updates both the `admin` table and `users.user_role`.
+- For local compose usage, the default `compose.yaml` works as-is:
 
 ```bash
-COMPOSE_FILE=compose.yaml ./scripts/make-admin.sh <email> --owner
+./scripts/make-admin.sh <email> --owner
 ```
 
 ## Rollback
