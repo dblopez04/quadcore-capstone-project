@@ -150,8 +150,8 @@ else
 fi
 
 if [ "$IMPORT_EVENTS" = "1" ]; then
-    echo "Scraping and importing UNT events..."
-    python3 scripts/scrape_unt_events.py
+    echo "Importing UNT events from the ICS feed..."
+    python3 scripts/import_unt_events_ics.py
 else
     echo "Skipping event import."
 fi
