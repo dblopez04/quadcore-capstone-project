@@ -1,7 +1,7 @@
-import { API_BASE_URL } from "./client";
+import { buildApiUrl } from "./client";
 
 export async function createEventRequest(payload) {
-    const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
+    const response = await fetch(buildApiUrl("/api/admin/events"), {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -20,7 +20,7 @@ export async function createEventRequest(payload) {
 }
 
 export async function fetchAdminEvents() {
-    const response = await fetch(`${API_BASE_URL}/api/admin/events`, {
+    const response = await fetch(buildApiUrl("/api/admin/events"), {
         method: "GET",
         credentials: "include",
     });
@@ -35,7 +35,7 @@ export async function fetchAdminEvents() {
 }
 
 export async function deleteAdminEvent(eventId) {
-    const response = await fetch(`${API_BASE_URL}/api/admin/events/${eventId}`, {
+    const response = await fetch(buildApiUrl(`/api/admin/events/${eventId}`), {
         method: "DELETE",
         credentials: "include",
     });
@@ -50,7 +50,7 @@ export async function deleteAdminEvent(eventId) {
 }
 
 export async function updateAdminEvent(eventId, payload) {
-    const response = await fetch(`${API_BASE_URL}/api/admin/events/${eventId}`, {
+    const response = await fetch(buildApiUrl(`/api/admin/events/${eventId}`), {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",

@@ -1,6 +1,34 @@
 // frontend/src/api/client.js
 const fallbackApiBaseUrl = "http://localhost:4000";
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || fallbackApiBaseUrl).replace(/\/$/, "");
+
+function normalizeApiBaseUrl(value) {
+    return String(value || "").trim().replace(/\/$/, "");
+}
+
+function normalizeApiPath(path) {
+    if (!path) return "";
+
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const baseEndsWithApi = API_BASE_URL.endsWith("/api");
+    const pathStartsWithApi = normalizedPath === "/api" || normalizedPath.startsWith("/api/");
+
+    if (baseEndsWithApi && pathStartsWithApi) {
+        const trimmedPath = normalizedPath.slice(4);
+        return trimmedPath || "/";
+    }
+
+    return normalizedPath;
+}
+
+export const API_BASE_URL = normalizeApiBaseUrl(
+    Object.prototype.hasOwnProperty.call(import.meta.env, "VITE_API_BASE_URL")
+        ? import.meta.env.VITE_API_BASE_URL
+        : fallbackApiBaseUrl
+);
+
+export function buildApiUrl(path) {
+    return `${API_BASE_URL}${normalizeApiPath(path)}`;
+}
 
 /**
  * Basic JSON request helper:
@@ -9,7 +37,7 @@ export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || fallbackApiBas
  * - throws readable errors
  */
 export async function apiRequest(path, options = {}) {
-    const url = `${API_BASE_URL}${path}`;
+    const url = buildApiUrl(path);
 
     const { headers: optHeaders, ...rest } = options;
 

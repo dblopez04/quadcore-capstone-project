@@ -1,5 +1,5 @@
 // frontend/src/api/auth.js
-import { API_BASE_URL } from "./client";
+import { buildApiUrl } from "./client";
 
 async function handleResponse(response, defaultErrorMessage) {
     let data = {};
@@ -17,7 +17,7 @@ async function handleResponse(response, defaultErrorMessage) {
 }
 
 export async function loginRequest(email, password) {
-    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    const response = await fetch(buildApiUrl("/api/auth/login"), {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -30,7 +30,7 @@ export async function loginRequest(email, password) {
 }
 
 export async function registerRequest(payload) {
-    const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+    const response = await fetch(buildApiUrl("/api/auth/register"), {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -43,7 +43,7 @@ export async function registerRequest(payload) {
 }
 
 export async function logoutRequest() {
-    const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+    const response = await fetch(buildApiUrl("/api/auth/logout"), {
         method: "POST",
         credentials: "include",
     });

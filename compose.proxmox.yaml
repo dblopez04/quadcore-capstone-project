@@ -59,7 +59,7 @@ services:
       context: .
       dockerfile: deploy/Dockerfile.caddy
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL_PROD:-/api}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL_PROD:-}
     container_name: caddy
     depends_on:
       - backend

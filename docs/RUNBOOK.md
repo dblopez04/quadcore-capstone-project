@@ -211,8 +211,12 @@ Use this only if you need a clean slate; it removes volumes and data.
 
 ## Common Gotchas
 - Frontend API base URL comes from `VITE_API_BASE_URL` (defaults to `http://localhost:4000`).
+- For production image builds, leave `VITE_API_BASE_URL_PROD` empty or set it to
+  the site origin only. Do not set it to `/api` or append `/api` to the origin,
+  because frontend calls already include the `/api/...` prefix.
 - Backend CORS origin comes from `FRONTEND_URL` and also allows
-  `http://localhost:5173` and `http://127.0.0.1:5173` in dev.
+  `http://localhost:5173` and `http://127.0.0.1:5173` in dev. Production also
+  hardcodes `https://www.meangreenguide.com` into the browser allowlist.
 - OSRM rebuilds only when `osrm-data/map.osrm` is missing; see `docs/MAP.md` before deleting files.
 - Tooling services behind compose profiles are not started by default; use `docker compose --profile tools ...` when running `osmium`.
 - Docker uses `linux/amd64` for DB and OSRM images; Apple Silicon may run under emulation.
