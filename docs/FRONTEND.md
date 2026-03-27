@@ -32,6 +32,7 @@
 - Guest mode is tracked in `localStorage` as `authMode`.
 - Search, bookmarks, lists, and event flows already call the backend.
 - Event cards use backend event details to show room/location detail when available.
+- Event normalization must coerce `details` payloads into plain text before rendering; `details` objects are for metadata, not direct JSX output.
 
 ## Conventions
 - Put page components in `frontend/src/pages/`.

@@ -90,6 +90,21 @@ function cleanText(value) {
     return String(value).trim();
 }
 
+function extractEventDescription(ev) {
+    const directDescription = cleanText(ev.description);
+    if (directDescription) return directDescription;
+
+    if (typeof ev.details === "string") {
+        return cleanText(ev.details);
+    }
+
+    return cleanText(
+        ev.details?.description ||
+        ev.details?.metadata?.description ||
+        ev.details?.metadata?.summary
+    );
+}
+
 function formatRoomLabel(roomDetail) {
     const room = cleanText(roomDetail);
     if (!room) return "";
@@ -157,7 +172,7 @@ function normalizeEvent(ev) {
     return {
         id: ev.event_id || ev.id || ev._id,
         title: ev.title || ev.name || "Untitled Event",
-        description: ev.description || ev.details || "",
+        description: extractEventDescription(ev),
         category: ev.category || ev.event_type || ev.type || "Event",
         locationId:
             ev.location_id ||
