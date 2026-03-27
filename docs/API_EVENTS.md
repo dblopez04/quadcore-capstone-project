@@ -1,15 +1,15 @@
 # Events API
 
-This document describes the backend event APIs used for calendar, bookmarks, registrations, reminders, tags, conflicts, and ICS export.
+This document summarizes the current event endpoints used by the frontend calendar,
+registration, bookmark, reminder, conflict, and ICS-export flows.
 
 **Base URL**
 `/api/events`
 
 **Auth**
 - Endpoints marked “Auth required” expect the `accessToken` cookie (`verifyToken` middleware).
-- Admin endpoints require `requireAdmin`.
 
-## Schemas
+## Response Shape
 
 **EventSummary**
 ```json
@@ -21,7 +21,7 @@ This document describes the backend event APIs used for calendar, bookmarks, reg
   "end_date_time": "2026-02-10T12:00:00Z",
   "event_type": "CAREER FAIR",
   "status": "SCHEDULED",
-  "is_public": true,
+  "location_id": "uuid",
   "location": {
     "location_id": "uuid",
     "name": "Student Union",
@@ -29,23 +29,13 @@ This document describes the backend event APIs used for calendar, bookmarks, reg
     "coordinates": { "type": "Point", "coordinates": [-97.1526, 33.2070] }
   },
   "details": {
-    "event_detail_id": "uuid",
+    "event_id": "uuid",
     "source_url": "https://calendar.unt.edu/event/example",
-    "source_location_name": "Wooten Hall 322",
-    "source_location_url": "https://calendar.unt.edu/wooten-hall",
+    "source_location_name": "Wooten Hall",
     "room_detail": "322",
-    "address": "1501 Highland St, Denton, TX",
-    "image_url": "https://...",
-    "website_url": "https://...",
-    "metadata": { "Audience": ["Students"] }
-  },
-  "tags": [{ "event_tag_id": "uuid", "name": "Career" }]
+    "metadata": { "audience": ["Students"] }
+  }
 }
-```
-
-**EventListResponse**
-```json
-{ "events": [EventSummary] }
 ```
 
 **EventReminder**
@@ -53,139 +43,64 @@ This document describes the backend event APIs used for calendar, bookmarks, reg
 {
   "event_reminder_id": "uuid",
   "remind_at": "2026-02-10T09:00:00Z",
-  "channel": "IN_APP",
-  "event": EventSummary
-}
-```
-
-**EventReminderListResponse**
-```json
-{ "reminders": [EventReminder] }
-```
-
-**TagListResponse**
-```json
-{ "tags": [{ "event_tag_id": "uuid", "name": "Career" }] }
-```
-
-**EventConflictsResponse**
-```json
-{
-  "conflicts": [
-    { "event_a": EventSummary, "event_b": EventSummary }
-  ]
+  "channel": "EMAIL",
+  "sent_at": null,
+  "event": { "event_id": "uuid" }
 }
 ```
 
 ## Endpoints
 
-**GET `/api/events` — Search and filter events**
+**GET `/api/events`**
 - Auth required: No
-- Query params: `q`, `start`, `end`, `event_type`, `status`, `location_id`, `tags`
-- `q` matches title, description, mapped location name, imported source location, room detail, and address
-- Response: `EventListResponse`
+- Query params: `q`, `start`, `end`, `event_type`, `status`, `location_id`
+- Search matches title, description, location name, imported source location name, and room detail.
 
-**GET `/api/events/bookmarks.ics` — Export bookmarked events (ICS)**
+**GET `/api/events/bookmarks`**
+- Auth required: Yes
+- Query params: `start`, `end`, `status`, `event_type`
+
+**GET `/api/events/bookmarks.ics`**
 - Auth required: Yes
 - Query params: `start`, `end`
 - Response: `text/calendar`
 
-**GET `/api/events/bookmarks` — Get current user’s bookmarked events**
+**POST `/api/events/:eventId/bookmark`**
 - Auth required: Yes
-- Query params: `start`, `end`, `status`, `event_type`, `tags`
-- Response: `EventListResponse`
+- Idempotently bookmarks an event.
 
-**POST `/api/events/:eventId/bookmark` — Bookmark an event**
+**DELETE `/api/events/:eventId/bookmark`**
 - Auth required: Yes
-- Response 201:
-```json
-{ "message": "Event bookmarked.", "event_bookmark_id": "uuid" }
-```
+- Removes the bookmark and deletes any email reminder tied to that saved event.
 
-**DELETE `/api/events/:eventId/bookmark` — Remove an event bookmark**
+**GET `/api/events/registrations`**
 - Auth required: Yes
-- Response 200:
-```json
-{ "message": "Bookmark removed." }
-```
+- Query params: `start`, `end`, `status`, `event_type`
 
-**GET `/api/events/registrations` — Get current user’s registrations**
+**POST `/api/events/:eventId/register`**
 - Auth required: Yes
-- Query params: `start`, `end`, `status`, `event_type`, `tags`
-- Response: `EventListResponse`
+- Creates a registration row.
+- Sends a confirmation email when the user has an email address and Resend is configured.
 
-**POST `/api/events/:eventId/register` — Register for an event**
+**DELETE `/api/events/:eventId/register`**
 - Auth required: Yes
-- Response 201:
-```json
-{ "message": "Registered for event.", "registration_id": "uuid" }
-```
+- Removes the user’s registration for the event.
 
-**DELETE `/api/events/:eventId/register` — Unregister from an event**
+**GET `/api/events/conflicts`**
 - Auth required: Yes
-- Response 200:
-```json
-{ "message": "Registration removed." }
-```
+- Query params: `start`, `end`, `source`
+- `source` accepts `bookmarks`, `registrations`, or both.
 
-**GET `/api/events/conflicts` — Detect conflicts**
-- Auth required: Yes
-- Query params: `start`, `end`, `source` (comma-separated values: `bookmarks`, `registrations`)
-- Response: `EventConflictsResponse`
-
-**GET `/api/events/reminders` — List reminders**
+**GET `/api/events/reminders`**
 - Auth required: Yes
 - Query params: `start`, `end`
-- Response: `EventReminderListResponse`
 
-**POST `/api/events/:eventId/reminders` — Create a reminder**
+**POST `/api/events/:eventId/reminders`**
 - Auth required: Yes
-- Body:
-```json
-{ "remind_at": "2026-02-10T09:00:00Z", "channel": "IN_APP" }
-```
-- For `EMAIL` reminders, send `{ "channel": "EMAIL" }`. The backend schedules the reminder for 24 hours before the event starts and requires the event to already be bookmarked.
-- Response 201:
-```json
-{ "event_reminder_id": "uuid", "remind_at": "2026-02-10T09:00:00Z", "channel": "IN_APP" }
-```
+- `IN_APP` reminders require `{ "remind_at": "...", "channel": "IN_APP" }`.
+- `EMAIL` reminders use `{ "channel": "EMAIL" }`.
+- `EMAIL` reminders are always scheduled for 24 hours before the event and require the event to already be bookmarked.
 
-**DELETE `/api/events/reminders/:reminderId` — Delete a reminder**
+**DELETE `/api/events/reminders/:reminderId`**
 - Auth required: Yes
-- Response 200:
-```json
-{ "message": "Reminder deleted." }
-```
-
-**GET `/api/events/tags` — List tags**
-- Auth required: No
-- Response: `TagListResponse`
-
-**POST `/api/events/tags` — Create tag**
-- Auth required: Admin
-- Body:
-```json
-{ "name": "Career" }
-```
-- Response 201:
-```json
-{ "event_tag_id": "uuid", "name": "Career" }
-```
-
-**POST `/api/events/:eventId/tags` — Assign tags to event**
-- Auth required: Admin
-- Body:
-```json
-{ "tags": ["Career", "Spring"] }
-```
-- Response 201:
-```json
-{ "tags": [{ "event_tag_id": "uuid", "name": "Career" }] }
-```
-
-**DELETE `/api/events/:eventId/tags/:tagId` — Remove tag from event**
-- Auth required: Admin
-- Response 200:
-```json
-{ "message": "Tag removed." }
-```
+- Deletes the reminder row.

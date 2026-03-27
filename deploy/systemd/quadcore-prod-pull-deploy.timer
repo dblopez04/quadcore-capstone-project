@@ -1,0 +1,13 @@
+[Unit]
+Description=Run Quadcore production pull deploy every 2 minutes
+
+[Timer]
+OnBootSec=2m
+OnUnitActiveSec=2m
+RandomizedDelaySec=20s
+Persistent=true
+Unit=quadcore-prod-pull-deploy.service
+
+[Install]
+WantedBy=timers.target
+

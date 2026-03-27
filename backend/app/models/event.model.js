@@ -7,22 +7,9 @@ module.exports = (sequelize, DataTypes) => {
         start_date_time: { type: DataTypes.DATE, allowNull: false },
         end_date_time: { type: DataTypes.DATE, allowNull: false },
         event_type: {
-            type: DataTypes.ENUM(
-                'ACADEMIC',
-                'SOCIAL',
-                'CAREER FAIR',
-                'SPORTS',
-                'CULTURAL',
-                'WORKSHOP',
-                'CONFERENCE',
-                'SEMINAR',
-                'OTHER'
-            ),
+            type: DataTypes.STRING(255),
             allowNull: false
         },
-        capacity: { type: DataTypes.INTEGER, allowNull: true },
-        registered_count: { type: DataTypes.INTEGER, defaultValue: 0 },
-        is_public: { type: DataTypes.BOOLEAN, defaultValue: true },
         status: {
             type: DataTypes.ENUM('SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED', 'POSTPONED'),
             defaultValue: 'SCHEDULED'

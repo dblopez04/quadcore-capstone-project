@@ -16,19 +16,6 @@ CREATE TYPE poi_category AS ENUM(
     'OTHER'
 );
 
--- EVENT ENUMS
-CREATE TYPE event_type AS ENUM(
-    'ACADEMIC',
-    'SOCIAL',
-    'CAREER FAIR',
-    'SPORTS',
-    'CULTURAL',
-    'WORKSHOP',
-    'CONFERENCE',
-    'SEMINAR',
-    'OTHER'
-);
-
 CREATE TYPE event_status AS ENUM(
     'SCHEDULED',
     'ONGOING',
@@ -134,30 +121,29 @@ CREATE TABLE events (
     location_id UUID NOT NULL REFERENCES locations(location_id),
     start_date_time TIMESTAMP NOT NULL,
     end_date_time TIMESTAMP NOT NULL,
-    event_type event_type NOT NULL,
-    capacity INTEGER CHECK (capacity > 0),
-    registered_count INTEGER DEFAULT 0 CHECK (registered_count >= 0),
-    is_public BOOLEAN DEFAULT true,
+    event_type VARCHAR(255) NOT NULL,
     status event_status DEFAULT 'SCHEDULED',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT end_after_start CHECK (end_date_time > start_date_time),
-    CONSTRAINT capacity_check CHECK (registered_count <= capacity)
+    CONSTRAINT end_after_start CHECK (end_date_time > start_date_time)
 );
 
 CREATE TABLE event_details (
-    event_detail_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id UUID NOT NULL UNIQUE REFERENCES events(event_id) ON DELETE CASCADE,
+    event_id UUID PRIMARY KEY REFERENCES events(event_id) ON DELETE CASCADE,
     source_url TEXT,
     source_location_name VARCHAR(255),
-    source_location_url TEXT,
     room_detail VARCHAR(255),
-    address TEXT,
-    image_url TEXT,
-    website_url TEXT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE event_bookmarks (
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, event_id),
+    UNIQUE(user_id, event_id)
 );
 
 CREATE TABLE event_registrations (
@@ -167,27 +153,6 @@ CREATE TABLE event_registrations (
     registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     registration_status VARCHAR(50) DEFAULT 'REGISTERED',
     UNIQUE(event_id, user_id)
-);
-
-CREATE TABLE event_bookmarks (
-    event_bookmark_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, event_id)
-);
-
-CREATE TABLE event_tags (
-    event_tag_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE event_tag_assignments (
-    event_tag_assignment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id UUID NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
-    event_tag_id UUID NOT NULL REFERENCES event_tags(event_tag_id) ON DELETE CASCADE,
-    UNIQUE(event_id, event_tag_id)
 );
 
 CREATE TABLE event_reminders (

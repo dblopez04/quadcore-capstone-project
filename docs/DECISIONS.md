@@ -51,11 +51,9 @@ made the data model misleading and hard to query.
 
 Decision:
 Drop `organizer_id` from `events` and add a one-to-one `event_details` table for
-source-facing metadata (`source_url`, source venue strings, room detail, address,
-image, website, and raw metadata JSON). Update the event API to return `details`
-with each event and allow `q` search to match imported detail fields. Keep
-source-derived tags so imported room/source-venue details remain searchable even
-without a dedicated UI yet.
+source-facing metadata (`source_url`, source venue strings, room detail, and raw
+metadata JSON). Update the event API to return `details` with each event and
+allow `q` search to match imported detail fields.
 
 Consequences:
 Imported events no longer pretend to be owned by a fake organizer account.
@@ -72,17 +70,14 @@ to line up with the existing `locations` and `points_of_interest` data instead o
 blindly creating duplicate venue rows.
 
 Decision:
-Add `scripts/scrape_unt_events.py` as a local ingestion tool. It scrapes the
-public UNT widget for event URLs, hydrates each event from the detail page
-`application/ld+json` payload plus page metadata, matches venues against existing
-`locations` and `points_of_interest` through `psql`, emits idempotent SQL inserts,
-and skips broad campus-wide venues (`UNIVERSITY OF NORTH TEXAS`, `ALL DINING HALLS`)
-plus explicitly hidden venue names (`DISCOVERY PARK BUILDING`, `UNT COLAB`,
-`FRISCO LANDING -- UNT AT FRISCO`). The matcher now supports explicit alias
-overrides for ambiguous outdoor/common-area venues (for example `University Union
-South Lawn -> University Union`, `Library Mall -> Willis Library`, and
-`14C - Sagemore Lawn C -> Sage Hall`) and collapses room-style strings to the
-parent building when possible.
+Add `scripts/import_unt_events_ics.py` as a local ingestion tool. It reads the
+official UNT ICS feed, matches venues against existing `locations` and
+`points_of_interest` through `psql`, emits idempotent SQL inserts, and skips
+broad campus-wide venues (`UNIVERSITY OF NORTH TEXAS`, `ALL DINING HALLS`) plus
+explicitly hidden venue names (`DISCOVERY PARK BUILDING`, `UNT COLAB`,
+`FRISCO LANDING -- UNT AT FRISCO`). The matcher supports explicit alias
+overrides for ambiguous outdoor/common-area venues and collapses room-style
+strings to the parent building when possible.
 
 The tool no longer creates new `locations` rows automatically. If a venue cannot
 be matched confidently, the event is skipped and a `reports` row is emitted in the
@@ -93,11 +88,10 @@ generated `EVENT_IMPORT` reports on each run so old failed-match artifacts do no
 linger after matcher improvements.
 
 Consequences:
-Event seeding is reproducible without adding a backend admin scrape endpoint or a
-schema migration. Calendar imports preserve richer source metadata in event
-descriptions and tags, and ambiguous venue handling is safer because unresolved
-cases become admin-review reports instead of bad foreign-key assignments or
-auto-created map locations.
+Event seeding is reproducible without adding a backend admin import endpoint or a
+schema migration. Calendar imports preserve structured source metadata, and
+ambiguous venue handling is safer because unresolved cases are skipped instead of
+creating bad foreign-key assignments.
 
 ## 2026-03-08 - Split Docker Dev and Proxmox Deployment Stacks
 Status: accepted

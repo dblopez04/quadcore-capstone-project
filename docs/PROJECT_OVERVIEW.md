@@ -1,76 +1,39 @@
 # Project Overview
 
 ## Goal
-Build a campus navigation app for the University of North Texas. The app surfaces
-campus locations on a map, supports user accounts, and provides navigation,
-accessibility, and safety features tailored to UNT.
-
-## Target Users
-- Students, faculty, and visitors navigating campus.
-- Admin users who manage POIs, closures, and events.
-
-## Requirements Snapshot
-- Interactive map with campus POIs (buildings, dining, parking, bus stops).
-- Search, filters, and user-specific access (student/faculty/visitor).
-- Routing, turn-by-turn navigation, walking ETA, and GPS location.
-- Bookmarks, search history, and user reporting for closures.
-- Accessibility and safety options (ramps, elevators, well-lit paths).
-- Mobile-first UI with consistent branding and reusable components.
-
-## Release Roadmap (from `requirements.md`)
-- R1: map render, POIs, location search, current location, register, login.
-- R2: routing, turn-by-turn, bookmarks, search history, POI filtering, reporting,
-  mobile responsiveness, UI consistency.
-- R3: temporary closures, calendar/events, admin access, accessibility, safety.
-See `docs/REQUIREMENTS.md` for status.
+Campus navigation app for UNT with account-based features, searchable places,
+map views, event support, and future accessibility/safety routing.
 
 ## Stack
-- Frontend: React + Vite + React Router + Leaflet
-- Backend: Express + Node + Sequelize + Swagger
-- Database: Postgres + PostGIS
-- Routing: OSRM
-- Orchestration: Docker Compose
-
+- Frontend: React, Vite, React Router, Leaflet
+- Backend: Express, Sequelize, Swagger
+- Data: Postgres, PostGIS
+- Routing engine: OSRM
+- Runtime: Docker Compose
 
 ## Repo Layout
-- `frontend/` - React UI and map rendering
-- `backend/` - Express API and auth
-- `database/` - Postgres/PostGIS schema
-- `osrm-data/` - campus OSM extract + OSRM artifacts
-- `compose.yaml` - dev orchestration
-- `requirements.md` - project requirements (source of truth)
+- `frontend/` - React UI
+- `backend/` - Express API
+- `database/` - schema and seed SQL
+- `osrm-data/` - OSM extract and OSRM artifacts
+- `compose*.yaml` - local and deployment stacks
 
-## Service URLs (local)
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:4000`
-- Swagger: `http://localhost:4000/docs`
-- Postgres: `localhost:5433`
-- OSRM: `http://localhost:5001`
+## Current State
+- Auth is implemented with JWT cookies and refresh flow.
+- Frontend includes login, register, forgot-password, home, search, map,
+  bookmarks, events, admin, about, help, and settings pages.
+- Backend exposes auth, user, search, locations, events, and admin route groups.
+- Search, location bookmarks/lists, event bookmarks/registrations/reminders, and
+  admin CRUD flows exist in the API.
+- Swagger is generated from route files.
 
-## Current Feature Set (from codebase)
-- Auth: register/login/logout/refresh with JWT cookies.
-- User profile endpoint.
-- Search history endpoints (store and clear searches).
-- React pages: login, register, home, map, search, bookmarks, settings, about, help.
-- Map view uses Leaflet + OpenStreetMap tiles with a campus marker.
-- Swagger docs are generated from route files.
-- Jest test suite for backend controllers, middleware, and routes.
+## Known Gaps
+- Backend does not call OSRM yet, so route geometry and turn-by-turn are not live.
+- Public POI access is still limited compared with the original requirements.
+- Some frontend pages are present but only partially wired, especially settings
+  and parts of the map/bookmark flows.
+- Role-specific behavior beyond admin/owner remains limited.
 
-
-## Data Sources
-- Campus OSM extract in `osrm-data/map.osm`.
-- OpenStreetMap tiles for map display.
-
-## Known Gaps (observed)
-- OSRM is not yet wired into backend endpoints.
-- POI read endpoints are still missing for non-admin users.
-- Search page now performs live fuzzy location matching; settings remains static UI.
-- Bookmarks page now supports bookmark/list APIs, but history/recently viewed UI is still pending.
-- Role-based access is partial: admin and owner controls are enforced, but
-  student/faculty/visitor-specific policy checks are still limited.
-
-## Non-Functional Requirements (summary)
-- Security: protect login info, search history, and bookmarks; restrict admin actions.
-- Reliability: handle large user counts and fast routing.
-- Usability: intuitive UI, mobile-first layouts, UNT branding.
-- Compatibility: modern desktop and mobile browsers (Chrome/Edge verified).
+## Use This With
+- `docs/AREAS.md` for file ownership and path lookup
+- `docs/RUNBOOK.md` for ports and commands

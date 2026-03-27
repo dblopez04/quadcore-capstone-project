@@ -1,0 +1,18 @@
+[Unit]
+Description=Quadcore production pull deploy
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deploy
+Group=docker
+WorkingDirectory=/opt/quadcore-capstone
+EnvironmentFile=-/opt/quadcore-capstone/.env.deploy
+ExecStart=/opt/quadcore-capstone/scripts/prod_pull_deploy.sh
+Nice=10
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
+

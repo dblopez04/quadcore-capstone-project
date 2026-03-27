@@ -16,6 +16,19 @@ const normalizePreviousRole = (role) => {
     return "VISITOR";
 };
 
+const ensureLocationExists = async (locationId) => {
+    if (!locationId) {
+        return { error: "location_id is required.", status: 400 };
+    }
+
+    const location = await Location.findByPk(locationId);
+    if (!location) {
+        return { error: "Referenced location was not found.", status: 404 };
+    }
+
+    return { location };
+};
+
 // --- LOCATIONS ---
 
 exports.getAllLocations = async (req, res) => {
@@ -175,6 +188,11 @@ exports.getAllEvents = async (req, res) => {
 
 exports.createEvent = async (req, res) => {
     try {
+        const locationCheck = await ensureLocationExists(req.body.location_id);
+        if (locationCheck.error) {
+            return res.status(locationCheck.status).send({ message: locationCheck.error });
+        }
+
         const event = await Event.create(req.body);
         res.send(event);
     } catch (err) {
@@ -185,6 +203,13 @@ exports.createEvent = async (req, res) => {
 exports.updateEvent = async (req, res) => {
     const id = req.params.id;
     try {
+        if (Object.prototype.hasOwnProperty.call(req.body, "location_id")) {
+            const locationCheck = await ensureLocationExists(req.body.location_id);
+            if (locationCheck.error) {
+                return res.status(locationCheck.status).send({ message: locationCheck.error });
+            }
+        }
+
         const [num] = await Event.update(req.body, { where: { event_id: id } });
         if (num == 1) {
             res.send({ message: "Event updated successfully." });

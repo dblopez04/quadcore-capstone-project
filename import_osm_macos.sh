@@ -2,20 +2,29 @@
 
 set -euo pipefail
 
-if [ -f ".env" ]; then
-    set -a
-    # shellcheck disable=SC1091
-    source .env
-    set +a
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
+
+compose_files_input="${COMPOSE_FILES:-}"
+declare -a COMPOSE_FILES=()
+if [ -n "$compose_files_input" ]; then
+    IFS=',' read -r -a COMPOSE_FILES <<< "$compose_files_input"
+else
+    COMPOSE_FILES=("compose.yaml")
 fi
 
-required_vars=(POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB)
-for var in "${required_vars[@]}"; do
-    if [ -z "${!var:-}" ]; then
-        echo "Missing required environment variable: $var"
-        exit 1
+declare -a COMPOSE_ARGS=()
+for compose_file in "${COMPOSE_FILES[@]:-}"; do
+    if [ -n "$compose_file" ]; then
+        COMPOSE_ARGS+=(-f "$compose_file")
     fi
 done
+
+dc() {
+    docker compose "${COMPOSE_ARGS[@]}" "$@"
+}
+
+required_vars=(POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB)
 
 OSM_DIR="osrm-data"
 OSM_FILE_TEXAS="$OSM_DIR/texas-latest.osm.pbf"
@@ -23,15 +32,16 @@ OSM_FILE="$OSM_DIR/map.osm"
 OSM_DOWNLOAD_URL="https://download.geofabrik.de/north-america/us/texas-latest.osm.pbf"
 DB_SERVICE="db"
 DB_HOST="db"
-DB_USER="$POSTGRES_USER"
-DB_NAME="$POSTGRES_DB"
-DB_PASS="$POSTGRES_PASSWORD"
+DB_USER="${POSTGRES_USER:-}"
+DB_NAME="${POSTGRES_DB:-}"
+DB_PASS="${POSTGRES_PASSWORD:-}"
 
 if [ -n "${OSM2PGSQL_IMAGE:-}" ]; then
     OSM2PGSQL_IMAGES=("$OSM2PGSQL_IMAGE")
 else
-    OSM2PGSQL_IMAGES=("osm2pgsql/osm2pgsql:latest" "iboates/osm2pgsql:latest")
+    OSM2PGSQL_IMAGES=("iboates/osm2pgsql:latest")
 fi
+OSM2PGSQL_RETRIES="${OSM2PGSQL_RETRIES:-3}"
 
 if [ -n "${OSMIUM_IMAGE:-}" ]; then
     OSMIUM_IMAGES=("$OSMIUM_IMAGE")
@@ -46,6 +56,26 @@ echo "Begin import..."
 echo "----------------"
 
 mkdir -p "$OSM_DIR"
+
+echo "Ensuring database service is running..."
+dc up -d "$DB_SERVICE"
+
+if [ -z "$DB_USER" ] || [ -z "$DB_PASS" ] || [ -z "$DB_NAME" ]; then
+    DB_USER="$(dc exec -T "$DB_SERVICE" sh -lc 'printf "%s" "$POSTGRES_USER"')"
+    DB_PASS="$(dc exec -T "$DB_SERVICE" sh -lc 'printf "%s" "$POSTGRES_PASSWORD"')"
+    DB_NAME="$(dc exec -T "$DB_SERVICE" sh -lc 'printf "%s" "$POSTGRES_DB"')"
+fi
+
+POSTGRES_USER="$DB_USER"
+POSTGRES_PASSWORD="$DB_PASS"
+POSTGRES_DB="$DB_NAME"
+
+for var in "${required_vars[@]}"; do
+    if [ -z "${!var:-}" ]; then
+        echo "Missing required environment variable: $var"
+        exit 1
+    fi
+done
 
 is_valid_osm_pbf() {
     local path="$1"
@@ -76,6 +106,26 @@ extract_map_with_osmium() {
     return 1
 }
 
+wait_for_database() {
+    local max_attempts="${DB_READY_MAX_ATTEMPTS:-60}"
+    local delay_seconds="${DB_READY_RETRY_DELAY_SEC:-2}"
+
+    echo "Waiting for database readiness..."
+    for attempt in $(seq 1 "$max_attempts"); do
+        if dc exec -T "$DB_SERVICE" pg_isready -U "$DB_USER" -d "$DB_NAME" >/dev/null 2>&1; then
+            echo "Database is ready."
+            return 0
+        fi
+
+        if [ "$attempt" -eq "$max_attempts" ]; then
+            echo "Database did not become ready after ${max_attempts} attempts."
+            return 1
+        fi
+
+        sleep "$delay_seconds"
+    done
+}
+
 if [ "$FORCE_MAP_REFRESH" = "1" ] || ! is_valid_osm_pbf "$OSM_FILE_TEXAS"; then
     echo "Downloading Texas data from Geofabrik"
     rm -f "$OSM_FILE_TEXAS"
@@ -96,10 +146,9 @@ else
     echo "$OSM_FILE already exists and looks valid"
 fi
 
-echo "Ensuring database service is running..."
-docker compose up -d "$DB_SERVICE"
+wait_for_database
 
-DB_CONTAINER_ID="$(docker compose ps -q "$DB_SERVICE")"
+DB_CONTAINER_ID="$(dc ps -q "$DB_SERVICE")"
 if [ -z "$DB_CONTAINER_ID" ]; then
     echo "Could not find a running container for service: $DB_SERVICE"
     exit 1
@@ -112,28 +161,34 @@ if [ -z "$NETWORK" ]; then
 fi
 
 echo "Setting up database extensions..."
-docker compose exec -T "$DB_SERVICE" psql -U "$DB_USER" -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS hstore;"
+dc exec -T "$DB_SERVICE" psql -U "$DB_USER" -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS hstore;"
 
 echo "Importing into PostGIS db..."
 imported=0
 for image in "${OSM2PGSQL_IMAGES[@]}"; do
-    echo "Trying osm2pgsql image: $image"
-    if docker run --rm \
-        --network "$NETWORK" \
-        -e PGPASSWORD="$DB_PASS" \
-        -v "$(pwd)/$OSM_DIR":/data \
-        "$image" \
-        -H "$DB_HOST" \
-        -U "$DB_USER" \
-        -d "$DB_NAME" \
-        --create --slim \
-        -G --hstore \
-        --latlong \
-        --cache 2000 \
-        /data/map.osm; then
-        imported=1
-        break
-    fi
+    for attempt in $(seq 1 "$OSM2PGSQL_RETRIES"); do
+        echo "Trying osm2pgsql image: $image (attempt $attempt/$OSM2PGSQL_RETRIES)"
+        if docker run --rm \
+            --network "$NETWORK" \
+            -e PGPASSWORD="$DB_PASS" \
+            -v "$(pwd)/$OSM_DIR":/data \
+            "$image" \
+            -H "$DB_HOST" \
+            -U "$DB_USER" \
+            -d "$DB_NAME" \
+            --create --slim \
+            -G --hstore \
+            --latlong \
+            --cache 2000 \
+            /data/map.osm; then
+            imported=1
+            break 2
+        fi
+
+        if [ "$attempt" -lt "$OSM2PGSQL_RETRIES" ]; then
+            sleep 2
+        fi
+    done
     echo "Failed with image: $image"
 done
 
@@ -145,7 +200,7 @@ fi
 echo "OSM data imported into PostGIS db"
 
 echo "Integrating map data locations and POIs"
-docker compose exec -T "$DB_SERVICE" psql -U "$DB_USER" -d "$DB_NAME" <<'SQL'
+dc exec -T "$DB_SERVICE" psql -U "$DB_USER" -d "$DB_NAME" <<'SQL'
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -347,6 +402,6 @@ DROP TABLE IF EXISTS tmp_osm_features;
 SQL
 echo "Tables updated with map data"
 echo "Rebuilding and restarting routing server"
-docker compose up -d osrm
+dc up -d osrm
 echo "Updated with latest data"
 echo "DONE"

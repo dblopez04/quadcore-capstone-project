@@ -4,7 +4,7 @@ import { apiRequest } from "./client";
 /**
  * Fetch events with optional filters.
  * Backend: GET /api/events
- * Query params supported: q, start, end, event_type, status, location_id, organizer_id, tags
+ * Query params supported: q, start, end, event_type, status, location_id
  */
 export async function fetchEvents(filters = {}) {
     const params = new URLSearchParams();
@@ -82,6 +82,18 @@ export async function createReminder(eventId, payload) {
 
 export async function deleteReminder(reminderId) {
     return apiRequest(`/api/events/reminders/${reminderId}`, {
+        method: "DELETE",
+    });
+}
+
+export async function fetchRegisteredEvents() {
+    return apiRequest("/api/events/registrations", {
+        method: "GET",
+    });
+}
+
+export async function unregisterFromEvent(eventId) {
+    return apiRequest(`/api/events/${eventId}/register`, {
         method: "DELETE",
     });
 }

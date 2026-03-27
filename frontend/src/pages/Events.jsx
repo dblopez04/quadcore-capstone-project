@@ -6,13 +6,15 @@ import {
     deleteReminder,
     fetchBookmarkedEvents,
     fetchEvents,
+    fetchRegisteredEvents,
     fetchReminders,
     registerForEvent,
     removeBookmarkedEvent,
+    unregisterFromEvent,
 } from "../api/eventService";
+import { useToast } from "../components/ToastProvider";
 import { fetchProfile } from "../api/userService";
 import { isGuestMode } from "../utils/authMode";
-import { useToast } from "../components/ToastProvider";
 
 function pad2(n) {
     return String(n).padStart(2, "0");
@@ -20,6 +22,12 @@ function pad2(n) {
 
 function toDateStr(d) {
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function eventDateStr(value) {
+    if (!value) return "";
+    const d = new Date(value);
+    return toDateStr(d);
 }
 
 function monthLabel(d) {
@@ -37,15 +45,139 @@ function buildMonthGrid(viewDate) {
     const daysInMonth = last.getDate();
 
     const cells = [];
-    for (let i = 0; i < startDay; i++) cells.push(null);
+    for (let i = 0; i < startDay; i += 1) cells.push(null);
 
-    for (let day = 1; day <= daysInMonth; day++) {
+    for (let day = 1; day <= daysInMonth; day += 1) {
         cells.push(new Date(year, month, day));
     }
 
     while (cells.length % 7 !== 0) cells.push(null);
 
     return cells;
+}
+
+function parseEventCoords(locationValue) {
+    const coordinates = locationValue?.coordinates;
+
+    if (Array.isArray(coordinates?.coordinates) && coordinates.coordinates.length >= 2) {
+        return {
+            lng: coordinates.coordinates[0],
+            lat: coordinates.coordinates[1],
+        };
+    }
+
+    return {
+        lat:
+            locationValue?.lat ??
+            locationValue?.latitude ??
+            coordinates?.lat ??
+            coordinates?.latitude ??
+            null,
+        lng:
+            locationValue?.lng ??
+            locationValue?.lon ??
+            locationValue?.longitude ??
+            coordinates?.lng ??
+            coordinates?.lon ??
+            coordinates?.longitude ??
+            null,
+    };
+}
+
+function normalizeEventDate(value) {
+    if (!value) return null;
+
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) {
+        return String(value);
+    }
+
+    return d.toISOString();
+}
+
+function cleanText(value) {
+    if (value == null) return "";
+    return String(value).trim();
+}
+
+function extractEventDescription(ev) {
+    const directDescription = cleanText(ev.description);
+    if (directDescription) return directDescription;
+
+    if (typeof ev.details === "string") {
+        return cleanText(ev.details);
+    }
+
+    return cleanText(
+        ev.details?.description ||
+        ev.details?.metadata?.description ||
+        ev.details?.metadata?.summary
+    );
+}
+
+function formatRoomLabel(roomDetail) {
+    const room = cleanText(roomDetail);
+    if (!room) return "";
+    return /[0-9]/.test(room) ? `Room ${room}` : room;
+}
+
+function formatEventLocation(ev) {
+    const locationName = cleanText(ev.locationName);
+    const sourceLocationName = cleanText(ev.sourceLocationName);
+    const roomDetail = cleanText(ev.roomDetail);
+    const baseLocation = locationName || sourceLocationName;
+
+    if (!roomDetail) {
+        return baseLocation || "Location not provided";
+    }
+
+    if (baseLocation && baseLocation.toLowerCase().includes(roomDetail.toLowerCase())) {
+        return baseLocation;
+    }
+
+    const roomLabel = formatRoomLabel(roomDetail);
+
+    if (!baseLocation) {
+        return roomLabel || "Location not provided";
+    }
+
+    return roomLabel ? `${baseLocation}, ${roomLabel}` : baseLocation;
+}
+
+function getReminderCutoff(start) {
+    return new Date(new Date(start).getTime() - 24 * 60 * 60 * 1000);
+}
+
+function formatEventWindow(event) {
+    const startText = event.start ? new Date(event.start).toLocaleString() : "Start: N/A";
+    const endText = event.end ? new Date(event.end).toLocaleString() : "";
+    return endText ? `${startText} - ${endText}` : startText;
+}
+
+function filterEvents(items, { query = "", category = "", date = "" } = {}) {
+    let filtered = [...items];
+
+    if (query.trim()) {
+        const normalizedQuery = query.trim().toLowerCase();
+        filtered = filtered.filter((ev) =>
+            (ev.title || "").toLowerCase().includes(normalizedQuery) ||
+            (ev.description || "").toLowerCase().includes(normalizedQuery) ||
+            (ev.locationName || "").toLowerCase().includes(normalizedQuery) ||
+            (ev.sourceLocationName || "").toLowerCase().includes(normalizedQuery) ||
+            (ev.roomDetail || "").toLowerCase().includes(normalizedQuery) ||
+            (ev.category || "").toLowerCase().includes(normalizedQuery)
+        );
+    }
+
+    if (category) {
+        filtered = filtered.filter((ev) => ev.category === category);
+    }
+
+    if (date) {
+        filtered = filtered.filter((ev) => eventDateStr(ev.start) === date);
+    }
+
+    return filtered;
 }
 
 function normalizeEvent(ev) {
@@ -65,81 +197,62 @@ function normalizeEvent(ev) {
         ev.end_date ||
         ev.endDate;
 
-    const start = startRaw ? new Date(startRaw).toISOString() : null;
-    const end = endRaw ? new Date(endRaw).toISOString() : null;
+    const start = normalizeEventDate(startRaw);
+    const end = normalizeEventDate(endRaw);
+    const eventLocation = typeof ev.location === "object" && ev.location !== null ? ev.location : null;
+    const parsedCoords = parseEventCoords(eventLocation);
+    const sourceLocationName =
+        ev.details?.source_location_name ||
+        ev.details?.sourceLocationName ||
+        ev.source_location_name ||
+        ev.sourceLocationName ||
+        "";
+    const roomDetail =
+        ev.details?.room_detail ||
+        ev.details?.roomDetail ||
+        ev.room_detail ||
+        ev.roomDetail ||
+        "";
 
     return {
         id: ev.event_id || ev.id || ev._id,
         title: ev.title || ev.name || "Untitled Event",
-        description: ev.description || ev.details || "",
+        description: extractEventDescription(ev),
         category: ev.category || ev.event_type || ev.type || "Event",
+        locationId:
+            ev.location_id ||
+            ev.locationId ||
+            eventLocation?.location_id ||
+            eventLocation?.id ||
+            null,
         locationName:
             ev.locationName ||
             ev.location_name ||
-            ev.location?.name ||
-            ev.location ||
+            eventLocation?.name ||
+            (typeof ev.location === "string" ? ev.location : "") ||
+            sourceLocationName ||
             "",
+        sourceLocationName,
+        roomDetail,
         lat:
             ev.lat ??
             ev.latitude ??
-            ev.location?.lat ??
-            ev.location?.latitude ??
-            null,
+            parsedCoords.lat,
         lng:
             ev.lng ??
             ev.longitude ??
-            ev.location?.lng ??
-            ev.location?.longitude ??
-            null,
+            parsedCoords.lng,
         start,
         end,
-        isDemo: Boolean(ev.isDemo),
     };
-}
-
-function buildDemoEvents() {
-    return [
-        {
-            id: "demo-1",
-            title: "UNT Career Fair",
-            description: "Meet employers and bring your resume.",
-            category: "Career",
-            locationName: "Union Ballroom",
-            lat: 33.2090,
-            lng: -97.1490,
-            start: new Date().toISOString(),
-            end: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-            isDemo: true,
-        },
-        {
-            id: "demo-2",
-            title: "Study Jam: CSCE Review",
-            description: "Group study session for upcoming exam.",
-            category: "Academic",
-            locationName: "Willis Library",
-            lat: 33.2106,
-            lng: -97.1503,
-            start: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
-            end: new Date(Date.now() + 49 * 60 * 60 * 1000).toISOString(),
-            isDemo: true,
-        },
-    ];
-}
-
-function getReminderCutoff(start) {
-    return new Date(new Date(start).getTime() - 24 * 60 * 60 * 1000);
-}
-
-function formatEventWindow(event) {
-    const startText = event.start ? new Date(event.start).toLocaleString() : "Start: N/A";
-    const endText = event.end ? new Date(event.end).toLocaleString() : "";
-    return endText ? `${startText} - ${endText}` : startText;
 }
 
 export default function Events() {
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
     const [savedEvents, setSavedEvents] = useState([]);
+    const [registeredEvents, setRegisteredEvents] = useState([]);
+    const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
     const [profileEmail, setProfileEmail] = useState("");
     const [emailReminders, setEmailReminders] = useState({});
     const [q, setQ] = useState("");
@@ -148,7 +261,11 @@ export default function Events() {
     const [error, setError] = useState("");
     const [selectedDate, setSelectedDate] = useState("");
     const [viewDate, setViewDate] = useState(() => new Date());
+    const [selectedCategory, setSelectedCategory] = useState("");
+    const [registeringId, setRegisteringId] = useState(null);
+    const [unregisteringId, setUnregisteringId] = useState(null);
     const [activeEventId, setActiveEventId] = useState("");
+    const [feedback, setFeedback] = useState("");
 
     const navigate = useNavigate();
     const { showToast } = useToast();
@@ -158,16 +275,38 @@ export default function Events() {
         const s = new Set();
         for (const e of allEvents) {
             if (!e.start) continue;
-            s.add(e.start.slice(0, 10));
+            s.add(eventDateStr(e.start));
         }
         return s;
+    }, [allEvents]);
+
+    const eventCountByDay = useMemo(() => {
+        const counts = {};
+
+        for (const e of allEvents) {
+            if (!e.start) continue;
+            const day = eventDateStr(e.start);
+            counts[day] = (counts[day] || 0) + 1;
+        }
+
+        return counts;
+    }, [allEvents]);
+
+    const selectedDateEvents = useMemo(() => {
+        if (!selectedDate) return [];
+        return allEvents.filter((ev) => eventDateStr(ev.start) === selectedDate);
+    }, [allEvents, selectedDate]);
+
+    const categoryOptions = useMemo(() => {
+        return Array.from(new Set(allEvents.map((event) => event.category).filter(Boolean)))
+            .sort((a, b) => a.localeCompare(b));
     }, [allEvents]);
 
     const savedEventIds = useMemo(() => {
         return new Set(savedEvents.map((event) => event.id));
     }, [savedEvents]);
 
-    async function loadEvents(filters = {}, nextSelectedDate = selectedDate) {
+    async function loadEvents(filters = {}) {
         try {
             setLoading(true);
             setError("");
@@ -175,12 +314,13 @@ export default function Events() {
             const data = await fetchEvents(filters);
             const raw = Array.isArray(data?.events) ? data.events : [];
             const normalized = raw.map(normalizeEvent);
-            const finalEvents = normalized.length === 0 ? buildDemoEvents() : normalized;
 
-            setAllEvents(finalEvents);
-            setEvents(nextSelectedDate
-                ? finalEvents.filter((event) => event.start?.startsWith(nextSelectedDate))
-                : finalEvents);
+            setAllEvents(normalized);
+            setEvents(filterEvents(normalized, {
+                query: q,
+                category: selectedCategory,
+                date: selectedDate,
+            }));
         } catch (e) {
             console.error(e);
             setError(e?.message || "Failed to load events.");
@@ -188,6 +328,34 @@ export default function Events() {
             setEvents([]);
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function loadRegisteredEvents() {
+        if (guestMode) {
+            setRegisteredEvents([]);
+            setRegisteredEventIds(new Set());
+            return;
+        }
+
+        try {
+            const data = await fetchRegisteredEvents();
+            const raw = Array.isArray(data?.events)
+                ? data.events
+                : Array.isArray(data)
+                    ? data
+                    : [];
+
+            const normalized = raw
+                .map((item) => normalizeEvent(item.event || item))
+                .filter((ev) => ev.id);
+
+            setRegisteredEvents(normalized);
+            setRegisteredEventIds(new Set(normalized.map((ev) => ev.id)));
+        } catch (e) {
+            console.error("Failed to load registrations:", e);
+            setRegisteredEvents([]);
+            setRegisteredEventIds(new Set());
         }
     }
 
@@ -232,38 +400,53 @@ export default function Events() {
         }
     }
 
-    useEffect(() => {
-        loadEvents();
-        loadSavedContext();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [guestMode]);
-
     async function handleRegister(eventId) {
+        if (guestMode) {
+            setFeedback("Sign in to register for events.");
+            return;
+        }
+
         try {
+            setRegisteringId(eventId);
+            setFeedback("");
             await registerForEvent(eventId);
-            showToast("Registered for event.", "success");
+            await loadRegisteredEvents();
+            setFeedback("Registered for event successfully.");
         } catch (e) {
             console.error(e);
+            setFeedback(
+                e?.status === 404
+                    ? "Event not found."
+                    : "Register failed. Please make sure you are logged in."
+            );
+        } finally {
+            setRegisteringId(null);
+        }
+    }
 
-            const msg =
-                e?.status === 409
-                    ? "This event is full."
-                    : e?.status === 404
-                        ? "Event not found."
-                        : "Register failed (are you logged in?).";
+    async function handleUnregister(eventId) {
+        if (guestMode) {
+            setFeedback("Sign in to manage registrations.");
+            return;
+        }
 
-            showToast(msg, "error");
+        try {
+            setUnregisteringId(eventId);
+            setFeedback("");
+            await unregisterFromEvent(eventId);
+            await loadRegisteredEvents();
+            setFeedback("Unregistered from event successfully.");
+        } catch (e) {
+            console.error(e);
+            setFeedback("Failed to unregister from event.");
+        } finally {
+            setUnregisteringId(null);
         }
     }
 
     async function handleBookmarkToggle(event) {
         if (guestMode) {
             showToast("Sign in to save events and manage reminders.", "error");
-            return;
-        }
-
-        if (event.isDemo) {
-            showToast("Demo events cannot be saved.", "error");
             return;
         }
 
@@ -321,11 +504,43 @@ export default function Events() {
         }
     }
 
-    const onSearch = async (e) => {
+    useEffect(() => {
+        loadEvents();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        loadRegisteredEvents();
+        loadSavedContext();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [guestMode]);
+
+    const onSearch = (e) => {
         e.preventDefault();
-        setSelectedDate("");
-        await loadEvents({ q }, "");
+        setEvents(filterEvents(allEvents, {
+            query: q,
+            category: selectedCategory,
+            date: selectedDate,
+        }));
     };
+
+    function handleViewOnMap(ev) {
+        if (ev.locationId) {
+            navigate(`/map?place=${encodeURIComponent(ev.locationId)}`);
+            return;
+        }
+
+        if (ev.lat == null || ev.lng == null) {
+            return;
+        }
+
+        const params = new URLSearchParams({
+            lat: String(ev.lat),
+            lng: String(ev.lng),
+            name: ev.locationName || ev.title,
+        });
+        navigate(`/map?${params.toString()}`);
+    }
 
     return (
         <div style={{ padding: "24px" }}>
@@ -333,114 +548,229 @@ export default function Events() {
 
             <div
                 style={{
-                    margin: "16px 0",
-                    padding: "12px",
+                    margin: "16px 0 20px 0",
+                    padding: "16px",
                     border: "1px solid #e5e5e5",
-                    borderRadius: "12px",
+                    borderRadius: "16px",
                     background: "#fff",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                 }}
             >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <button
-                        onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
-                        style={{ padding: "6px 10px", borderRadius: 8 }}
-                    >
-                        Prev
-                    </button>
-
-                    <div style={{ fontWeight: 700 }}>{monthLabel(viewDate)}</div>
-
-                    <button
-                        onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
-                        style={{ padding: "6px 10px", borderRadius: 8 }}
-                    >
-                        Next
-                    </button>
-                </div>
-
                 <div
                     style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(7, 1fr)",
-                        gap: "6px",
-                        marginTop: "10px",
-                        fontSize: 13,
+                        padding: "12px",
+                        border: "1px solid #e5e5e5",
+                        borderRadius: "12px",
+                        background: "#fafafa",
                     }}
                 >
-                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                        <div key={d} style={{ fontWeight: 700, textAlign: "center", opacity: 0.75 }}>
-                            {d}
-                        </div>
-                    ))}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <button
+                            onClick={() =>
+                                setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))
+                            }
+                            style={{ padding: "6px 10px", borderRadius: 8 }}
+                        >
+                            Prev
+                        </button>
 
-                    {buildMonthGrid(viewDate).map((dateObj, idx) => {
-                        if (!dateObj) return <div key={idx} />;
+                        <div style={{ fontWeight: 700 }}>{monthLabel(viewDate)}</div>
 
-                        const dStr = toDateStr(dateObj);
-                        const hasEvent = eventDays.has(dStr);
-                        const isSelected = selectedDate === dStr;
-
-                        return (
-                            <button
-                                key={idx}
-                                onClick={async () => {
-                                    setSelectedDate(dStr);
-                                    await loadEvents({ start: dStr, end: dStr, q }, dStr);
-                                }}
-                                style={{
-                                    padding: "10px 0",
-                                    borderRadius: 10,
-                                    border: "1px solid #ddd",
-                                    cursor: "pointer",
-                                    fontWeight: 700,
-                                    background: isSelected
-                                        ? "rgba(0, 128, 0, 0.18)"
-                                        : hasEvent
-                                            ? "rgba(0, 128, 0, 0.10)"
-                                            : "white",
-                                }}
-                            >
-                                {dateObj.getDate()}
-                            </button>
-                        );
-                    })}
-                </div>
-
-                <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center" }}>
-                    <button
-                        onClick={async () => {
-                            setSelectedDate("");
-                            await loadEvents(q ? { q } : {}, "");
-                        }}
-                        style={{ padding: "6px 10px", borderRadius: 8 }}
-                    >
-                        Clear Filter
-                    </button>
+                        <button
+                            onClick={() =>
+                                setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))
+                            }
+                            style={{ padding: "6px 10px", borderRadius: 8 }}
+                        >
+                            Next
+                        </button>
+                    </div>
 
                     {selectedDate && (
-                        <span style={{ fontSize: 13, color: "#444" }}>
-                            Showing events for <strong>{selectedDate}</strong>
-                        </span>
-                    )}
-                </div>
-            </div>
+                        <div
+                            style={{
+                                marginTop: 14,
+                                padding: "12px",
+                                border: "1px solid #e5e5e5",
+                                borderRadius: 12,
+                                background: "#f9fbf9",
+                            }}
+                        >
+                            <div style={{ fontWeight: 700, marginBottom: 8 }}>
+                                Events on {selectedDate}
+                            </div>
 
-            <form onSubmit={onSearch} style={{ margin: "12px 0", display: "flex", gap: "8px" }}>
-                <input
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder="Search events (title, description)"
+                            {selectedDateEvents.length === 0 ? (
+                                <div style={{ fontSize: 14, color: "#666" }}>
+                                    No events scheduled for this date.
+                                </div>
+                            ) : (
+                                <div style={{ display: "grid", gap: 8 }}>
+                                    {selectedDateEvents.map((ev) => (
+                                        <div
+                                            key={`calendar-${ev.id}`}
+                                            style={{
+                                                padding: "10px 12px",
+                                                borderRadius: 10,
+                                                background: "#fff",
+                                                border: "1px solid #e5e5e5",
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: 600 }}>{ev.title}</div>
+                                            <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+                                                {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
+                                                {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(7, 1fr)",
+                            gap: "6px",
+                            marginTop: "10px",
+                            fontSize: 13,
+                        }}
+                    >
+                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                            <div key={d} style={{ fontWeight: 700, textAlign: "center", opacity: 0.75 }}>
+                                {d}
+                            </div>
+                        ))}
+
+                        {buildMonthGrid(viewDate).map((dateObj, idx) => {
+                            if (!dateObj) return <div key={idx} />;
+
+                            const dStr = toDateStr(dateObj);
+                            const hasEvent = eventDays.has(dStr);
+                            const isSelected = selectedDate === dStr;
+
+                            return (
+                                <button
+                                    key={idx}
+                                    onClick={() => {
+                                        setSelectedDate(dStr);
+                                        setEvents(filterEvents(allEvents, {
+                                            query: q,
+                                            category: selectedCategory,
+                                            date: dStr,
+                                        }));
+                                    }}
+                                    style={{
+                                        padding: "10px 0",
+                                        borderRadius: 10,
+                                        border: "1px solid #ddd",
+                                        cursor: "pointer",
+                                        fontWeight: 700,
+                                        background: isSelected
+                                            ? "rgba(0, 128, 0, 0.18)"
+                                            : hasEvent
+                                                ? "rgba(0, 128, 0, 0.10)"
+                                                : "white",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "center",
+                                            lineHeight: 1.1,
+                                        }}
+                                    >
+                                        <span>{dateObj.getDate()}</span>
+
+                                        {eventCountByDay[dStr] > 0 && (
+                                            <span
+                                                style={{
+                                                    marginTop: 4,
+                                                    fontSize: 11,
+                                                    padding: "2px 6px",
+                                                    borderRadius: 999,
+                                                    background: "#006A31",
+                                                    color: "white",
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                {eventCountByDay[dStr]}
+                                            </span>
+                                        )}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center" }}>
+                        <button
+                            onClick={() => {
+                                setSelectedDate("");
+                                setEvents(filterEvents(allEvents, {
+                                    query: q,
+                                    category: selectedCategory,
+                                    date: "",
+                                }));
+                            }}
+                            style={{ padding: "6px 10px", borderRadius: 8 }}
+                        >
+                            Clear Filter
+                        </button>
+
+                        {selectedDate && (
+                            <span style={{ fontSize: 13, color: "#444" }}>
+                                Showing events for <strong>{selectedDate}</strong>
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <form
+                    onSubmit={onSearch}
                     style={{
-                        padding: "10px",
-                        flex: 1,
-                        borderRadius: "8px",
-                        border: "1px solid #ddd",
+                        marginTop: "14px",
+                        display: "flex",
+                        gap: "8px",
+                        flexWrap: "wrap",
                     }}
-                />
-                <button type="submit" style={{ padding: "10px 14px", borderRadius: "8px" }}>
-                    Search
-                </button>
-            </form>
+                >
+                    <input
+                        value={q}
+                        onChange={(e) => setQ(e.target.value)}
+                        placeholder="Search events (title, description)"
+                        style={{
+                            padding: "10px",
+                            flex: 1,
+                            borderRadius: "8px",
+                            border: "1px solid #ddd",
+                        }}
+                    />
+
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        style={{
+                            padding: "10px",
+                            borderRadius: "8px",
+                            border: "1px solid #ddd",
+                            minWidth: "160px",
+                        }}
+                    >
+                        <option value="">All Categories</option>
+                        {categoryOptions.map((category) => (
+                            <option key={category} value={category}>
+                                {category}
+                            </option>
+                        ))}
+                    </select>
+                    <button type="submit" style={{ padding: "10px 14px", borderRadius: "8px" }}>
+                        Search
+                    </button>
+                </form>
+            </div>
 
             {!guestMode && (
                 <div
@@ -454,7 +784,7 @@ export default function Events() {
                 >
                     <div style={{ fontWeight: 700, marginBottom: 4 }}>Reminder email</div>
                     <div style={{ color: "#35594a", fontSize: 14 }}>
-                        {profileEmail ? profileEmail : "No email on file."}
+                        {profileEmail || "No email on file."}
                     </div>
                     <button
                         onClick={() => navigate("/settings")}
@@ -507,9 +837,13 @@ export default function Events() {
                                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                                         <div>
                                             <h4 style={{ margin: "0 0 6px" }}>{event.title}</h4>
-                                            <div style={{ color: "#53645b", fontSize: 14 }}>{formatEventWindow(event)}</div>
+                                            <div style={{ color: "#53645b", fontSize: 14 }}>
+                                                {formatEventWindow(event)}
+                                            </div>
                                             {event.locationName && (
-                                                <div style={{ color: "#53645b", fontSize: 14 }}>{event.locationName}</div>
+                                                <div style={{ color: "#53645b", fontSize: 14 }}>
+                                                    {event.locationName}
+                                                </div>
                                             )}
                                         </div>
                                         <button
@@ -545,21 +879,103 @@ export default function Events() {
                 )}
             </div>
 
-            {events.length > 0 && events.every((ev) => ev.isDemo) && (
+            {feedback && (
                 <div
                     style={{
                         margin: "12px 0",
                         padding: "10px 12px",
-                        borderRadius: "10px",
-                        background: "#fff8e1",
-                        border: "1px solid #f0d98c",
-                        color: "#6b5b00",
-                        fontSize: "14px",
+                        borderRadius: 10,
+                        background: feedback.toLowerCase().includes("failed")
+                            ? "#fdecec"
+                            : "#edf7ed",
+                        border: feedback.toLowerCase().includes("failed")
+                            ? "1px solid #f5c2c7"
+                            : "1px solid #b7dfb9",
+                        color: feedback.toLowerCase().includes("failed")
+                            ? "#842029"
+                            : "#1e4620",
+                        fontSize: 14,
                     }}
                 >
-                    Showing demo events because no real events are currently available from the backend.
+                    {feedback}
                 </div>
             )}
+
+            {registeredEvents.length > 0 && (
+                <div
+                    style={{
+                        margin: "16px 0 20px 0",
+                        padding: "16px",
+                        border: "1px solid #e5e5e5",
+                        borderRadius: "16px",
+                        background: "#fff",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                    }}
+                >
+                    <h3 style={{ marginTop: 0, marginBottom: 12 }}>My Registered Events</h3>
+                    <div style={{ display: "grid", gap: "12px" }}>
+                        {registeredEvents.map((ev) => (
+                            <div
+                                key={`registered-${ev.id}`}
+                                style={{
+                                    border: "1px solid #e5e5e5",
+                                    borderRadius: "12px",
+                                    padding: "14px",
+                                    background: "#f9fbf9",
+                                }}
+                            >
+                                <div style={{ fontWeight: 700 }}>{ev.title}</div>
+                                <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
+                                    {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
+                                    {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                </div>
+                                <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
+                                    {formatEventLocation(ev)}
+                                </div>
+                                <div style={{ marginTop: 12 }}>
+                                    <button
+                                        onClick={() => handleUnregister(ev.id)}
+                                        disabled={unregisteringId === ev.id}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: unregisteringId === ev.id ? "#aaa" : "#b42318",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: unregisteringId === ev.id ? "not-allowed" : "pointer",
+                                        }}
+                                    >
+                                        {unregisteringId === ev.id ? "Unregistering..." : "Unregister"}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {(q.trim() || selectedCategory || selectedDate) && (
+                <div
+                    style={{
+                        margin: "8px 0 14px 0",
+                        padding: "10px 12px",
+                        borderRadius: 10,
+                        background: "#f7f7f7",
+                        border: "1px solid #e5e5e5",
+                        color: "#444",
+                        fontSize: 14,
+                    }}
+                >
+                    Showing <strong>{events.length}</strong> result{events.length === 1 ? "" : "s"}
+                    {q.trim() && <> for <strong>"{q.trim()}"</strong></>}
+                    {selectedCategory && <> in <strong>{selectedCategory}</strong></>}
+                    {selectedDate && <> on <strong>{selectedDate}</strong></>}
+                </div>
+            )}
+
+            <h3 style={{ margin: "20px 0 12px 0" }}>All Events</h3>
+
             {loading ? (
                 <p>Loading events...</p>
             ) : error ? (
@@ -569,7 +985,8 @@ export default function Events() {
             ) : (
                 <div style={{ display: "grid", gap: "12px" }}>
                     {events.map((ev) => {
-                        const canMap = ev.lat != null && ev.lng != null;
+                        const canMap = Boolean(ev.locationId) || (ev.lat != null && ev.lng != null);
+                        const isRegistered = registeredEventIds.has(ev.id);
                         const isSaved = savedEventIds.has(ev.id);
 
                         return (
@@ -577,100 +994,138 @@ export default function Events() {
                                 key={ev.id}
                                 style={{
                                     border: "1px solid #e5e5e5",
-                                    borderRadius: "12px",
-                                    padding: "14px",
+                                    borderRadius: "16px",
+                                    padding: "18px",
                                     background: "white",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                                 }}
                             >
-                                <h3 style={{ margin: 0 }}>{ev.title}</h3>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "flex-start",
+                                        gap: "12px",
+                                        flexWrap: "wrap",
+                                    }}
+                                >
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: "28px", lineHeight: 1.2 }}>
+                                            {ev.title}
+                                        </h3>
 
-                                {ev.isDemo && (
-                                    <div
+                                        <div
+                                            style={{
+                                                display: "inline-block",
+                                                marginTop: 10,
+                                                padding: "4px 10px",
+                                                borderRadius: "999px",
+                                                background: "#eef6ff",
+                                                color: "#1d4ed8",
+                                                fontSize: "12px",
+                                                fontWeight: 700,
+                                                letterSpacing: "0.3px",
+                                            }}
+                                        >
+                                            {ev.category}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {ev.description && (
+                                    <p
                                         style={{
-                                            display: "inline-block",
-                                            marginTop: 6,
-                                            padding: "2px 8px",
-                                            borderRadius: 999,
-                                            fontSize: 12,
-                                            border: "1px solid #ddd",
-                                            background: "#f7f7f7",
+                                            margin: "14px 0 10px 0",
                                             color: "#444",
+                                            lineHeight: 1.7,
+                                            fontSize: "15px",
                                         }}
                                     >
-                                        Demo Data
-                                    </div>
+                                        {ev.description}
+                                    </p>
                                 )}
 
-                                <p style={{ margin: "6px 0" }}>
-                                    <strong>{ev.category}</strong>
-                                    {ev.locationName ? ` - ${ev.locationName}` : ""}
-                                </p>
+                                <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+                                    <div style={{ fontSize: "14px", color: "#555" }}>
+                                        <strong>When:</strong>{" "}
+                                        {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
+                                        {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                    </div>
 
-                                {ev.description && <p style={{ margin: "6px 0", color: "#444" }}>{ev.description}</p>}
+                                    <div style={{ fontSize: "14px", color: "#555" }}>
+                                        <strong>Location:</strong>{" "}
+                                        {formatEventLocation(ev)}
+                                    </div>
+                                </div>
 
-                                <p style={{ margin: "6px 0", fontSize: "14px", color: "#666" }}>
-                                    {formatEventWindow(ev)}
-                                </p>
+                                <div style={{ display: "flex", gap: "10px", marginTop: 16, flexWrap: "wrap" }}>
+                                    <button
+                                        disabled={!canMap}
+                                        onClick={() => handleViewOnMap(ev)}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: canMap ? "#0a5" : "#aaa",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: canMap ? "pointer" : "not-allowed",
+                                        }}
+                                    >
+                                        View on Map
+                                    </button>
 
-                                <button
-                                    onClick={() => handleRegister(ev.id)}
-                                    disabled={ev.isDemo}
-                                    style={{
-                                        marginTop: 10,
-                                        marginRight: 10,
-                                        padding: "8px 10px",
-                                        borderRadius: 8,
-                                        background: ev.isDemo ? "#aaa" : "#0b5",
-                                        color: "white",
-                                        border: "none",
-                                        cursor: ev.isDemo ? "not-allowed" : "pointer",
-                                    }}
-                                >
-                                    Register
-                                </button>
+                                    <button
+                                        onClick={() => (
+                                            isRegistered ? handleUnregister(ev.id) : handleRegister(ev.id)
+                                        )}
+                                        disabled={registeringId === ev.id || unregisteringId === ev.id}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: isRegistered ? "#b42318" : "#1d4ed8",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor:
+                                                registeringId === ev.id || unregisteringId === ev.id
+                                                    ? "not-allowed"
+                                                    : "pointer",
+                                            opacity:
+                                                registeringId === ev.id || unregisteringId === ev.id
+                                                    ? 0.7
+                                                    : 1,
+                                        }}
+                                    >
+                                        {registeringId === ev.id
+                                            ? "Registering..."
+                                            : unregisteringId === ev.id
+                                                ? "Unregistering..."
+                                                : isRegistered
+                                                    ? "Unregister"
+                                                    : "Register"}
+                                    </button>
 
-                                <button
-                                    onClick={() => handleBookmarkToggle(ev)}
-                                    disabled={activeEventId === ev.id || ev.isDemo}
-                                    style={{
-                                        marginTop: 10,
-                                        marginRight: 10,
-                                        padding: "8px 10px",
-                                        borderRadius: 8,
-                                        background: isSaved ? "#245c3f" : "#1f7a4b",
-                                        color: "white",
-                                        border: "none",
-                                        cursor: ev.isDemo ? "not-allowed" : "pointer",
-                                    }}
-                                >
-                                    {isSaved ? "Saved" : "Save Event"}
-                                </button>
-
-                                <button
-                                    disabled={!canMap}
-                                    onClick={() => {
-                                        const params = new URLSearchParams({
-                                            lat: String(ev.lat),
-                                            lng: String(ev.lng),
-                                            name: ev.title,
-                                        });
-                                        navigate(`/map?${params.toString()}`);
-                                    }}
-                                    style={{
-                                        marginTop: 10,
-                                        padding: "8px 10px",
-                                        borderRadius: 8,
-                                        background: canMap ? "#0a5" : "#aaa",
-                                        color: "white",
-                                        border: "none",
-                                        cursor: canMap ? "pointer" : "not-allowed",
-                                    }}
-                                >
-                                    View on Map
-                                </button>
+                                    <button
+                                        onClick={() => handleBookmarkToggle(ev)}
+                                        disabled={activeEventId === ev.id}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: isSaved ? "#245c3f" : "#1f7a4b",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: activeEventId === ev.id ? "not-allowed" : "pointer",
+                                            opacity: activeEventId === ev.id ? 0.7 : 1,
+                                        }}
+                                    >
+                                        {isSaved ? "Unsave" : "Save Event"}
+                                    </button>
+                                </div>
 
                                 {!canMap && (
-                                    <div style={{ marginTop: 6, fontSize: 12, color: "#777" }}>
+                                    <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>
                                         Map coordinates not provided by backend.
                                     </div>
                                 )}

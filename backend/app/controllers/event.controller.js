@@ -5,8 +5,6 @@ const Event = db.Event;
 const EventBookmark = db.EventBookmark;
 const EventDetail = db.EventDetail;
 const EventRegistration = db.EventRegistration;
-const EventTag = db.EventTag;
-const EventTagAssignment = db.EventTagAssignment;
 const EventReminder = db.EventReminder;
 const Location = db.Location;
 const User = db.User;
@@ -38,9 +36,9 @@ const buildDateRange = (start, end) => {
             where: {
                 [Op.and]: [
                     { start_date_time: { [Op.lte]: endDate } },
-                    { end_date_time: { [Op.gte]: startDate } }
-                ]
-            }
+                    { end_date_time: { [Op.gte]: startDate } },
+                ],
+            },
         };
     }
 
@@ -77,32 +75,29 @@ const buildDefaultEmailReminderTime = (event) => {
     return new Date(startDate.getTime() - (24 * 60 * 60 * 1000));
 };
 
+const buildEventInclude = () => ([
+    { model: Location },
+    { model: EventDetail, as: "details", required: false },
+]);
+
 const buildEventResponse = (event, sources) => {
-    const location = event && event.Location ? {
-        location_id: event.Location.location_id,
-        name: event.Location.name,
-        description: event.Location.description,
-        coordinates: event.Location.coordinates
-    } : null;
-
-    const tags = event && event.EventTags
-        ? event.EventTags.map((tag) => ({
-            event_tag_id: tag.event_tag_id,
-            name: tag.name
-        }))
-        : [];
-
-    const details = event && event.details
+    const rawLocation = event?.location || event?.Location || null;
+    const location = rawLocation
         ? {
-            event_detail_id: event.details.event_detail_id,
+            location_id: rawLocation.location_id,
+            name: rawLocation.name,
+            description: rawLocation.description,
+            coordinates: rawLocation.coordinates,
+        }
+        : null;
+
+    const details = event?.details
+        ? {
+            event_id: event.details.event_id,
             source_url: event.details.source_url,
             source_location_name: event.details.source_location_name,
-            source_location_url: event.details.source_location_url,
             room_detail: event.details.room_detail,
-            address: event.details.address,
-            image_url: event.details.image_url,
-            website_url: event.details.website_url,
-            metadata: event.details.metadata || {}
+            metadata: event.details.metadata || {},
         }
         : null;
 
@@ -114,10 +109,9 @@ const buildEventResponse = (event, sources) => {
         end_date_time: event.end_date_time,
         event_type: event.event_type,
         status: event.status,
-        is_public: event.is_public,
+        location_id: location?.location_id || event.location_id || null,
         location,
         details,
-        tags
     };
 
     if (sources && sources.length) {
@@ -127,20 +121,13 @@ const buildEventResponse = (event, sources) => {
     return response;
 };
 
-const buildEventInclude = (tagNames) => {
-    const include = [
-        { model: Location },
-        { model: EventDetail, as: "details", required: false },
-        {
-            model: EventTag,
-            through: { attributes: [] },
-            required: tagNames.length > 0,
-            where: tagNames.length > 0 ? { name: { [Op.in]: tagNames } } : undefined
-        }
-    ];
-
-    return include;
-};
+const getIncludedEvent = (record) => (
+    record?.Event
+    || record?.event
+    || record?.dataValues?.Event
+    || record?.dataValues?.event
+    || null
+);
 
 const escapeIcsText = (value) => {
     return String(value || "")
@@ -158,10 +145,17 @@ const formatIcsDate = (value) => {
         .replace(/\.\d{3}Z$/, "Z");
 };
 
+const loadEvents = async (where) => {
+    return Event.findAll({
+        where,
+        include: buildEventInclude(),
+        order: [["start_date_time", "ASC"]],
+    });
+};
+
 exports.getEvents = async (req, res) => {
     try {
         const { q, start, end, status, event_type, location_id } = req.query;
-        const tagNames = parseList(req.query.tags || req.query.tag);
         const where = {};
 
         if (status) where.status = status;
@@ -181,7 +175,6 @@ exports.getEvents = async (req, res) => {
                 { "$Location.name$": { [Op.iLike]: `%${q}%` } },
                 { "$details.source_location_name$": { [Op.iLike]: `%${q}%` } },
                 { "$details.room_detail$": { [Op.iLike]: `%${q}%` } },
-                { "$details.address$": { [Op.iLike]: `%${q}%` } }
             ];
         }
 
@@ -191,14 +184,7 @@ exports.getEvents = async (req, res) => {
         }
 
         Object.assign(where, range.where);
-
-        const events = await Event.findAll({
-            where,
-            include: buildEventInclude(tagNames),
-            order: [["start_date_time", "ASC"]],
-            distinct: true
-        });
-
+        const events = await loadEvents(where);
         res.send({ events: events.map((event) => buildEventResponse(event)) });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error retrieving events." });
@@ -208,11 +194,16 @@ exports.getEvents = async (req, res) => {
 exports.getBookmarkedEvents = async (req, res) => {
     try {
         const { start, end, status, event_type } = req.query;
-        const tagNames = parseList(req.query.tags || req.query.tag);
         const where = {};
 
         if (status) where.status = status;
-        if (event_type) where.event_type = event_type;
+
+        const eventTypes = parseList(event_type);
+        if (eventTypes.length === 1) {
+            where.event_type = eventTypes[0];
+        } else if (eventTypes.length > 1) {
+            where.event_type = { [Op.in]: eventTypes };
+        }
 
         const range = buildDateRange(start, end);
         if (range.error) {
@@ -228,18 +219,65 @@ exports.getBookmarkedEvents = async (req, res) => {
                     model: Event,
                     required: true,
                     where,
-                    include: buildEventInclude(tagNames)
-                }
+                    include: buildEventInclude(),
+                },
             ],
             order: [[{ model: Event }, "start_date_time", "ASC"]],
-            distinct: true
         });
 
-        const events = bookmarks.map((bookmark) => buildEventResponse(bookmark.Event));
+        const events = bookmarks
+            .map((bookmark) => getIncludedEvent(bookmark))
+            .filter(Boolean)
+            .map((event) => buildEventResponse(event));
 
         res.send({ events });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error retrieving bookmarked events." });
+    }
+};
+
+exports.getRegistrations = async (req, res) => {
+    try {
+        const { start, end, status, event_type } = req.query;
+        const where = {};
+
+        if (status) where.status = status;
+
+        const eventTypes = parseList(event_type);
+        if (eventTypes.length === 1) {
+            where.event_type = eventTypes[0];
+        } else if (eventTypes.length > 1) {
+            where.event_type = { [Op.in]: eventTypes };
+        }
+
+        const range = buildDateRange(start, end);
+        if (range.error) {
+            return res.status(400).send({ message: range.error });
+        }
+
+        Object.assign(where, range.where);
+
+        const registrations = await EventRegistration.findAll({
+            where: { user_id: req.user_id },
+            include: [
+                {
+                    model: Event,
+                    required: true,
+                    where,
+                    include: buildEventInclude(),
+                },
+            ],
+            order: [[{ model: Event }, "start_date_time", "ASC"]],
+        });
+
+        const events = registrations
+            .map((registration) => getIncludedEvent(registration))
+            .filter(Boolean)
+            .map((event) => buildEventResponse(event));
+
+        res.send({ events });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error retrieving registrations." });
     }
 };
 
@@ -258,28 +296,26 @@ exports.exportBookmarkedEventsIcs = async (req, res) => {
                     model: Event,
                     required: true,
                     where: range.where,
-                    include: [{ model: Location }]
-                }
+                    include: [{ model: Location }],
+                },
             ],
-            order: [[{ model: Event }, "start_date_time", "ASC"]]
+            order: [[{ model: Event }, "start_date_time", "ASC"]],
         });
 
         const lines = [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
-            "PRODID:-//QuadCore//EN",
-            "CALSCALE:GREGORIAN"
+            "PRODID:-//quadcore//Bookmarked Events//EN",
         ];
 
-        const stamp = formatIcsDate(new Date());
-
         bookmarks.forEach((bookmark) => {
-            const event = bookmark.Event;
+            const event = getIncludedEvent(bookmark);
+            if (!event) return;
             const locationName = event.Location ? event.Location.name : "";
 
             lines.push("BEGIN:VEVENT");
             lines.push(`UID:${event.event_id}`);
-            lines.push(`DTSTAMP:${stamp}`);
+            lines.push(`DTSTAMP:${formatIcsDate(new Date())}`);
             lines.push(`DTSTART:${formatIcsDate(event.start_date_time)}`);
             lines.push(`DTEND:${formatIcsDate(event.end_date_time)}`);
             lines.push(`SUMMARY:${escapeIcsText(event.title)}`);
@@ -302,7 +338,7 @@ exports.exportBookmarkedEventsIcs = async (req, res) => {
     }
 };
 
-exports.bookmarkEvent = async (req, res) => {
+exports.registerForEvent = async (req, res) => {
     try {
         const eventId = req.params.eventId;
         const event = await Event.findByPk(eventId);
@@ -311,9 +347,66 @@ exports.bookmarkEvent = async (req, res) => {
             return res.status(404).send({ message: "Event not found." });
         }
 
+        const [registration, created] = await EventRegistration.findOrCreate({
+            where: { user_id: req.user_id, event_id: eventId },
+            defaults: { user_id: req.user_id, event_id: eventId },
+        });
+
+        if (!created) {
+            return res.status(200).send({ message: "Already registered." });
+        }
+
+        const user = await User.findByPk(req.user_id);
+        if (user?.email && process.env.RESEND_API_KEY && process.env.EMAIL_FROM) {
+            const eventForEmail = await Event.findByPk(eventId, {
+                include: [{ model: Location }],
+            });
+
+            sendEventRegistrationEmail({
+                to: user.email,
+                event: eventForEmail || event,
+            }).catch((error) => {
+                console.error("Failed to send registration email:", error.message || error);
+            });
+        }
+
+        return res.status(201).send({
+            message: "Registered for event.",
+            registration_id: registration.registration_id,
+        });
+    } catch (err) {
+        return res.status(500).send({ message: err.message || "Error registering for event." });
+    }
+};
+
+exports.unregisterFromEvent = async (req, res) => {
+    try {
+        const eventId = req.params.eventId;
+        const deleted = await EventRegistration.destroy({
+            where: { user_id: req.user_id, event_id: eventId },
+        });
+
+        if (deleted === 0) {
+            return res.status(404).send({ message: "Registration not found." });
+        }
+
+        return res.send({ message: "Registration removed." });
+    } catch (err) {
+        return res.status(500).send({ message: err.message || "Error removing registration." });
+    }
+};
+
+exports.bookmarkEvent = async (req, res) => {
+    try {
+        const eventId = req.params.eventId;
+        const event = await Event.findByPk(eventId);
+        if (!event) {
+            return res.status(404).send({ message: "Event not found." });
+        }
+
         const [bookmark, created] = await EventBookmark.findOrCreate({
             where: { user_id: req.user_id, event_id: eventId },
-            defaults: { user_id: req.user_id, event_id: eventId }
+            defaults: { user_id: req.user_id, event_id: eventId },
         });
 
         if (!created) {
@@ -322,7 +415,8 @@ exports.bookmarkEvent = async (req, res) => {
 
         res.status(201).send({
             message: "Event bookmarked.",
-            event_bookmark_id: bookmark.event_bookmark_id
+            user_id: bookmark.user_id,
+            event_id: bookmark.event_id,
         });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error bookmarking event." });
@@ -332,154 +426,21 @@ exports.bookmarkEvent = async (req, res) => {
 exports.removeBookmark = async (req, res) => {
     try {
         const eventId = req.params.eventId;
-        const deleted = await EventBookmark.destroy({
-            where: { user_id: req.user_id, event_id: eventId }
+        const num = await EventBookmark.destroy({
+            where: { user_id: req.user_id, event_id: eventId },
         });
 
-        if (deleted === 0) {
+        if (num !== 1) {
             return res.status(404).send({ message: "Bookmark not found." });
         }
 
         await EventReminder.destroy({
-            where: { user_id: req.user_id, event_id: eventId, channel: "EMAIL" }
+            where: { user_id: req.user_id, event_id: eventId, channel: "EMAIL" },
         });
 
         res.send({ message: "Bookmark removed." });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error removing bookmark." });
-    }
-};
-
-exports.registerForEvent = async (req, res) => {
-    const eventId = req.params.eventId;
-    const transaction = await db.sequelize.transaction();
-
-    try {
-        const event = await Event.findByPk(eventId, {
-            transaction,
-            lock: transaction.LOCK.UPDATE
-        });
-
-        if (!event) {
-            await transaction.rollback();
-            return res.status(404).send({ message: "Event not found." });
-        }
-
-        if (event.capacity && event.registered_count >= event.capacity) {
-            await transaction.rollback();
-            return res.status(409).send({ message: "Event is at full capacity." });
-        }
-
-        const [registration, created] = await EventRegistration.findOrCreate({
-            where: { user_id: req.user_id, event_id: eventId },
-            defaults: { user_id: req.user_id, event_id: eventId },
-            transaction
-        });
-
-        if (!created) {
-            await transaction.commit();
-            return res.status(200).send({ message: "Already registered." });
-        }
-
-        await event.increment("registered_count", { by: 1, transaction });
-        await transaction.commit();
-
-        const user = await User.findByPk(req.user_id);
-        if (user && user.email && process.env.RESEND_API_KEY && process.env.EMAIL_FROM) {
-            const eventForEmail = await Event.findByPk(eventId, {
-                include: [{ model: Location }]
-            });
-
-            sendEventRegistrationEmail({
-                to: user.email,
-                event: eventForEmail || event
-            }).catch((error) => {
-                console.error("Failed to send registration email:", error.message || error);
-            });
-        }
-
-        return res.status(201).send({
-            message: "Registered for event.",
-            registration_id: registration.registration_id
-        });
-    } catch (err) {
-        await transaction.rollback();
-        return res.status(500).send({ message: err.message || "Error registering for event." });
-    }
-};
-
-exports.unregisterFromEvent = async (req, res) => {
-    const eventId = req.params.eventId;
-    const transaction = await db.sequelize.transaction();
-
-    try {
-        const event = await Event.findByPk(eventId, {
-            transaction,
-            lock: transaction.LOCK.UPDATE
-        });
-
-        if (!event) {
-            await transaction.rollback();
-            return res.status(404).send({ message: "Event not found." });
-        }
-
-        const deleted = await EventRegistration.destroy({
-            where: { user_id: req.user_id, event_id: eventId },
-            transaction
-        });
-
-        if (deleted === 0) {
-            await transaction.rollback();
-            return res.status(404).send({ message: "Registration not found." });
-        }
-
-        if (event.registered_count > 0) {
-            await event.decrement("registered_count", { by: 1, transaction });
-        }
-
-        await transaction.commit();
-        return res.send({ message: "Registration removed." });
-    } catch (err) {
-        await transaction.rollback();
-        return res.status(500).send({ message: err.message || "Error removing registration." });
-    }
-};
-
-exports.getRegistrations = async (req, res) => {
-    try {
-        const { start, end, status, event_type } = req.query;
-        const tagNames = parseList(req.query.tags || req.query.tag);
-        const where = {};
-
-        if (status) where.status = status;
-        if (event_type) where.event_type = event_type;
-
-        const range = buildDateRange(start, end);
-        if (range.error) {
-            return res.status(400).send({ message: range.error });
-        }
-
-        Object.assign(where, range.where);
-
-        const registrations = await EventRegistration.findAll({
-            where: { user_id: req.user_id },
-            include: [
-                {
-                    model: Event,
-                    required: true,
-                    where,
-                    include: buildEventInclude(tagNames)
-                }
-            ],
-            order: [[{ model: Event }, "start_date_time", "ASC"]],
-            distinct: true
-        });
-
-        const events = registrations.map((registration) => buildEventResponse(registration.Event));
-
-        res.send({ events });
-    } catch (err) {
-        res.status(500).send({ message: err.message || "Error retrieving registrations." });
     }
 };
 
@@ -505,21 +466,22 @@ exports.getConflicts = async (req, res) => {
                         model: Event,
                         required: true,
                         where: range.where,
-                        include: buildEventInclude([])
-                    }
-                ]
+                        include: buildEventInclude(),
+                    },
+                ],
             });
 
             bookmarks.forEach((bookmark) => {
-                const event = bookmark.Event;
+                const event = getIncludedEvent(bookmark);
                 if (!event) return;
+
                 const existing = eventMap.get(event.event_id);
                 if (existing) {
                     existing.sources.add("BOOKMARK");
                 } else {
                     eventMap.set(event.event_id, {
                         event,
-                        sources: new Set(["BOOKMARK"])
+                        sources: new Set(["BOOKMARK"]),
                     });
                 }
             });
@@ -533,21 +495,22 @@ exports.getConflicts = async (req, res) => {
                         model: Event,
                         required: true,
                         where: range.where,
-                        include: buildEventInclude([])
-                    }
-                ]
+                        include: buildEventInclude(),
+                    },
+                ],
             });
 
             registrations.forEach((registration) => {
-                const event = registration.Event;
+                const event = getIncludedEvent(registration);
                 if (!event) return;
+
                 const existing = eventMap.get(event.event_id);
                 if (existing) {
                     existing.sources.add("REGISTRATION");
                 } else {
                     eventMap.set(event.event_id, {
                         event,
-                        sources: new Set(["REGISTRATION"])
+                        sources: new Set(["REGISTRATION"]),
                     });
                 }
             });
@@ -556,12 +519,11 @@ exports.getConflicts = async (req, res) => {
         const events = Array.from(eventMap.values())
             .map((item) => ({
                 event: item.event,
-                sources: Array.from(item.sources)
+                sources: Array.from(item.sources),
             }))
             .sort((a, b) => new Date(a.event.start_date_time) - new Date(b.event.start_date_time));
 
         const conflicts = [];
-
         for (let i = 0; i < events.length; i += 1) {
             const current = events[i];
             const currentStart = new Date(current.event.start_date_time);
@@ -570,17 +532,13 @@ exports.getConflicts = async (req, res) => {
             for (let j = i + 1; j < events.length; j += 1) {
                 const next = events[j];
                 const nextStart = new Date(next.event.start_date_time);
+                if (nextStart > currentEnd) break;
                 const nextEnd = new Date(next.event.end_date_time);
 
-                if (nextStart > currentEnd) {
-                    break;
-                }
-
-                const overlaps = currentStart <= nextEnd && currentEnd >= nextStart;
-                if (overlaps) {
+                if (currentStart <= nextEnd && currentEnd >= nextStart) {
                     conflicts.push({
                         event_a: buildEventResponse(current.event, current.sources),
-                        event_b: buildEventResponse(next.event, next.sources)
+                        event_b: buildEventResponse(next.event, next.sources),
                     });
                 }
             }
@@ -589,93 +547,6 @@ exports.getConflicts = async (req, res) => {
         res.send({ conflicts });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error detecting conflicts." });
-    }
-};
-
-exports.listTags = async (req, res) => {
-    try {
-        const tags = await EventTag.findAll({ order: [["name", "ASC"]] });
-        res.send({
-            tags: tags.map((tag) => ({ event_tag_id: tag.event_tag_id, name: tag.name }))
-        });
-    } catch (err) {
-        res.status(500).send({ message: err.message || "Error retrieving tags." });
-    }
-};
-
-exports.createTag = async (req, res) => {
-    try {
-        const name = String(req.body.name || "").trim();
-        if (!name) {
-            return res.status(400).send({ message: "Tag name is required." });
-        }
-
-        const [tag, created] = await EventTag.findOrCreate({
-            where: { name },
-            defaults: { name }
-        });
-
-        if (!created) {
-            return res.status(409).send({ message: "Tag already exists." });
-        }
-
-        res.status(201).send({ event_tag_id: tag.event_tag_id, name: tag.name });
-    } catch (err) {
-        res.status(500).send({ message: err.message || "Error creating tag." });
-    }
-};
-
-exports.addTagsToEvent = async (req, res) => {
-    try {
-        const eventId = req.params.eventId;
-        const tags = parseList(req.body.tags);
-
-        if (tags.length === 0) {
-            return res.status(400).send({ message: "Tags array is required." });
-        }
-
-        const event = await Event.findByPk(eventId);
-        if (!event) {
-            return res.status(404).send({ message: "Event not found." });
-        }
-
-        const createdTags = [];
-
-        for (const tagName of tags) {
-            const [tag] = await EventTag.findOrCreate({
-                where: { name: tagName },
-                defaults: { name: tagName }
-            });
-
-            await EventTagAssignment.findOrCreate({
-                where: { event_id: eventId, event_tag_id: tag.event_tag_id },
-                defaults: { event_id: eventId, event_tag_id: tag.event_tag_id }
-            });
-
-            createdTags.push({ event_tag_id: tag.event_tag_id, name: tag.name });
-        }
-
-        res.status(201).send({ tags: createdTags });
-    } catch (err) {
-        res.status(500).send({ message: err.message || "Error assigning tags." });
-    }
-};
-
-exports.removeTagFromEvent = async (req, res) => {
-    try {
-        const { eventId, tagId } = req.params;
-
-        const deleted = await EventTagAssignment.destroy({
-            where: { event_id: eventId, event_tag_id: tagId }
-        });
-
-        if (deleted === 0) {
-            return res.status(404).send({ message: "Tag assignment not found." });
-        }
-
-        res.send({ message: "Tag removed." });
-    } catch (err) {
-        res.status(500).send({ message: err.message || "Error removing tag." });
     }
 };
 
@@ -697,19 +568,26 @@ exports.getReminders = async (req, res) => {
                 {
                     model: Event,
                     required: true,
-                    include: buildEventInclude([])
-                }
+                    include: buildEventInclude(),
+                },
             ],
-            order: [["remind_at", "ASC"]]
+            order: [["remind_at", "ASC"]],
         });
 
-        const response = reminders.map((reminder) => ({
-            event_reminder_id: reminder.event_reminder_id,
-            remind_at: reminder.remind_at,
-            channel: reminder.channel,
-            sent_at: reminder.sent_at,
-            event: buildEventResponse(reminder.Event)
-        }));
+        const response = reminders
+            .map((reminder) => {
+                const event = getIncludedEvent(reminder);
+                if (!event) return null;
+
+                return {
+                    event_reminder_id: reminder.event_reminder_id,
+                    remind_at: reminder.remind_at,
+                    channel: reminder.channel,
+                    sent_at: reminder.sent_at,
+                    event: buildEventResponse(event),
+                };
+            })
+            .filter(Boolean);
 
         res.send({ reminders: response });
     } catch (err) {
@@ -735,7 +613,7 @@ exports.createReminder = async (req, res) => {
 
         if (channel === "EMAIL") {
             const bookmark = await EventBookmark.findOne({
-                where: { user_id: req.user_id, event_id: eventId }
+                where: { user_id: req.user_id, event_id: eventId },
             });
 
             if (!bookmark) {
@@ -743,21 +621,23 @@ exports.createReminder = async (req, res) => {
             }
 
             const user = await User.findByPk(req.user_id);
-            if (!user || !user.email) {
+            if (!user?.email) {
                 return res.status(400).send({ message: "Add an email address before enabling reminders." });
             }
 
             const remindDate = buildDefaultEmailReminderTime(event);
             if (remindDate <= new Date()) {
-                return res.status(400).send({ message: "Email reminders must be enabled at least 24 hours before the event starts." });
+                return res.status(400).send({
+                    message: "Email reminders must be enabled at least 24 hours before the event starts.",
+                });
             }
 
             reminder = await EventReminder.findOne({
                 where: {
                     user_id: req.user_id,
                     event_id: eventId,
-                    channel: "EMAIL"
-                }
+                    channel: "EMAIL",
+                },
             });
 
             if (reminder) {
@@ -765,14 +645,14 @@ exports.createReminder = async (req, res) => {
                     remind_at: remindDate,
                     sent_at: null,
                     failed_at: null,
-                    last_error: null
+                    last_error: null,
                 });
             } else {
                 reminder = await EventReminder.create({
                     user_id: req.user_id,
                     event_id: eventId,
                     remind_at: remindDate,
-                    channel: "EMAIL"
+                    channel: "EMAIL",
                 });
             }
         } else {
@@ -791,14 +671,14 @@ exports.createReminder = async (req, res) => {
                 user_id: req.user_id,
                 event_id: eventId,
                 remind_at: remindDate,
-                channel
+                channel,
             });
         }
 
         res.status(201).send({
             event_reminder_id: reminder.event_reminder_id,
             remind_at: reminder.remind_at,
-            channel: reminder.channel
+            channel: reminder.channel,
         });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error creating reminder." });
@@ -810,7 +690,7 @@ exports.deleteReminder = async (req, res) => {
         const reminderId = req.params.reminderId;
 
         const deleted = await EventReminder.destroy({
-            where: { event_reminder_id: reminderId, user_id: req.user_id }
+            where: { event_reminder_id: reminderId, user_id: req.user_id },
         });
 
         if (deleted === 0) {

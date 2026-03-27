@@ -4,11 +4,9 @@ This repo is worked on by multiple coding agents and humans. Use this file to ke
 changes consistent and reduce handoff friction.
 
 ## Read First
-- `requirements.md` for project scope and constraints.
 - `docs/PROJECT_OVERVIEW.md` for architecture and current behavior.
 - `docs/AREAS.md` for ownership and file map.
 - `docs/RUNBOOK.md` for local dev commands and service ports.
-- `docs/REQUIREMENTS.md` for requirement status and release mapping.
 
 ## Working Rules
 - Keep changes scoped to one area unless the task explicitly needs cross-area work.
@@ -16,12 +14,11 @@ changes consistent and reduce handoff friction.
 - Follow existing patterns in each area (React pages/components, Express controllers/routes, SQL in `database/init.sql`).
 - Do not commit secrets; keep `.env` local and update `.env.example` if needed.
 - If you skip tests, say why and note risk.
-- When implementing a requirement, update `docs/REQUIREMENTS.md` and add a decision entry if behavior or schema changes.
+- When behavior or schema changes, update the relevant area docs and add a decision entry when needed.
 
 ## Documentation Upkeep
 - Update docs when behavior changes, not just when code compiles.
-- Use `docs/REQUIREMENTS.md` for requirement status changes.
-- Use `docs/DECISIONS.md` for schema, API contract, or architectural decisions.
+- Record schema, API contract, or architectural changes in the relevant area doc or handoff.
 - Update area docs (`docs/FRONTEND.md`, `docs/BACKEND.md`, `docs/DATABASE.md`, `docs/MAP.md`) when you touch those domains.
 
 ## Area-Specific Checklists
@@ -38,7 +35,7 @@ changes consistent and reduce handoff friction.
 
 ### Database
 - Update `database/init.sql` for schema changes.
-- Call out any breaking changes in `docs/DECISIONS.md`.
+- Call out breaking changes in the relevant area doc or handoff.
 
 ### Map
 - Map data and OSRM artifacts live in `osrm-data/`.

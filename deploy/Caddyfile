@@ -1,0 +1,32 @@
+{
+    auto_https off
+    admin off
+}
+
+:80 {
+    encode gzip zstd
+
+    handle /api/* {
+        reverse_proxy backend:4000
+    }
+
+    handle /docs* {
+        reverse_proxy backend:4000
+    }
+
+    handle /healthz {
+        reverse_proxy backend:4000
+    }
+
+    handle {
+        root * /srv/frontend
+        try_files {path} /index.html
+        file_server
+    }
+
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+}
