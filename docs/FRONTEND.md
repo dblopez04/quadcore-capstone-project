@@ -31,6 +31,7 @@
 - Requests that need auth use cookie credentials.
 - Guest mode is tracked in `localStorage` as `authMode`.
 - Search, bookmarks, lists, and event flows already call the backend.
+- Event cards use backend event details to show room/location detail when available.
 
 ## Conventions
 - Put page components in `frontend/src/pages/`.

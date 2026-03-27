@@ -85,6 +85,40 @@ function normalizeEventDate(value) {
     return d.toISOString();
 }
 
+function cleanText(value) {
+    if (value == null) return "";
+    return String(value).trim();
+}
+
+function formatRoomLabel(roomDetail) {
+    const room = cleanText(roomDetail);
+    if (!room) return "";
+    return /[0-9]/.test(room) ? `Room ${room}` : room;
+}
+
+function formatEventLocation(ev) {
+    const locationName = cleanText(ev.locationName);
+    const sourceLocationName = cleanText(ev.sourceLocationName);
+    const roomDetail = cleanText(ev.roomDetail);
+    const baseLocation = locationName || sourceLocationName;
+
+    if (!roomDetail) {
+        return baseLocation || "Location not provided";
+    }
+
+    if (baseLocation && baseLocation.toLowerCase().includes(roomDetail.toLowerCase())) {
+        return baseLocation;
+    }
+
+    const roomLabel = formatRoomLabel(roomDetail);
+
+    if (!baseLocation) {
+        return roomLabel || "Location not provided";
+    }
+
+    return roomLabel ? `${baseLocation}, ${roomLabel}` : baseLocation;
+}
+
 // Try to support both your old mock shape + backend shape
 function normalizeEvent(ev) {
     const startRaw =
@@ -107,6 +141,18 @@ function normalizeEvent(ev) {
     const end = normalizeEventDate(endRaw);
     const eventLocation = typeof ev.location === "object" && ev.location !== null ? ev.location : null;
     const parsedCoords = parseEventCoords(eventLocation);
+    const sourceLocationName =
+        ev.details?.source_location_name ||
+        ev.details?.sourceLocationName ||
+        ev.source_location_name ||
+        ev.sourceLocationName ||
+        "";
+    const roomDetail =
+        ev.details?.room_detail ||
+        ev.details?.roomDetail ||
+        ev.room_detail ||
+        ev.roomDetail ||
+        "";
 
     return {
         id: ev.event_id || ev.id || ev._id,
@@ -123,8 +169,11 @@ function normalizeEvent(ev) {
             ev.locationName ||
             ev.location_name ||
             eventLocation?.name ||
-            ev.location ||
+            (typeof ev.location === "string" ? ev.location : "") ||
+            sourceLocationName ||
             "",
+        sourceLocationName,
+        roomDetail,
         lat:
             ev.lat ??
             ev.latitude ??
@@ -287,6 +336,8 @@ export default function Events() {
                 (ev.title || "").toLowerCase().includes(query) ||
                 (ev.description || "").toLowerCase().includes(query) ||
                 (ev.locationName || "").toLowerCase().includes(query) ||
+                (ev.sourceLocationName || "").toLowerCase().includes(query) ||
+                (ev.roomDetail || "").toLowerCase().includes(query) ||
                 (ev.category || "").toLowerCase().includes(query)
             );
         }
@@ -587,7 +638,7 @@ export default function Events() {
                                     {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
                                 </div>
                                 <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
-                                    {ev.locationName || "Location not provided"}
+                                    {formatEventLocation(ev)}
                                 </div>
                                 <div style={{ marginTop: 12 }}>
                                     <button
@@ -710,7 +761,7 @@ export default function Events() {
 
                                     <div style={{ fontSize: "14px", color: "#555" }}>
                                         <strong>Location:</strong>{" "}
-                                        {ev.locationName || "Location not provided"}
+                                        {formatEventLocation(ev)}
                                     </div>
                                 </div>
 
