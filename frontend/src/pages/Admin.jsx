@@ -24,7 +24,6 @@ function normalizeAdminEvent(ev) {
             ev.location?.name ||
             ev.locationName ||
             "",
-        capacity: ev.capacity ?? "",
         status: ev.status || "SCHEDULED",
     };
 }
@@ -40,8 +39,7 @@ export default function Admin() {
         location_id: "",
         start_date_time: "",
         end_date_time: "",
-        event_type: "ACADEMIC",
-        capacity: ""
+        event_type: "",
     });
 
     const [message, setMessage] = useState("");
@@ -196,8 +194,7 @@ export default function Admin() {
             location_id: "",
             start_date_time: "",
             end_date_time: "",
-            event_type: "ACADEMIC",
-            capacity: ""
+            event_type: "",
         });
         setLocationQuery("");
         setLocationResults([]);
@@ -221,7 +218,6 @@ export default function Admin() {
                 await updateAdminEvent(editingEventId, {
                     ...form,
                     organizer_id: user.user_id,
-                    capacity: form.capacity ? Number(form.capacity) : null
                 });
 
                 setMessage("Event updated successfully!");
@@ -229,7 +225,6 @@ export default function Admin() {
                 await createEventRequest({
                     ...form,
                     organizer_id: user.user_id,
-                    capacity: form.capacity ? Number(form.capacity) : null
                 });
 
                 setMessage("Event created successfully!");
@@ -351,7 +346,7 @@ export default function Admin() {
                                 </p>
 
                                 <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
-                                    Status: {ev.status} | Capacity: {ev.capacity || "N/A"}
+                                    Status: {ev.status}
                                 </p>
 
                                 <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -376,7 +371,6 @@ export default function Admin() {
                                                 start_date_time: ev.start ? ev.start.slice(0, 16) : "",
                                                 end_date_time: ev.end ? ev.end.slice(0, 16) : "",
                                                 event_type: ev.eventType,
-                                                capacity: ev.capacity || "",
                                             });
                                         }}
                                         style={{
@@ -579,34 +573,15 @@ export default function Admin() {
                         style={fieldStyle}
                     />
 
-                    <select
+                    <input
+                        type="text"
                         name="event_type"
                         value={form.event_type}
                         onChange={handleChange}
                         onFocus={handleFieldFocus}
                         onBlur={handleFieldBlur}
-                        style={fieldStyle}
-                    >
-                        <option value="ACADEMIC">ACADEMIC</option>
-                        <option value="SOCIAL">SOCIAL</option>
-                        <option value="CAREER FAIR">CAREER FAIR</option>
-                        <option value="SPORTS">SPORTS</option>
-                        <option value="CULTURAL">CULTURAL</option>
-                        <option value="WORKSHOP">WORKSHOP</option>
-                        <option value="CONFERENCE">CONFERENCE</option>
-                        <option value="SEMINAR">SEMINAR</option>
-                        <option value="OTHER">OTHER</option>
-                    </select>
-
-                    <input
-                        name="capacity"
-                        type="number"
-                        min="1"
-                        placeholder="Capacity"
-                        value={form.capacity}
-                        onChange={handleChange}
-                        onFocus={handleFieldFocus}
-                        onBlur={handleFieldBlur}
+                        placeholder="Category"
+                        required
                         style={fieldStyle}
                     />
 

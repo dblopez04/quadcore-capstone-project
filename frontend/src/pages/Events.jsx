@@ -137,19 +137,6 @@ function normalizeEvent(ev) {
         end,
     };
 }
-
-
-const EVENT_CATEGORY_OPTIONS = [
-    { value: "ACADEMIC", label: "Academic" },
-    { value: "SOCIAL", label: "Social" },
-    { value: "CAREER FAIR", label: "Career Fair" },
-    { value: "SPORTS", label: "Sports" },
-    { value: "CULTURAL", label: "Cultural" },
-    { value: "WORKSHOP", label: "Workshop" },
-    { value: "CONFERENCE", label: "Conference" },
-    { value: "SEMINAR", label: "Seminar" },
-    { value: "OTHER", label: "Other" },
-];
 export default function Events() {
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
@@ -158,13 +145,12 @@ export default function Events() {
     const [error, setError] = useState("");
     const [selectedDate, setSelectedDate] = useState(""); // YYYY-MM-DD
     const [viewDate, setViewDate] = useState(() => new Date());
+    const [selectedCategory, setSelectedCategory] = useState("");
     const [registeringId, setRegisteringId] = useState(null);
+    const [unregisteringId, setUnregisteringId] = useState(null);
     const [feedback, setFeedback] = useState("");
     const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
     const [registeredEvents, setRegisteredEvents] = useState([]);
-    const [unregisteringId, setUnregisteringId] = useState(null);
-    const [expandedEventId, setExpandedEventId] = useState(null);
-    const [selectedCategory, setSelectedCategory] = useState("");
 
     const navigate = useNavigate();
 
@@ -195,7 +181,10 @@ export default function Events() {
         return allEvents.filter((ev) => eventDateStr(ev.start) === selectedDate);
     }, [allEvents, selectedDate]);
 
-    const categoryOptions = EVENT_CATEGORY_OPTIONS;
+    const categoryOptions = useMemo(() => {
+        return Array.from(new Set(allEvents.map((event) => event.category).filter(Boolean)))
+            .sort((a, b) => a.localeCompare(b));
+    }, [allEvents]);
 
     async function loadEvents(filters = {}) {
         try {
@@ -229,7 +218,6 @@ export default function Events() {
     async function loadRegisteredEvents() {
         try {
             const data = await fetchRegisteredEvents();
-
             const raw = Array.isArray(data?.events)
                 ? data.events
                 : Array.isArray(data)
@@ -241,12 +229,7 @@ export default function Events() {
                 .filter((ev) => ev.id);
 
             setRegisteredEvents(normalized);
-
-            const ids = new Set(
-                normalized.map((ev) => ev.id).filter(Boolean)
-            );
-
-            setRegisteredEventIds(ids);
+            setRegisteredEventIds(new Set(normalized.map((ev) => ev.id)));
         } catch (e) {
             console.error("Failed to load registrations:", e);
             setRegisteredEvents([]);
@@ -258,22 +241,14 @@ export default function Events() {
         try {
             setRegisteringId(eventId);
             setFeedback("");
-
             await registerForEvent(eventId);
-            setRegisteredEventIds((prev) => new Set([...prev, eventId]));
             await loadRegisteredEvents();
             setFeedback("Registered for event successfully.");
         } catch (e) {
             console.error(e);
-
-            const msg =
-                e?.status === 409
-                    ? "This event is full."
-                    : e?.status === 404
-                        ? "Event not found."
-                        : "Register failed. Please make sure you are logged in.";
-
-            setFeedback(msg);
+            setFeedback(e?.status === 404
+                ? "Event not found."
+                : "Register failed. Please make sure you are logged in.");
         } finally {
             setRegisteringId(null);
         }
@@ -283,16 +258,8 @@ export default function Events() {
         try {
             setUnregisteringId(eventId);
             setFeedback("");
-
             await unregisterFromEvent(eventId);
-
-            setRegisteredEventIds((prev) => {
-                const next = new Set(prev);
-                next.delete(eventId);
-                return next;
-            });
-
-            setRegisteredEvents((prev) => prev.filter((ev) => ev.id !== eventId));
+            await loadRegisteredEvents();
             setFeedback("Unregistered from event successfully.");
         } catch (e) {
             console.error(e);
@@ -301,6 +268,7 @@ export default function Events() {
             setUnregisteringId(null);
         }
     }
+
     useEffect(() => {
         loadEvents();
         loadRegisteredEvents();
@@ -557,8 +525,8 @@ export default function Events() {
                     >
                         <option value="">All Categories</option>
                         {categoryOptions.map((category) => (
-                            <option key={category.value} value={category.value}>
-                                {category.label}
+                            <option key={category} value={category}>
+                                {category}
                             </option>
                         ))}
                     </select>
@@ -574,21 +542,15 @@ export default function Events() {
                         margin: "12px 0",
                         padding: "10px 12px",
                         borderRadius: 10,
-                        background:
-                            feedback.toLowerCase().includes("failed") ||
-                                feedback.toLowerCase().includes("full")
-                                ? "#fdecec"
-                                : "#edf7ed",
-                        border:
-                            feedback.toLowerCase().includes("failed") ||
-                                feedback.toLowerCase().includes("full")
-                                ? "1px solid #f5c2c7"
-                                : "1px solid #b7dfb9",
-                        color:
-                            feedback.toLowerCase().includes("failed") ||
-                                feedback.toLowerCase().includes("full")
-                                ? "#842029"
-                                : "#1e4620",
+                        background: feedback.toLowerCase().includes("failed")
+                            ? "#fdecec"
+                            : "#edf7ed",
+                        border: feedback.toLowerCase().includes("failed")
+                            ? "1px solid #f5c2c7"
+                            : "1px solid #b7dfb9",
+                        color: feedback.toLowerCase().includes("failed")
+                            ? "#842029"
+                            : "#1e4620",
                         fontSize: 14,
                     }}
                 >
@@ -608,102 +570,44 @@ export default function Events() {
                     }}
                 >
                     <h3 style={{ marginTop: 0, marginBottom: 12 }}>My Registered Events</h3>
-
                     <div style={{ display: "grid", gap: "12px" }}>
-                        {registeredEvents.map((ev) => {
-                            const isOpen = expandedEventId === ev.id;
-
-                            return (
-                                <div
-                                    key={`registered-${ev.id}`}
-                                    style={{
-                                        border: "1px solid #e5e5e5",
-                                        borderRadius: "12px",
-                                        background: "#fff",
-                                        overflow: "hidden",
-                                    }}
-                                >
-                                    <div
-                                        onClick={() => setExpandedEventId(isOpen ? null : ev.id)}
+                        {registeredEvents.map((ev) => (
+                            <div
+                                key={`registered-${ev.id}`}
+                                style={{
+                                    border: "1px solid #e5e5e5",
+                                    borderRadius: "12px",
+                                    padding: "14px",
+                                    background: "#f9fbf9",
+                                }}
+                            >
+                                <div style={{ fontWeight: 700 }}>{ev.title}</div>
+                                <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
+                                    {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
+                                    {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                </div>
+                                <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
+                                    {ev.locationName || "Location not provided"}
+                                </div>
+                                <div style={{ marginTop: 12 }}>
+                                    <button
+                                        onClick={() => handleUnregister(ev.id)}
+                                        disabled={unregisteringId === ev.id}
                                         style={{
-                                            padding: "12px 14px",
-                                            cursor: "pointer",
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                            background: "#f9fbf9",
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: unregisteringId === ev.id ? "#aaa" : "#b42318",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: unregisteringId === ev.id ? "not-allowed" : "pointer",
                                         }}
                                     >
-                                        <span style={{ fontWeight: 600 }}>{ev.title}</span>
-                                        <span style={{ fontSize: 12, color: "#666" }}>
-                                            {isOpen ? "▲" : "▼"}
-                                        </span>
-                                    </div>
-
-                                    {isOpen && (
-                                        <div style={{ padding: "14px" }}>
-                                            <div
-                                                style={{
-                                                    display: "inline-block",
-                                                    padding: "4px 10px",
-                                                    borderRadius: "999px",
-                                                    background: "#edf7ed",
-                                                    border: "1px solid #b7dfb9",
-                                                    color: "#1e4620",
-                                                    fontSize: "12px",
-                                                    fontWeight: 700,
-                                                }}
-                                            >
-                                                Registered
-                                            </div>
-
-                                            {ev.description && (
-                                                <p style={{ margin: "10px 0", color: "#444", lineHeight: 1.6 }}>
-                                                    {ev.description}
-                                                </p>
-                                            )}
-
-                                            <div style={{ display: "grid", gap: 6 }}>
-                                                <div style={{ fontSize: "14px", color: "#555" }}>
-                                                    <strong>When:</strong>{" "}
-                                                    {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                                    {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
-                                                </div>
-
-                                                <div style={{ fontSize: "14px", color: "#555" }}>
-                                                    <strong>Location:</strong>{" "}
-                                                    {ev.locationName || "Location not provided"}
-                                                </div>
-                                            </div>
-
-                                            <div style={{ marginTop: 12 }}>
-                                                <button
-                                                    onClick={() => handleUnregister(ev.id)}
-                                                    disabled={unregisteringId === ev.id}
-                                                    style={{
-                                                        padding: "10px 14px",
-                                                        borderRadius: 10,
-                                                        background:
-                                                            unregisteringId === ev.id ? "#aaa" : "#b42318",
-                                                        color: "white",
-                                                        border: "none",
-                                                        fontWeight: 600,
-                                                        cursor:
-                                                            unregisteringId === ev.id
-                                                                ? "not-allowed"
-                                                                : "pointer",
-                                                    }}
-                                                >
-                                                    {unregisteringId === ev.id
-                                                        ? "Unregistering..."
-                                                        : "Unregister"}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
+                                        {unregisteringId === ev.id ? "Unregistering..." : "Unregister"}
+                                    </button>
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
@@ -782,21 +686,6 @@ export default function Events() {
                                         </div>
                                     </div>
 
-                                    {isRegistered && (
-                                        <div
-                                            style={{
-                                                padding: "6px 10px",
-                                                borderRadius: "999px",
-                                                background: "#edf7ed",
-                                                border: "1px solid #b7dfb9",
-                                                color: "#1e4620",
-                                                fontSize: "12px",
-                                                fontWeight: 700,
-                                            }}
-                                        >
-                                            Registered
-                                        </div>
-                                    )}
                                 </div>
 
                                 {ev.description && (
@@ -826,40 +715,6 @@ export default function Events() {
                                 </div>
 
                                 <div style={{ display: "flex", gap: "10px", marginTop: 16, flexWrap: "wrap" }}>
-                                    {isRegistered ? (
-                                        <button
-                                            onClick={() => handleUnregister(ev.id)}
-                                            disabled={unregisteringId === ev.id}
-                                            style={{
-                                                padding: "10px 14px",
-                                                borderRadius: 10,
-                                                background: unregisteringId === ev.id ? "#aaa" : "#b42318",
-                                                color: "white",
-                                                border: "none",
-                                                fontWeight: 600,
-                                                cursor: unregisteringId === ev.id ? "not-allowed" : "pointer",
-                                            }}
-                                        >
-                                            {unregisteringId === ev.id ? "Unregistering..." : "Unregister"}
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => handleRegister(ev.id)}
-                                            disabled={registeringId === ev.id}
-                                            style={{
-                                                padding: "10px 14px",
-                                                borderRadius: 10,
-                                                background: registeringId === ev.id ? "#aaa" : "#0b5",
-                                                color: "white",
-                                                border: "none",
-                                                fontWeight: 600,
-                                                cursor: registeringId === ev.id ? "not-allowed" : "pointer",
-                                            }}
-                                        >
-                                            {registeringId === ev.id ? "Registering..." : "Register"}
-                                        </button>
-                                    )}
-
                                     <button
                                         disabled={!canMap}
                                         onClick={() => handleViewOnMap(ev)}
@@ -874,6 +729,37 @@ export default function Events() {
                                         }}
                                     >
                                         View on Map
+                                    </button>
+
+                                    <button
+                                        onClick={() => (
+                                            isRegistered ? handleUnregister(ev.id) : handleRegister(ev.id)
+                                        )}
+                                        disabled={registeringId === ev.id || unregisteringId === ev.id}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: isRegistered ? "#b42318" : "#1d4ed8",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor:
+                                                registeringId === ev.id || unregisteringId === ev.id
+                                                    ? "not-allowed"
+                                                    : "pointer",
+                                            opacity:
+                                                registeringId === ev.id || unregisteringId === ev.id
+                                                    ? 0.7
+                                                    : 1,
+                                        }}
+                                    >
+                                        {registeringId === ev.id
+                                            ? "Registering..."
+                                            : unregisteringId === ev.id
+                                                ? "Unregistering..."
+                                                : isRegistered
+                                                    ? "Unregister"
+                                                    : "Register"}
                                     </button>
                                 </div>
 
