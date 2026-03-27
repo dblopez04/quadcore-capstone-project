@@ -5,13 +5,16 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
+compose_files_input="${COMPOSE_FILES:-}"
 declare -a COMPOSE_FILES=()
-if [ -n "${COMPOSE_FILES:-}" ]; then
-    IFS=',' read -r -a COMPOSE_FILES <<< "${COMPOSE_FILES}"
+if [ -n "$compose_files_input" ]; then
+    IFS=',' read -r -a COMPOSE_FILES <<< "$compose_files_input"
+else
+    COMPOSE_FILES=("compose.yaml")
 fi
 
 declare -a COMPOSE_ARGS=()
-for compose_file in "${COMPOSE_FILES[@]}"; do
+for compose_file in "${COMPOSE_FILES[@]:-}"; do
     if [ -n "$compose_file" ]; then
         COMPOSE_ARGS+=(-f "$compose_file")
     fi
