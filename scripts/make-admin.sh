@@ -54,8 +54,16 @@ if [ "$IS_OWNER_SQL" = "TRUE" ]; then
     echo "Owner mode enabled."
 fi
 
-USER_ID="$("${PSQL[@]}" -XAt -v ON_ERROR_STOP=1 -v email="$EMAIL" -c "SELECT user_id FROM users WHERE email = :'email';" | tr -d '[:space:]')"
-CURRENT_ROLE="$("${PSQL[@]}" -XAt -v ON_ERROR_STOP=1 -v email="$EMAIL" -c "SELECT user_role FROM users WHERE email = :'email';" | tr -d '[:space:]')"
+USER_ID="$(
+    "${PSQL[@]}" -XAt -v ON_ERROR_STOP=1 -v email="$EMAIL" <<'SQL' | tr -d '[:space:]'
+SELECT user_id FROM users WHERE email = :'email';
+SQL
+)"
+CURRENT_ROLE="$(
+    "${PSQL[@]}" -XAt -v ON_ERROR_STOP=1 -v email="$EMAIL" <<'SQL' | tr -d '[:space:]'
+SELECT user_role FROM users WHERE email = :'email';
+SQL
+)"
 
 if [ -z "$USER_ID" ]; then
     echo "Error: No user found with email $EMAIL"
@@ -71,8 +79,7 @@ fi
 
 "${PSQL[@]}" -v ON_ERROR_STOP=1 \
     -v user_id="$USER_ID" \
-    -v previous_role="$PREVIOUS_ROLE" \
-    -c "
+    -v previous_role="$PREVIOUS_ROLE" <<SQL
 BEGIN;
 INSERT INTO admin (user_id, is_owner, previous_role)
 VALUES (:'user_id'::uuid, $IS_OWNER_SQL, :'previous_role'::role)
@@ -85,7 +92,7 @@ UPDATE users
 SET user_role = 'ADMIN'
 WHERE user_id = :'user_id'::uuid;
 COMMIT;
-"
+SQL
 
 if [ "$IS_OWNER_SQL" = "TRUE" ]; then
     echo "Done! $EMAIL is now an admin + owner."
