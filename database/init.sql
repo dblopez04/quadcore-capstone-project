@@ -16,19 +16,6 @@ CREATE TYPE poi_category AS ENUM(
     'OTHER'
 );
 
--- EVENT ENUMS
-CREATE TYPE event_type AS ENUM(
-    'ACADEMIC',
-    'SOCIAL',
-    'CAREER FAIR',
-    'SPORTS',
-    'CULTURAL',
-    'WORKSHOP',
-    'CONFERENCE',
-    'SEMINAR',
-    'OTHER'
-);
-
 CREATE TYPE event_status AS ENUM(
     'SCHEDULED',
     'ONGOING',
@@ -134,7 +121,7 @@ CREATE TABLE events (
     location_id UUID NOT NULL REFERENCES locations(location_id),
     start_date_time TIMESTAMP NOT NULL,
     end_date_time TIMESTAMP NOT NULL,
-    event_type event_type NOT NULL,
+    event_type VARCHAR(255) NOT NULL,
     status event_status DEFAULT 'SCHEDULED',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
