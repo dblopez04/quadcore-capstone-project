@@ -20,9 +20,6 @@ module.exports = (sequelize, DataTypes) => {
             ),
             allowNull: false
         },
-        capacity: { type: DataTypes.INTEGER, allowNull: true },
-        registered_count: { type: DataTypes.INTEGER, defaultValue: 0 },
-        is_public: { type: DataTypes.BOOLEAN, defaultValue: true },
         status: {
             type: DataTypes.ENUM('SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED', 'POSTPONED'),
             defaultValue: 'SCHEDULED'
