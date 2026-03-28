@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -494,10 +495,39 @@ def load_database_url(cli_value: str) -> str:
     return ""
 
 
-def load_candidates(database_url: str, psql_bin: str) -> list[Candidate]:
-    if not database_url:
-        return []
+def build_psql_command(
+    database_url: str,
+    psql_bin: str,
+    *,
+    docker_container: str,
+) -> list[str]:
+    if psql_bin != "psql":
+        if not database_url:
+            raise ValueError("DATABASE_URL or --database-url is required when using a custom psql binary")
+        return [psql_bin, database_url]
 
+    if database_url and shutil.which("psql"):
+        return [psql_bin, database_url]
+
+    if not shutil.which("docker"):
+        raise FileNotFoundError(
+            "Neither a usable local 'psql' configuration nor Docker is available. "
+            "Install psql, add it to PATH with DATABASE_URL set, or run with Docker installed "
+            "and the database container running."
+        )
+
+    return [
+        "docker",
+        "exec",
+        "-i",
+        docker_container,
+        "sh",
+        "-lc",
+        'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"',
+    ]
+
+
+def load_candidates(database_url: str, psql_bin: str) -> list[Candidate]:
     query = """
     SELECT
       source_kind,
@@ -536,8 +566,13 @@ def load_candidates(database_url: str, psql_bin: str) -> list[Candidate]:
     ORDER BY source_kind, location_name, source_name;
     """
 
+    psql_command = build_psql_command(
+        database_url,
+        psql_bin,
+        docker_container=os.environ.get("IMPORT_EVENTS_DB_CONTAINER", "db"),
+    )
     result = subprocess.run(
-        [psql_bin, database_url, "-X", "-A", "-F", "\t", "-t", "-c", query],
+        [*psql_command, "-X", "-A", "-F", "\t", "-t", "-c", query],
         check=True,
         capture_output=True,
         text=True,
@@ -933,11 +968,13 @@ def write_output(path: str, content: str) -> None:
 
 
 def apply_sql(database_url: str, psql_bin: str, content: str) -> None:
-    if not database_url:
-        raise ValueError("DATABASE_URL is required when applying SQL to Postgres")
-
+    psql_command = build_psql_command(
+        database_url,
+        psql_bin,
+        docker_container=os.environ.get("IMPORT_EVENTS_DB_CONTAINER", "db"),
+    )
     subprocess.run(
-        [psql_bin, database_url, "-v", "ON_ERROR_STOP=1"],
+        [*psql_command, "-v", "ON_ERROR_STOP=1"],
         input=content,
         check=True,
         text=True,
