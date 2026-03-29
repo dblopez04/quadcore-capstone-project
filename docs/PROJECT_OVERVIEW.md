@@ -22,6 +22,7 @@ map views, event support, and future accessibility/safety routing.
 - Auth is implemented with JWT cookies and refresh flow.
 - Frontend includes login, register, forgot-password, home, search, map,
   bookmarks, events, admin, about, help, and settings pages.
+- Password reset requests now issue backend-generated reset tokens and email delivery through Resend.
 - Backend exposes auth, user, search, locations, events, and admin route groups.
 - Search, location bookmarks/lists, event bookmarks/registrations/reminders, and
   admin CRUD flows exist in the API.

@@ -16,6 +16,7 @@ const defineLocationList = require('./locationList.model');
 const defineLocationListItem = require('./locationListItem.model');
 const defineRecentlyViewedLocation = require('./recentlyViewedLocation.model');
 const defineReport = require('./report.model');
+const definePasswordResetToken = require('./passwordResetToken.model');
 
 const db = {};
 db.sequelize = sequelize;
@@ -38,6 +39,7 @@ db.LocationList = defineLocationList(sequelize, Sequelize.DataTypes);
 db.LocationListItem = defineLocationListItem(sequelize, Sequelize.DataTypes);
 db.RecentlyViewedLocation = defineRecentlyViewedLocation(sequelize, Sequelize.DataTypes);
 db.Report = defineReport(sequelize, Sequelize.DataTypes);
+db.PasswordResetToken = definePasswordResetToken(sequelize, Sequelize.DataTypes);
 
 // User associations
 db.User.hasOne(db.Student, { foreignKey: 'user_id', onDelete: 'CASCADE' });
@@ -106,5 +108,9 @@ db.Admin.hasMany(db.Report, { as: 'assignedReports', foreignKey: 'assigned_to' }
 db.Report.belongsTo(db.Admin, { as: 'assignee', foreignKey: 'assigned_to' });
 db.Admin.hasMany(db.Report, { as: 'resolvedReports', foreignKey: 'resolved_by' });
 db.Report.belongsTo(db.Admin, { as: 'resolver', foreignKey: 'resolved_by' });
+
+// Password reset associations
+db.User.hasMany(db.PasswordResetToken, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+db.PasswordResetToken.belongsTo(db.User, { foreignKey: 'user_id' });
 
 module.exports = db;

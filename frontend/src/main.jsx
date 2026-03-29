@@ -8,7 +8,8 @@ import "./App.css";
 import Login from './pages/Login.jsx'
 import Admin from './pages/Admin.jsx'
 import Register from "./pages/Register";
-import ForgotPassword from './pages/ForgotPassword';
+import ForgotPassword from './pages/ForgotPasswordPage.jsx';
+import ResetPassword from './pages/ResetPassword';
 import Layout from './components/Layout.jsx'
 import Home from './pages/Home.jsx'
 import MapPage from './pages/MapPage.jsx'
@@ -24,6 +25,7 @@ const router = createBrowserRouter([
     { path: '/', element: <Login /> },
     { path: '/register', element: <Register /> },
     { path: '/forgot-password', element: <ForgotPassword /> },
+    { path: '/reset-password', element: <ResetPassword /> },
 
 
     {

@@ -65,9 +65,25 @@ export async function logoutRequest() {
 }
 
 export async function requestPasswordReset(email) {
-    console.log("Password reset requested for:", email);
+    const response = await fetch(buildApiUrl("/api/auth/forgot-password"), {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+    });
 
-    await new Promise((res) => setTimeout(res, 600));
+    return handleResponse(response, "Failed to request password reset");
+}
 
-    return { message: "Reset email sent (mock)." };
+export async function resetPassword(token, newPassword) {
+    const response = await fetch(buildApiUrl("/api/auth/reset-password"), {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token, newPassword }),
+    });
+
+    return handleResponse(response, "Failed to reset password");
 }

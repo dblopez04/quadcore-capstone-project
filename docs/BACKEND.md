@@ -18,6 +18,10 @@
 - `JWT_SECRET`
 - `JWT_REFRESH_SECRET`
 - `FRONTEND_URL`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `PASSWORD_RESET_URL_BASE`
+- `PASSWORD_RESET_TOKEN_TTL_MINUTES`
 - `OSRM_URL`
 - `DB_CONNECT_MAX_ATTEMPTS`
 - `DB_CONNECT_RETRY_DELAY_MS`
@@ -27,7 +31,7 @@
 - `COOKIE_DOMAIN`
 
 ## Route Groups
-- `/api/auth` - register, login, logout, refresh
+- `/api/auth` - register, login, logout, refresh, forgot-password, reset-password
 - `/api/user` - profile and search history
 - `/api/search` - federated search across locations and POIs
 - `/api/locations` - list, detail, share links, bookmarks, recently viewed, custom lists
@@ -41,6 +45,8 @@
 - `requireAdmin` protects admin routes.
 - `requireOwner` protects owner delegation routes.
 - First-owner bootstrap logic exists for owner assignment.
+- Password reset uses single-use hashed reset tokens stored outside the `users` table.
+- Reset emails are delivered through Resend and point users to the frontend reset page.
 
 ## Tests
 Run from `backend/`:

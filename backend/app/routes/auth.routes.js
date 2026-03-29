@@ -75,6 +75,28 @@ const middleware = require("../middleware/auth.middleware");
  *           type: string
  *           format: password
  *           description: User's password
+ *     ForgotPasswordRequest:
+ *       type: object
+ *       required:
+ *         - email
+ *       properties:
+ *         email:
+ *           type: string
+ *           format: email
+ *           description: Email for the account requesting a password reset
+ *     ResetPasswordRequest:
+ *       type: object
+ *       required:
+ *         - token
+ *         - newPassword
+ *       properties:
+ *         token:
+ *           type: string
+ *           description: Raw password reset token from the reset email link
+ *         newPassword:
+ *           type: string
+ *           format: password
+ *           description: New password to store for the user
  *     AuthResponse:
  *       type: object
  *       properties:
@@ -239,6 +261,108 @@ router.post("/register", middleware.duplicateRegistration, controller.register);
  *               $ref: '#/components/schemas/Error'
  */
 router.post("/login", controller.login);
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request a password reset email
+ *     description: Sends a password reset email when the account exists. Response is generic for privacy.
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ForgotPasswordRequest'
+ *           example:
+ *             email: student@example.com
+ *     responses:
+ *       200:
+ *         description: Password reset request accepted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             example:
+ *               message: "If an account exists for that email, a reset link has been sent."
+ *       400:
+ *         description: Missing email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               message: "Email is required"
+ *       500:
+ *         description: Server error while generating or sending the reset email
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               message: "Failed to process password reset request"
+ */
+router.post("/forgot-password", controller.forgotPassword);
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset a user's password
+ *     description: Verifies a reset token and updates the user's password
+ *     tags:
+ *       - Authentication
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ResetPasswordRequest'
+ *           example:
+ *             token: "raw-token-from-email"
+ *             newPassword: "newSecurePassword123"
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             example:
+ *               message: "Password reset successful"
+ *       400:
+ *         description: Invalid input or expired token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             examples:
+ *               missingFields:
+ *                 summary: Missing token or password
+ *                 value:
+ *                   message: "Token and new password are required"
+ *               invalidToken:
+ *                 summary: Expired or invalid token
+ *                 value:
+ *                   message: "Reset link is invalid or expired"
+ *       500:
+ *         description: Server error while resetting the password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               message: "Failed to reset password"
+ */
+router.post("/reset-password", controller.resetPassword);
 
 /**
  * @swagger

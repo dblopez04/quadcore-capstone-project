@@ -16,6 +16,7 @@
 - `/` - login
 - `/register`
 - `/forgot-password`
+- `/reset-password`
 - `/home`
 - `/search`
 - `/bookmarks`
@@ -30,6 +31,7 @@
 - Client base URL comes from `VITE_API_BASE_URL`.
 - Requests that need auth use cookie credentials.
 - Guest mode is tracked in `localStorage` as `authMode`.
+- Forgot-password submits to `/api/auth/forgot-password`, and reset-password submits the emailed token to `/api/auth/reset-password`.
 - Search, bookmarks, lists, and event flows already call the backend.
 - Event cards use backend event details to show room/location detail when available.
 - Event normalization must coerce `details` payloads into plain text before rendering; `details` objects are for metadata, not direct JSX output.

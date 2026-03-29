@@ -1,12 +1,21 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { Op } = require("sequelize");
 const db = require("../models");
 const {
     getAccessCookieOptions,
     getRefreshCookieOptions,
     getClearCookieOptions
 } = require("../config/cookie.config");
+const { sendPasswordResetEmail } = require("../services/email.service");
+const {
+    buildPasswordResetUrl,
+    generatePasswordResetToken,
+    getPasswordResetTtlMinutes,
+    hashPasswordResetToken,
+} = require("../services/passwordReset.service");
 const User = db.User;
+const PasswordResetToken = db.PasswordResetToken;
 const REGISTERABLE_ROLES = new Set(["STUDENT", "FACULTY", "VISITOR"]);
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -26,6 +35,10 @@ const generateRefreshToken = (user) => {
         JWT_REFRESH_SECRET, 
         { expiresIn: "7d" }
     );
+};
+
+const GENERIC_FORGOT_PASSWORD_RESPONSE = {
+    message: "If an account exists for that email, a reset link has been sent.",
 };
 
 exports.register = async (req, res) => {
@@ -149,6 +162,130 @@ exports.refreshToken = async (req, res) => {
         res.status(200).json({ message: "Token refreshed successfully" });
     } catch (err) {
         return res.status(403).json({ message: "Invalid or expired refresh token" });
+    }
+};
+
+exports.forgotPassword = async (req, res) => {
+    const email = String(req.body.email || "").trim();
+
+    if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+    }
+
+    try {
+        const user = await User.findOne({
+            where: {
+                email,
+            },
+        });
+
+        if (!user) {
+            return res.status(200).json(GENERIC_FORGOT_PASSWORD_RESPONSE);
+        }
+
+        const rawToken = generatePasswordResetToken();
+        const tokenHash = hashPasswordResetToken(rawToken);
+        const ttlMinutes = getPasswordResetTtlMinutes();
+        const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
+        const resetUrl = buildPasswordResetUrl(rawToken);
+        const now = new Date();
+
+        await PasswordResetToken.update(
+            { used_at: now },
+            {
+                where: {
+                    user_id: user.user_id,
+                    used_at: null,
+                    expires_at: {
+                        [Op.gt]: now,
+                    },
+                },
+            }
+        );
+
+        const resetRecord = await PasswordResetToken.create({
+            user_id: user.user_id,
+            token_hash: tokenHash,
+            expires_at: expiresAt,
+        });
+
+        try {
+            await sendPasswordResetEmail({
+                to: user.email,
+                resetUrl,
+                ttlMinutes,
+            });
+        } catch (emailError) {
+            await resetRecord.destroy();
+            throw emailError;
+        }
+
+        return res.status(200).json(GENERIC_FORGOT_PASSWORD_RESPONSE);
+    } catch (err) {
+        return res.status(500).json({ message: "Failed to process password reset request" });
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    const token = String(req.body.token || "").trim();
+    const newPassword = String(req.body.newPassword || "");
+
+    if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+    }
+
+    if (newPassword.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters long" });
+    }
+
+    try {
+        const tokenHash = hashPasswordResetToken(token);
+        const resetRecord = await PasswordResetToken.findOne({
+            where: {
+                token_hash: tokenHash,
+                used_at: null,
+                expires_at: {
+                    [Op.gt]: new Date(),
+                },
+            },
+        });
+
+        if (!resetRecord) {
+            return res.status(400).json({ message: "Reset link is invalid or expired" });
+        }
+
+        const user = await User.findOne({
+            where: {
+                user_id: resetRecord.user_id,
+            },
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: "Reset link is invalid or expired" });
+        }
+
+        const now = new Date();
+
+        await user.update({
+            password_hash: bcrypt.hashSync(newPassword, 10),
+            refresh_token: null,
+        });
+
+        await PasswordResetToken.update(
+            { used_at: now },
+            {
+                where: {
+                    user_id: user.user_id,
+                    used_at: null,
+                },
+            }
+        );
+
+        res.clearCookie("accessToken", getClearCookieOptions());
+        res.clearCookie("refreshToken", getClearCookieOptions());
+        return res.status(200).json({ message: "Password reset successful" });
+    } catch (err) {
+        return res.status(500).json({ message: "Failed to reset password" });
     }
 };
 
