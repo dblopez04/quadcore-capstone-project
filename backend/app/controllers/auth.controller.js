@@ -166,7 +166,7 @@ exports.refreshToken = async (req, res) => {
 };
 
 exports.forgotPassword = async (req, res) => {
-    const email = String(req.body.email || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
 
     if (!email) {
         return res.status(400).json({ message: "Email is required" });
@@ -222,7 +222,18 @@ exports.forgotPassword = async (req, res) => {
 
         return res.status(200).json(GENERIC_FORGOT_PASSWORD_RESPONSE);
     } catch (err) {
-        return res.status(500).json({ message: "Failed to process password reset request" });
+        console.error("forgotPassword error:", {
+            email,
+            message: err?.message,
+            stack: err?.stack,
+        });
+
+        const isProduction = String(process.env.NODE_ENV || "").toLowerCase() === "production";
+
+        return res.status(500).json({
+            message: "Failed to process password reset request",
+            ...(isProduction ? {} : { debug: err?.message }),
+        });
     }
 };
 
@@ -285,7 +296,17 @@ exports.resetPassword = async (req, res) => {
         res.clearCookie("refreshToken", getClearCookieOptions());
         return res.status(200).json({ message: "Password reset successful" });
     } catch (err) {
-        return res.status(500).json({ message: "Failed to reset password" });
+        console.error("resetPassword error:", {
+            message: err?.message,
+            stack: err?.stack,
+        });
+
+        const isProduction = String(process.env.NODE_ENV || "").toLowerCase() === "production";
+
+        return res.status(500).json({
+            message: "Failed to reset password",
+            ...(isProduction ? {} : { debug: err?.message }),
+        });
     }
 };
 
