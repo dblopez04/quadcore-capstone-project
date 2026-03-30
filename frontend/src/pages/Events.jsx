@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     fetchEvents,
@@ -24,6 +24,26 @@ function monthLabel(d) {
     return d.toLocaleString(undefined, { month: "long", year: "numeric" });
 }
 
+function formatTime(value) {
+    if (!value) return "N/A";
+
+    return new Date(value).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
+
+function formatEventDateTime(value) {
+    if (!value) return "N/A";
+
+    return new Date(value).toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
 function buildMonthGrid(viewDate) {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
@@ -217,6 +237,7 @@ export default function Events() {
     const [registeredEvents, setRegisteredEvents] = useState([]);
 
     const navigate = useNavigate();
+    const allEventsRef = useRef(null);
 
     const eventDays = useMemo(() => {
         const s = new Set();
@@ -442,7 +463,13 @@ export default function Events() {
                             }}
                         >
                             <div style={{ fontWeight: 700, marginBottom: 8 }}>
-                                Events on {selectedDate}
+                                Events on{" "}
+                                {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
+                                    weekday: "long",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                })}
                             </div>
 
                             {selectedDateEvents.length === 0 ? (
@@ -454,18 +481,35 @@ export default function Events() {
                                     {selectedDateEvents.map((ev) => (
                                         <div
                                             key={`calendar-${ev.id}`}
+                                            onClick={() => {
+                                                setEvents(allEvents.filter((eventItem) => eventDateStr(eventItem.start) === selectedDate));
+                                                allEventsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                            }}
                                             style={{
                                                 padding: "10px 12px",
                                                 borderRadius: 10,
                                                 background: "#fff",
-                                                border: "1px solid #e5e5e5",
+                                                border: "1px solid #dcdcdc",
+                                                cursor: "pointer",
+                                                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                                                transition: "transform 0.15s ease, box-shadow 0.15s ease",
                                             }}
                                         >
                                             <div style={{ fontWeight: 600 }}>{ev.title}</div>
                                             <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
-                                                {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                                {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                                {formatTime(ev.start)}
+                                                {ev.end ? ` - ${formatTime(ev.end)}` : ""}
                                             </div>
+                                            <div style={{ fontSize: 13, color: "#555", marginTop: 2 }}>
+                                                {formatEventLocation(ev)}
+                                            </div>
+                                            {ev.description && (
+                                                <div style={{ fontSize: 12, color: "#666", marginTop: 4, lineHeight: 1.4 }}>
+                                                    {ev.description.length > 120
+                                                        ? `${ev.description.slice(0, 120)}...`
+                                                        : ev.description}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -649,13 +693,29 @@ export default function Events() {
                             >
                                 <div style={{ fontWeight: 700 }}>{ev.title}</div>
                                 <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
-                                    {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                    {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                    {ev.start ? formatTime(ev.start) : "Start: N/A"}
+                                    {ev.end ? ` - ${formatTime(ev.end)}` : ""}
                                 </div>
                                 <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
                                     {formatEventLocation(ev)}
                                 </div>
-                                <div style={{ marginTop: 12 }}>
+                                <div style={{ display: "flex", gap: "10px", marginTop: 12, flexWrap: "wrap" }}>
+                                    <button
+                                        onClick={() => handleViewOnMap(ev)}
+                                        disabled={!(ev.locationId || (ev.lat != null && ev.lng != null))}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: ev.locationId || (ev.lat != null && ev.lng != null) ? "#0a5" : "#aaa",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: ev.locationId || (ev.lat != null && ev.lng != null) ? "pointer" : "not-allowed",
+                                        }}
+                                    >
+                                        View on Map
+                                    </button>
+
                                     <button
                                         onClick={() => handleUnregister(ev.id)}
                                         disabled={unregisteringId === ev.id}
@@ -696,7 +756,9 @@ export default function Events() {
                     {selectedDate && <> on <strong>{selectedDate}</strong></>}
                 </div>
             )}
-            <h3 style={{ margin: "20px 0 12px 0" }}>All Events</h3>
+            <h3 ref={allEventsRef} style={{ margin: "20px 0 12px 0" }}>
+                All Events
+            </h3>
 
             {loading ? (
                 <p>Loading events...</p>
@@ -770,8 +832,8 @@ export default function Events() {
                                 <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
                                     <div style={{ fontSize: "14px", color: "#555" }}>
                                         <strong>When:</strong>{" "}
-                                        {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                        {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                        {ev.start ? formatEventDateTime(ev.start) : "Start: N/A"}
+                                        {ev.end ? ` - ${formatTime(ev.end)}` : ""}
                                     </div>
 
                                     <div style={{ fontSize: "14px", color: "#555" }}>
