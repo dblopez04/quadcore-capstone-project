@@ -235,6 +235,8 @@ export default function Events() {
     const [feedback, setFeedback] = useState("");
     const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
     const [registeredEvents, setRegisteredEvents] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const eventsPerPage = 12;
 
     const navigate = useNavigate();
     const allEventsRef = useRef(null);
@@ -265,6 +267,14 @@ export default function Events() {
 
         return allEvents.filter((ev) => eventDateStr(ev.start) === selectedDate);
     }, [allEvents, selectedDate]);
+
+    const paginatedEvents = useMemo(() => {
+        const startIndex = (currentPage - 1) * eventsPerPage;
+        const endIndex = startIndex + eventsPerPage;
+        return events.slice(startIndex, endIndex);
+    }, [events, currentPage]);
+
+    const totalPages = Math.ceil(events.length / eventsPerPage);
 
     const categoryOptions = useMemo(() => {
         return Array.from(new Set(allEvents.map((event) => event.category).filter(Boolean)))
@@ -768,7 +778,7 @@ export default function Events() {
                 <p>No events found.</p>
             ) : (
                 <div style={{ display: "grid", gap: "12px" }}>
-                    {events.map((ev) => {
+                    {paginatedEvents.map((ev) => {
                         const canMap = Boolean(ev.locationId) || (ev.lat != null && ev.lng != null);
                         const isRegistered = registeredEventIds.has(ev.id);
 
@@ -899,6 +909,50 @@ export default function Events() {
                             </div>
                         );
                     })}
+                </div>
+            )}
+            {totalPages > 1 && (
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        gap: "8px",
+                        marginTop: "20px",
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        style={{
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            border: "1px solid #ddd",
+                            background: currentPage === 1 ? "#f3f3f3" : "white",
+                            cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                        }}
+                    >
+                        Prev
+                    </button>
+
+                    <span style={{ fontSize: "14px", color: "#444" }}>
+                        Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+                    </span>
+
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        style={{
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            border: "1px solid #ddd",
+                            background: currentPage === totalPages ? "#f3f3f3" : "white",
+                            cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                        }}
+                    >
+                        Next
+                    </button>
                 </div>
             )}
         </div>
