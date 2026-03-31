@@ -63,7 +63,8 @@ async function sendPasswordResetEmail({ to, resetUrl, ttlMinutes }) {
     const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-        throw new Error(payload.message || payload.error || "Failed to send reset email");
+        const errorMessage = payload.message || payload.error || "Failed to send reset email";
+        throw new Error(`Resend request failed (${response.status}): ${errorMessage}`);
     }
 
     return payload;
