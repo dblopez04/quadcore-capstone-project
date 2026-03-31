@@ -37,6 +37,11 @@ export default function ResetPassword() {
         try {
             const result = await resetPassword(token, password);
             setMessage(result.message || "Password reset successful.");
+
+            // redirect after 2 seconds
+            setTimeout(() => {
+                navigate("/");
+            }, 2000);
             setPassword("");
             setConfirmPassword("");
         } catch (err) {

@@ -1,16 +1,12 @@
 {
   "ExpandedNodes": [
     "",
-    "\\backend\\app",
-    "\\backend\\app\\routes",
     "\\database",
     "\\frontend",
     "\\frontend\\src",
-    "\\frontend\\src\\api",
-    "\\frontend\\src\\components",
-    "\\frontend\\src\\pages",
-    "\\frontend\\src\\utils"
+    "\\frontend\\src\\hooks",
+    "\\scripts"
   ],
-  "SelectedNode": "\\frontend\\src\\pages\\Bookmarks.jsx",
+  "SelectedNode": "\\scripts\\import_unt_events_ics.py",
   "PreviewInSolutionExplorer": false
 }
