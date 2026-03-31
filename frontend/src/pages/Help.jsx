@@ -6,6 +6,7 @@ export default function Help() {
                 <li>Go to the Map tab to see the campus map.</li>
                 <li>Zoom with your mouse or trackpad.</li>
                 <li>More features arrive in future sprints.</li>
+                <li>Testing CI/CD</li>
             </ul>
         </section>
     );
