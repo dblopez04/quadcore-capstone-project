@@ -42,6 +42,18 @@ export default function Register() {
         }
     };
 
+    const fieldStyle = {
+        width: "100%",
+        padding: "14px 16px",
+        marginBottom: 12,
+        border: "1px solid #d0d5dd",
+        borderRadius: 12,
+        fontSize: 16,
+        backgroundColor: "#fff",
+        boxSizing: "border-box",
+        outline: "none",
+    };
+
     return (
         <div
             style={{
@@ -118,15 +130,7 @@ export default function Register() {
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         required
-                        style={{
-                            width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
-                        }}
+                        style={fieldStyle}
                     />
 
                     {/* Last Name */}
@@ -136,15 +140,7 @@ export default function Register() {
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         required
-                        style={{
-                            width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
-                        }}
+                        style={fieldStyle}
                     />
 
                     {/* Email */}
@@ -154,15 +150,7 @@ export default function Register() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        style={{
-                            width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
-                        }}
+                        style={fieldStyle}
                     />
 
                     {/* Phone Number */}
@@ -171,30 +159,14 @@ export default function Register() {
                         placeholder="Phone Number"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
-                        style={{
-                            width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
-                        }}
+                        style={fieldStyle}
                     />
 
                     {/* Role */}
                     <select
                         value={userRole}
                         onChange={(e) => setUserRole(e.target.value)}
-                        style={{
-                            width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
-                        }}
+                        style={fieldStyle}
                     >
                         <option value="STUDENT">Student</option>
                         <option value="FACULTY">Faculty</option>
@@ -209,13 +181,8 @@ export default function Register() {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         style={{
-                            width: "100%",
-                            padding: 12,
+                            ...fieldStyle,
                             marginBottom: 16,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
                         }}
                     />
 
