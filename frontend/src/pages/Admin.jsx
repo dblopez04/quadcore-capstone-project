@@ -54,6 +54,11 @@ export default function Admin() {
     const [editingEventId, setEditingEventId] = useState(null);
     const [allLocations, setAllLocations] = useState([]);
     const [savingEvent, setSavingEvent] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const eventsPerPage = 12;
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [adminEvents.length]);
 
     const fieldStyle = {
         width: "100%",
@@ -256,6 +261,13 @@ export default function Admin() {
         }
     };
 
+    const totalPages = Math.ceil(adminEvents.length / eventsPerPage);
+
+    const startIndex = (currentPage - 1) * eventsPerPage;
+    const endIndex = startIndex + eventsPerPage;
+
+    const paginatedAdminEvents = adminEvents.slice(startIndex, endIndex);
+
     return (
         <div
             style={{
@@ -307,9 +319,10 @@ export default function Admin() {
                     <p>Loading admin events...</p>
                 ) : adminEvents.length === 0 ? (
                     <p>No events found.</p>
-                ) : (
-                    <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-                        {adminEvents.map((ev) => (
+                    ) : (
+                        <>
+                            <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+                            {paginatedAdminEvents.map((ev) => (
                             <div
                                 key={ev.id}
                                 style={{
@@ -418,8 +431,61 @@ export default function Admin() {
                                     </button>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                gap: 12,
+                                marginTop: 20,
+                                flexWrap: "wrap",
+                            }}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                style={{
+                                    padding: "8px 14px",
+                                    borderRadius: 10,
+                                    border: "1px solid #d0d5dd",
+                                    background: currentPage === 1 ? "#f2f4f7" : "#fff",
+                                    color: currentPage === 1 ? "#98a2b3" : "#111827",
+                                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                                    fontWeight: 500,
+                                }}
+                            >
+                                Prev
+                            </button>
+
+                            <span style={{ fontSize: 14, color: "#344054", fontWeight: 500 }}>
+                                Page {currentPage} of {totalPages || 1}
+                            </span>
+
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages || totalPages === 0}
+                                style={{
+                                    padding: "8px 14px",
+                                    borderRadius: 10,
+                                    border: "1px solid #d0d5dd",
+                                    background:
+                                        currentPage === totalPages || totalPages === 0 ? "#f2f4f7" : "#fff",
+                                    color:
+                                        currentPage === totalPages || totalPages === 0 ? "#98a2b3" : "#111827",
+                                    cursor:
+                                        currentPage === totalPages || totalPages === 0 ? "not-allowed" : "pointer",
+                                    fontWeight: 500,
+                                }}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </>
                 )}
             </div>
 

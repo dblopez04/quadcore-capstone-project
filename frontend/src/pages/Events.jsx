@@ -419,6 +419,8 @@ export default function Events() {
         navigate(`/map?${params.toString()}`);
     }
 
+    const todayStr = toDateStr(new Date());
+
     return (
         <div style={{ padding: "24px" }}>
             <h2>Campus Events</h2>
@@ -426,20 +428,14 @@ export default function Events() {
             <div
                 style={{
                     margin: "16px 0 20px 0",
-                    padding: "16px",
-                    border: "1px solid #e5e5e5",
-                    borderRadius: "16px",
-                    background: "#fff",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                 }}
             >
                 {/* Calendar */}
                 <div
                     style={{
-                        padding: "12px",
-                        border: "1px solid #e5e5e5",
+                        padding: "16px",
                         borderRadius: "12px",
-                        background: "#fafafa",
+                        background: "#f8f8f8",
                     }}
                 >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -467,11 +463,9 @@ export default function Events() {
                     {selectedDate && (
                         <div
                             style={{
-                                marginTop: 14,
-                                padding: "12px",
-                                border: "1px solid #e5e5e5",
-                                borderRadius: 12,
-                                background: "#f9fbf9",
+                                marginTop: 18,
+                                paddingTop: "12px",
+                                borderTop: "1px solid #e5e5e5",
                             }}
                         >
                             <div style={{ fontWeight: 700, marginBottom: 8 }}>
@@ -550,6 +544,7 @@ export default function Events() {
                             const dStr = toDateStr(dateObj);
                             const hasEvent = eventDays.has(dStr);
                             const isSelected = selectedDate === dStr;
+                            const isToday = dStr === todayStr;
 
                             return (
                                 <button
@@ -561,14 +556,20 @@ export default function Events() {
                                     style={{
                                         padding: "10px 0",
                                         borderRadius: 10,
-                                        border: "1px solid #ddd",
+                                        border: isSelected
+                                            ? "2px solid #006A31"
+                                            : isToday
+                                                ? "2px solid #1d4ed8"
+                                                : "1px solid #ddd",
                                         cursor: "pointer",
                                         fontWeight: 700,
                                         background: isSelected
                                             ? "rgba(0, 128, 0, 0.18)"
-                                            : hasEvent
-                                                ? "rgba(0, 128, 0, 0.10)"
-                                                : "white",
+                                            : isToday
+                                                ? "rgba(29, 78, 216, 0.08)"
+                                                : hasEvent
+                                                    ? "rgba(0, 128, 0, 0.10)"
+                                                    : "white",
                                     }}
                                 >
                                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.1 }}>

@@ -1,11 +1,6 @@
 ﻿import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-
-const cardStyle = {
-    padding: "1.5rem",
-    backgroundColor: "#f5f5f5",
-    borderRadius: "12px",
-};
+import { useEffect, useState } from "react";
+import { fetchRegisteredEvents } from "../api/eventService";
 
 const primaryBtn = {
     padding: "0.9rem 1.3rem",
@@ -68,54 +63,124 @@ const viewAllBtn = {
 };
 
 const eventCard = {
-    padding: "1.25rem 1.35rem",
-    background: "white",
-    borderRadius: "16px",
-    border: "1px solid rgba(0,0,0,0.08)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "20px 22px",
+    borderRadius: 18,
+    border: "1px solid #e4e7ec",
+    background: "#fff",
     boxShadow: "0 8px 22px rgba(0,0,0,0.06)",
     cursor: "pointer",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-    marginBottom: "0.9rem",
-};
-
-const eventCardLeft = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.3rem",
+    transition: "transform 0.18s ease, box-shadow 0.18s ease",
+    marginBottom: 14,
 };
 
 const eventTitle = {
-    fontWeight: 800,
-    fontSize: "1.1rem",
-    color: "#111",
-};
-
-const eventMeta = {
-    color: "#555",
-    fontSize: "0.95rem",
-};
-
-const eventLocation = {
-    color: "#777",
-    fontSize: "0.9rem",
-};
-
-const eventArrow = {
-    fontSize: "1.4rem",
-    color: "#006633",
+    fontSize: 18,
     fontWeight: 700,
-    marginLeft: "1rem",
+    lineHeight: 1.2,
+    color: "#101828",
+    margin: 0,
 };
+
+function cleanText(value) {
+    if (value == null) return "";
+    return String(value).trim();
+}
+
+function formatRegisteredEventDate(value) {
+    if (!value) return "Date TBD";
+
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "Date TBD";
+
+    return d.toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
+
+function formatRegisteredEventLocation(ev) {
+    const locationName =
+        cleanText(ev.locationName) ||
+        cleanText(ev.location_name) ||
+        cleanText(ev.location?.name) ||
+        cleanText(typeof ev.location === "string" ? ev.location : "");
+
+    const sourceLocationName =
+        cleanText(ev.details?.source_location_name) ||
+        cleanText(ev.source_location_name);
+
+    const roomDetail =
+        cleanText(ev.details?.room_detail) ||
+        cleanText(ev.room_detail);
+
+    const baseLocation = locationName || sourceLocationName;
+
+    if (!roomDetail) {
+        return baseLocation || "Location not provided";
+    }
+
+    if (baseLocation && baseLocation.toLowerCase().includes(roomDetail.toLowerCase())) {
+        return baseLocation;
+    }
+
+    return baseLocation ? `${baseLocation}, ${roomDetail}` : roomDetail;
+}
+
+function normalizeRegisteredEvent(item) {
+    const ev = item.event || item;
+
+    return {
+        id: ev.event_id || ev.id || ev._id,
+        title: ev.title || ev.name || "Untitled Event",
+        date: formatRegisteredEventDate(
+            ev.start_date_time ||
+            ev.start_time ||
+            ev.startTime ||
+            ev.start ||
+            ev.start_date ||
+            ev.startDate
+        ),
+        location: formatRegisteredEventLocation(ev),
+    };
+}
+
 export default function Home() {
     const navigate = useNavigate();
 
-    const [registeredEvents] = useState([
-        { id: 1, title: "My Registered Event 1", date: "March 30, 2026", location: "UNT Union" },
-        { id: 2, title: "My Registered Event 2", date: "April 2, 2026", location: "Discovery Park" },
-    ]);
+    const [registeredEvents, setRegisteredEvents] = useState([]);
+    const [loadingRegisteredEvents, setLoadingRegisteredEvents] = useState(true);
+
+    useEffect(() => {
+        const loadRegisteredEvents = async () => {
+            try {
+                const data = await fetchRegisteredEvents();
+
+                const raw = Array.isArray(data?.events)
+                    ? data.events
+                    : Array.isArray(data)
+                        ? data
+                        : [];
+
+                const normalized = raw
+                    .map((item) => normalizeRegisteredEvent(item))
+                    .filter((ev) => ev.id);
+
+                setRegisteredEvents(normalized);
+            } catch (error) {
+                console.error("Error loading registered events:", error);
+                setRegisteredEvents([]);
+            } finally {
+                setLoadingRegisteredEvents(false);
+            }
+        };
+
+        loadRegisteredEvents();
+    }, []);
 
     return (
         <section style={{ padding: "2rem", maxWidth: "1100px", margin: "0 auto 3rem" }}>
@@ -245,29 +310,131 @@ export default function Home() {
                     </button>
                 </div>
 
-                {registeredEvents.map((event) => (
+                {loadingRegisteredEvents ? (
                     <div
-                        key={event.id}
-                        style={eventCard}
-                        onClick={() => navigate("/events")}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.transform = "translateY(-4px)";
-                            e.currentTarget.style.boxShadow = "0 12px 28px rgba(0,0,0,0.12)";
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.transform = "translateY(0px)";
-                            e.currentTarget.style.boxShadow = "0 8px 22px rgba(0,0,0,0.06)";
+                        style={{
+                            padding: "24px",
+                            borderRadius: 16,
+                            border: "1px solid #e4e7ec",
+                            background: "#fff",
+                            color: "#667085",
+                            textAlign: "center",
                         }}
                     >
-                        <div style={eventCardLeft}>
-                            <div style={eventTitle}>{event.title}</div>
-                            <div style={eventMeta}>{event.date}</div>
-                            <div style={eventLocation}>{event.location}</div>
+                        Loading your registered events...
+                    </div>
+                ) : registeredEvents.length === 0 ? (
+                    <div
+                        style={{
+                            padding: "28px 24px",
+                            borderRadius: 16,
+                            border: "1px solid #e4e7ec",
+                            background: "#fff",
+                            color: "#667085",
+                            textAlign: "center",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 14,
+                        }}
+                    >
+                        <div style={{ fontSize: 16, fontWeight: 600, color: "#101828" }}>
+                            No registered events yet
                         </div>
 
-                        <div style={eventArrow}>→</div>
+                        <div style={{ fontSize: 14, color: "#667085" }}>
+                            Browse campus events and register to see them here.
+                        </div>
+
+                        <button
+                            onClick={() => navigate("/events")}
+                            style={{
+                                padding: "10px 16px",
+                                borderRadius: 10,
+                                border: "none",
+                                background: "#006A31",
+                                color: "#fff",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                            }}
+                        >
+                            Browse Events
+                        </button>
                     </div>
-                ))}
+                ) : (
+                    registeredEvents.map((event) => (
+                        <div
+                            key={event.id}
+                            style={eventCard}
+                            onClick={() => navigate("/events")}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = "translateY(-4px)";
+                                e.currentTarget.style.boxShadow = "0 12px 28px rgba(0,0,0,0.12)";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = "translateY(0px)";
+                                e.currentTarget.style.boxShadow = "0 8px 22px rgba(0,0,0,0.06)";
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                    width: "100%",
+                                    gap: 16,
+                                }}
+                            >
+                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                    <div style={eventTitle}>{event.title}</div>
+
+                                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                                        <span
+                                            style={{
+                                                fontSize: 13,
+                                                fontWeight: 600,
+                                                color: "#166534",
+                                                background: "#ecfdf3",
+                                                border: "1px solid #b7dfc8",
+                                                borderRadius: 999,
+                                                padding: "4px 10px",
+                                            }}
+                                        >
+                                            {event.date}
+                                        </span>
+
+                                        <span
+                                            style={{
+                                                fontSize: 14,
+                                                color: "#667085",
+                                            }}
+                                        >
+                                            {event.location}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div
+                                    style={{
+                                        minWidth: 40,
+                                        height: 40,
+                                        borderRadius: 999,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        border: "1px solid #d0d5dd",
+                                        background: "#fff",
+                                        color: "#006A31",
+                                        fontSize: 20,
+                                        fontWeight: 700,
+                                    }}
+                                >
+                                    →
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
             </div>
 
         </section>
