@@ -238,6 +238,8 @@ export default function Events() {
     const [currentPage, setCurrentPage] = useState(1);
     const eventsPerPage = 12;
 
+    const eventCardRefs = useRef({});
+
     const navigate = useNavigate();
     const allEventsRef = useRef(null);
 
@@ -694,11 +696,32 @@ export default function Events() {
                         {registeredEvents.map((ev) => (
                             <div
                                 key={`registered-${ev.id}`}
+                                onClick={() => {
+                                    const matchingIndex = events.findIndex((eventItem) => eventItem.id === ev.id);
+
+                                    if (matchingIndex !== -1) {
+                                        const pageForEvent = Math.floor(matchingIndex / eventsPerPage) + 1;
+                                        setCurrentPage(pageForEvent);
+
+                                        setTimeout(() => {
+                                            eventCardRefs.current[ev.id]?.scrollIntoView({
+                                                behavior: "smooth",
+                                                block: "center",
+                                            });
+                                        }, 100);
+                                    } else {
+                                        allEventsRef.current?.scrollIntoView({
+                                            behavior: "smooth",
+                                            block: "start",
+                                        });
+                                    }
+                                }}
                                 style={{
                                     border: "1px solid #e5e5e5",
                                     borderRadius: "12px",
                                     padding: "14px",
                                     background: "#f9fbf9",
+                                    cursor: "pointer",
                                 }}
                             >
                                 <div style={{ fontWeight: 700 }}>{ev.title}</div>
@@ -785,6 +808,9 @@ export default function Events() {
                         return (
                             <div
                                 key={ev.id}
+                                ref={(el) => {
+                                    if (el) eventCardRefs.current[ev.id] = el;
+                                }}
                                 style={{
                                     border: "1px solid #e5e5e5",
                                     borderRadius: "16px",

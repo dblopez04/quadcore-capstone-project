@@ -1,12 +1,16 @@
 {
   "ExpandedNodes": [
     "",
-    "\\database",
-    "\\frontend",
+    "\\backend\\app",
+    "\\backend\\app\\controllers",
+    "\\backend\\app\\models",
+    "\\backend\\app\\routes",
+    "\\backend\\app\\services",
     "\\frontend\\src",
-    "\\frontend\\src\\hooks",
+    "\\frontend\\src\\api",
+    "\\frontend\\src\\components",
     "\\scripts"
   ],
-  "SelectedNode": "\\scripts\\import_unt_events_ics.py",
+  "SelectedNode": "\\.env",
   "PreviewInSolutionExplorer": false
 }

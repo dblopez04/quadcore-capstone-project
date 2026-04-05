@@ -1,4 +1,5 @@
 ﻿import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 const cardStyle = {
     padding: "1.5rem",
@@ -49,8 +50,73 @@ const actionSub = {
     fontSize: "0.95rem",
     color: "#556",
 };
+
+const sectionHeaderRow = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "1rem",
+};
+
+const viewAllBtn = {
+    background: "none",
+    border: "none",
+    color: "#006633",
+    fontWeight: 700,
+    cursor: "pointer",
+    fontSize: "0.95rem",
+};
+
+const eventCard = {
+    padding: "1.25rem 1.35rem",
+    background: "white",
+    borderRadius: "16px",
+    border: "1px solid rgba(0,0,0,0.08)",
+    boxShadow: "0 8px 22px rgba(0,0,0,0.06)",
+    cursor: "pointer",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+    marginBottom: "0.9rem",
+};
+
+const eventCardLeft = {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.3rem",
+};
+
+const eventTitle = {
+    fontWeight: 800,
+    fontSize: "1.1rem",
+    color: "#111",
+};
+
+const eventMeta = {
+    color: "#555",
+    fontSize: "0.95rem",
+};
+
+const eventLocation = {
+    color: "#777",
+    fontSize: "0.9rem",
+};
+
+const eventArrow = {
+    fontSize: "1.4rem",
+    color: "#006633",
+    fontWeight: 700,
+    marginLeft: "1rem",
+};
 export default function Home() {
     const navigate = useNavigate();
+
+    const [registeredEvents] = useState([
+        { id: 1, title: "My Registered Event 1", date: "March 30, 2026", location: "UNT Union" },
+        { id: 2, title: "My Registered Event 2", date: "April 2, 2026", location: "Discovery Park" },
+    ]);
+
     return (
         <section style={{ padding: "2rem", maxWidth: "1100px", margin: "0 auto 3rem" }}>
             {/* HERO SECTION */}
@@ -166,12 +232,42 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* UPCOMING EVENTS PREVIEW */}
+            {/* REGISTERED EVENTS PREVIEW */}
             <div>
-                <h2 style={{ marginBottom: "1rem" }}>Upcoming Events</h2>
-                <div style={cardStyle}>Event 1</div>
-                <div style={{ height: "10px" }} />
-                <div style={cardStyle}>Event 2</div>
+                <div style={sectionHeaderRow}>
+                    <h2>My Registered Events</h2>
+
+                    <button
+                        onClick={() => navigate("/events")}
+                        style={viewAllBtn}
+                    >
+                        View All
+                    </button>
+                </div>
+
+                {registeredEvents.map((event) => (
+                    <div
+                        key={event.id}
+                        style={eventCard}
+                        onClick={() => navigate("/events")}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-4px)";
+                            e.currentTarget.style.boxShadow = "0 12px 28px rgba(0,0,0,0.12)";
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "translateY(0px)";
+                            e.currentTarget.style.boxShadow = "0 8px 22px rgba(0,0,0,0.06)";
+                        }}
+                    >
+                        <div style={eventCardLeft}>
+                            <div style={eventTitle}>{event.title}</div>
+                            <div style={eventMeta}>{event.date}</div>
+                            <div style={eventLocation}>{event.location}</div>
+                        </div>
+
+                        <div style={eventArrow}>→</div>
+                    </div>
+                ))}
             </div>
 
         </section>
