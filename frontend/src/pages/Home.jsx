@@ -1,5 +1,5 @@
 ﻿import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { fetchRegisteredEvents } from "../api/eventService";
 
 const primaryBtn = {
@@ -84,6 +84,69 @@ const eventTitle = {
     margin: 0,
 };
 
+const calendarHeader = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "1rem",
+};
+
+const calendarCell = {
+    minHeight: "72px",
+    background: "#f8faf8",
+    border: "1px solid #d8e2d8",
+    borderRadius: "12px",
+    padding: "8px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+};
+
+const calendarNavBtn = {
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    fontWeight: 500,
+    fontSize: "1rem",
+    color: "#111827",
+    padding: "4px 10px",
+};
+
+const calendarGrid = {
+    display: "grid",
+    gridTemplateColumns: "repeat(7, 1fr)",
+    gap: "6px",
+};
+
+const calendarDayName = {
+    fontWeight: 600,
+    color: "#555",
+    textAlign: "center",
+    paddingBottom: "2px",
+    fontSize: "0.95rem",
+};
+
+const emptyCalendarCell = {
+    minHeight: "72px",
+    background: "transparent",
+    borderRadius: "12px",
+};
+
+
+const calendarEventPill = {
+    fontSize: "11px",
+    padding: "6px 8px",
+    borderRadius: "10px",
+    background: "#dff3e4",
+    color: "#166534",
+    border: "1px solid #a7d8b4",
+    cursor: "pointer",
+    fontWeight: 600,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+};
+
 function cleanText(value) {
     if (value == null) return "";
     return String(value).trim();
@@ -101,6 +164,22 @@ function formatRegisteredEventDate(value) {
         hour: "numeric",
         minute: "2-digit",
     });
+}
+
+function getEventDateParts(value) {
+    if (!value) {
+        return { month: "TBD", day: "--" };
+    }
+
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) {
+        return { month: "TBD", day: "--" };
+    }
+
+    return {
+        month: d.toLocaleString("en-US", { month: "short" }).toUpperCase(),
+        day: String(d.getDate()),
+    };
 }
 
 function formatRegisteredEventLocation(ev) {
@@ -134,19 +213,45 @@ function formatRegisteredEventLocation(ev) {
 function normalizeRegisteredEvent(item) {
     const ev = item.event || item;
 
+    const rawDate =
+        ev.start_date_time ||
+        ev.start_time ||
+        ev.startTime ||
+        ev.start ||
+        ev.start_date ||
+        ev.startDate;
+
     return {
         id: ev.event_id || ev.id || ev._id,
         title: ev.title || ev.name || "Untitled Event",
-        date: formatRegisteredEventDate(
-            ev.start_date_time ||
-            ev.start_time ||
-            ev.startTime ||
-            ev.start ||
-            ev.start_date ||
-            ev.startDate
-        ),
+        rawDate,
+        date: formatRegisteredEventDate(rawDate),
+        dateParts: getEventDateParts(rawDate),
         location: formatRegisteredEventLocation(ev),
     };
+}
+
+function getCalendarDays(currentMonth) {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+
+    const firstDayOfMonth = new Date(year, month, 1);
+    const lastDayOfMonth = new Date(year, month + 1, 0);
+
+    const startDay = firstDayOfMonth.getDay();
+    const totalDays = lastDayOfMonth.getDate();
+
+    const days = [];
+
+    for (let i = 0; i < startDay; i++) {
+        days.push(null);
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+        days.push(new Date(year, month, day));
+    }
+
+    return days;
 }
 
 export default function Home() {
@@ -154,6 +259,7 @@ export default function Home() {
 
     const [registeredEvents, setRegisteredEvents] = useState([]);
     const [loadingRegisteredEvents, setLoadingRegisteredEvents] = useState(true);
+    const [currentMonth, setCurrentMonth] = useState(new Date());
 
     useEffect(() => {
         const loadRegisteredEvents = async () => {
@@ -171,6 +277,14 @@ export default function Home() {
                     .filter((ev) => ev.id);
 
                 setRegisteredEvents(normalized);
+
+                //  set calendar to first event's month
+                if (normalized.length > 0 && normalized[0].rawDate) {
+                    const firstDate = new Date(normalized[0].rawDate);
+                    if (!isNaN(firstDate)) {
+                        setCurrentMonth(new Date(firstDate.getFullYear(), firstDate.getMonth(), 1));
+                    }
+                }
             } catch (error) {
                 console.error("Error loading registered events:", error);
                 setRegisteredEvents([]);
@@ -182,8 +296,56 @@ export default function Home() {
         loadRegisteredEvents();
     }, []);
 
+    const calendarDays = useMemo(() => getCalendarDays(currentMonth), [currentMonth]);
+
+    const eventsByDate = useMemo(() => {
+        const grouped = {};
+
+        registeredEvents.forEach((event) => {
+            if (!event.rawDate) return;
+
+            const d = new Date(event.rawDate);
+            if (Number.isNaN(d.getTime())) return;
+
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+            if (!grouped[key]) {
+                grouped[key] = [];
+            }
+
+            grouped[key].push(event);
+        });
+
+        return grouped;
+    }, [registeredEvents]);
+
+    const groupedEvents = useMemo(() => {
+        const groups = {};
+
+        registeredEvents.forEach((event) => {
+            if (!event.date) return;
+
+            const d = new Date(event.date);
+            if (isNaN(d)) return;
+
+            const dayKey = d.toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "short",
+                day: "numeric",
+            });
+
+            if (!groups[dayKey]) {
+                groups[dayKey] = [];
+            }
+
+            groups[dayKey].push(event);
+        });
+
+        return groups;
+    }, [registeredEvents]);
+
     return (
-        <section style={{ padding: "2rem", maxWidth: "1100px", margin: "0 auto 3rem" }}>
+        <section style={{ padding: "2rem", maxWidth: "1000px", margin: "0 auto 3rem" }}>
             {/* HERO SECTION */}
             <div style={{ marginBottom: "3rem" }}>
                 <h1
@@ -362,78 +524,108 @@ export default function Home() {
                         </button>
                     </div>
                 ) : (
-                    registeredEvents.map((event) => (
-                        <div
-                            key={event.id}
-                            style={eventCard}
-                            onClick={() => navigate("/events")}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = "translateY(-4px)";
-                                e.currentTarget.style.boxShadow = "0 12px 28px rgba(0,0,0,0.12)";
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = "translateY(0px)";
-                                e.currentTarget.style.boxShadow = "0 8px 22px rgba(0,0,0,0.06)";
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    width: "100%",
-                                    gap: 16,
-                                }}
+                    <div
+                        style={{
+                            padding: "16px",
+                            background: "#ffffff",
+                            borderRadius: "18px",
+                            border: "1px solid #e4e7ec",
+                            boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+                            maxWidth: "780px",
+                            margin: "0 auto",
+                        }}
+                    >
+                        {/* MONTH HEADER */}
+                        <div style={calendarHeader}>
+                            <button
+                                style={calendarNavBtn}
+                                onClick={() =>
+                                    setCurrentMonth(
+                                        new Date(
+                                            currentMonth.getFullYear(),
+                                            currentMonth.getMonth() - 1,
+                                            1
+                                        )
+                                    )
+                                }
                             >
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                    <div style={eventTitle}>{event.title}</div>
+                                ←
+                            </button>
 
-                                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                                        <span
-                                            style={{
-                                                fontSize: 13,
-                                                fontWeight: 600,
-                                                color: "#166534",
-                                                background: "#ecfdf3",
-                                                border: "1px solid #b7dfc8",
-                                                borderRadius: 999,
-                                                padding: "4px 10px",
-                                            }}
-                                        >
-                                            {event.date}
-                                        </span>
+                            <h3 style={{ margin: 0, color: "#006633" }}>
+                                {currentMonth.toLocaleString("en-US", {
+                                    month: "long",
+                                    year: "numeric",
+                                })}
+                            </h3>
 
-                                        <span
-                                            style={{
-                                                fontSize: 14,
-                                                color: "#667085",
-                                            }}
-                                        >
-                                            {event.location}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div
-                                    style={{
-                                        minWidth: 40,
-                                        height: 40,
-                                        borderRadius: 999,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        border: "1px solid #d0d5dd",
-                                        background: "#fff",
-                                        color: "#006A31",
-                                        fontSize: 20,
-                                        fontWeight: 700,
-                                    }}
-                                >
-                                    →
-                                </div>
-                            </div>
+                            <button
+                                style={calendarNavBtn}
+                                onClick={() =>
+                                    setCurrentMonth(
+                                        new Date(
+                                            currentMonth.getFullYear(),
+                                            currentMonth.getMonth() + 1,
+                                            1
+                                        )
+                                    )
+                                }
+                            >
+                                →
+                            </button>
                         </div>
-                    ))
+
+                        {/* CALENDAR GRID */}
+                        <div style={calendarGrid}>
+                            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName) => (
+                                <div key={dayName} style={calendarDayName}>
+                                    {dayName}
+                                </div>
+                            ))}
+
+                            {calendarDays.map((day, index) => {
+                                if (!day) {
+                                    return (
+                                        <div
+                                            key={`empty-${index}`}
+                                            style={emptyCalendarCell}
+                                        />
+                                    );
+                                }
+
+                                const dateKey = `${day.getFullYear()}-${String(
+                                    day.getMonth() + 1
+                                ).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+
+                                const dayEvents = eventsByDate[dateKey] || [];
+
+                                return (
+                                    <div key={dateKey} style={calendarCell}>
+                                        <div
+                                            style={{
+                                                fontWeight: 700,
+                                                color: "#101828",
+                                                fontSize: "0.95rem",
+                                            }}
+                                        >
+                                            {day.getDate()}
+                                        </div>
+
+                                        {dayEvents.map((event) => (
+                                            <div
+                                                key={event.id}
+                                                style={calendarEventPill}
+                                                onClick={() => navigate("/events")}
+                                                title={`${event.title} - ${event.location}`}
+                                            >
+                                                {event.title}
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
                 )}
             </div>
 
