@@ -52,7 +52,8 @@ See `docs/REQUIREMENTS.md` for status.
 - User profile endpoint.
 - Search history endpoints (store and clear searches).
 - React pages: login, register, home, map, search, bookmarks, settings, about, help.
-- Map view uses Leaflet + OpenStreetMap tiles with a campus marker.
+- Map view uses Leaflet + OpenStreetMap tiles, browser geolocation, destination
+  search, and OSRM route rendering for walking directions.
 - Swagger docs are generated from route files.
 - Jest test suite for backend controllers, middleware, and routes.
 
@@ -62,10 +63,10 @@ See `docs/REQUIREMENTS.md` for status.
 - OpenStreetMap tiles for map display.
 
 ## Known Gaps (observed)
-- OSRM is not yet wired into backend endpoints.
 - POI read endpoints are still missing for non-admin users.
 - Search page now performs live fuzzy location matching; settings remains static UI.
 - Bookmarks page now supports bookmark/list APIs, but history/recently viewed UI is still pending.
+- Map routing currently shows geometry, ETA, and distance, but not turn-by-turn maneuver text.
 - Role-based access is partial: admin and owner controls are enforced, but
   student/faculty/visitor-specific policy checks are still limited.
 

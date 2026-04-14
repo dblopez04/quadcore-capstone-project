@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Marker, Popup, useMap } from "react-leaflet";
 
 export default function UserLocationMarker({
@@ -7,8 +7,9 @@ export default function UserLocationMarker({
     onLocationFound,
 }) {
     const map = useMap();
-    const [pos, setPos] = useState(null); // {lat, lng}
+    const [pos, setPos] = useState(null);
     const [err, setErr] = useState("");
+    const watchIdRef = useRef(null);
 
     useEffect(() => {
         if (!("geolocation" in navigator)) {
@@ -19,6 +20,8 @@ export default function UserLocationMarker({
         const onSuccess = (p) => {
             const next = { lat: p.coords.latitude, lng: p.coords.longitude };
             setPos(next);
+            setErr("");
+
             if (onLocationFound) {
                 onLocationFound(next);
             }
@@ -33,17 +36,20 @@ export default function UserLocationMarker({
             setErr(e?.message || "Unable to get your location.");
         };
 
-        navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+        watchIdRef.current = navigator.geolocation.watchPosition(onSuccess, onError, {
             enableHighAccuracy: true,
             timeout: 10000,
-            maximumAge: 30000,
+            maximumAge: 3000,
         });
-    }, [map, autoCenter, zoom]);
 
-    // Optional: show nothing if no location
+        return () => {
+            if (watchIdRef.current != null) {
+                navigator.geolocation.clearWatch(watchIdRef.current);
+            }
+        };
+    }, [map, autoCenter, zoom, onLocationFound]);
+
     if (!pos && !err) return null;
-
-    // If denied/error: don't break the map; show a small popup marker at default? We'll just render nothing.
     if (err) return null;
 
     return (
@@ -52,6 +58,9 @@ export default function UserLocationMarker({
                 <div style={{ fontWeight: 600 }}>You are here</div>
                 <div style={{ fontSize: 12 }}>
                     lat: {pos.lat.toFixed(5)}, lng: {pos.lng.toFixed(5)}
+                </div>
+                <div style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                    Live tracking enabled
                 </div>
             </Popup>
         </Marker>

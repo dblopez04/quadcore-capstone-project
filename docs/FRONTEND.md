@@ -37,6 +37,8 @@
 - Keep `VITE_API_BASE_URL` in `frontend/.env` for local overrides.
 - Search uses `frontend/src/api/locationService.js` to fetch `/api/locations` and
   apply client-side fuzzy ranking for location results.
+- Routing UI uses `frontend/src/api/osrmService.js` to call `/api/osrm/route`
+  and render OSRM GeoJSON responses on the map.
 - Bookmarks UI strips the demo seed phrase (`Seeded from local OSM extract`)
   from subtitle text before rendering.
 - Bookmarks UI now calls `/api/locations/bookmarks` and `/api/locations/lists`
@@ -48,9 +50,12 @@
 - Planned APIs: POIs, routing, bookmarks, reporting, and events.
 
 ## Map UI Notes
-- `frontend/src/MapView.jsx` currently renders a static Leaflet map and marker.
-- Planned: add user location using the Geolocation API (with permission prompts).
-- Planned: draw route polylines and step-by-step directions from OSRM responses.
+- `frontend/src/pages/MapPage.jsx` now includes a directions panel with
+  start/end search, current-location start, point picking from the map, route
+  swap/clear actions, and walking ETA + distance summary.
+- `frontend/src/MapView.jsx` renders the main Leaflet map, current-location
+  marker, route start/destination markers, and OSRM GeoJSON route overlays.
+- Turn-by-turn maneuver text is still pending.
 
 ## Filters and Categories
 POI categories defined in the database:
@@ -98,4 +103,4 @@ npm run lint
 
 ## Known Gaps
 - Settings page is still static.
-- No POI layer, route drawing, or current location display yet.
+- No POI layer or turn-by-turn maneuver list yet.

@@ -10,14 +10,14 @@ Status legend:
 
 | ID | Requirement | Release | Status | Area | Notes |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Map render | R1 | Partial (UI) | Frontend/Map | Leaflet map + marker only |
+| 1 | Map render | R1 | Implemented | Frontend/Map | Leaflet map renders campus tiles, markers, and routing overlays |
 | 2 | Points of interest | R1 | Partial (API) | Map/DB/Backend/Frontend | Admin POI CRUD exists and public POI discovery is available through federated `/api/search`; no dedicated POI UI/list endpoint yet |
 | 3 | Location search | R1 | Implemented | Frontend/Backend | Search page now performs client-side fuzzy ranking over `/api/locations` data with typo tolerance and live results |
-| 4 | Current location | R1 | Not started | Frontend/Map | No Geolocation wiring yet |
+| 4 | Current location | R1 | Implemented | Frontend/Map | Browser geolocation can populate the route start point on the map page |
 | 5 | Register | R1 | Implemented | Frontend/Backend | Register UI + API |
 | 6 | Login | R1 | Implemented | Frontend/Backend | Login UI + API |
-| 7 | Routing | R2 | Not started | Backend/Map | OSRM not wired |
-| 8 | Turn-by-turn navigation | R2 | Not started | Backend/Frontend | Needs OSRM steps |
+| 7 | Routing | R2 | Implemented | Backend/Map/Frontend | OSRM API is wired and the map page can request and render walking routes |
+| 8 | Turn-by-turn navigation | R2 | Partial (UI) | Backend/Frontend | Route geometry, ETA, and distance are shown; maneuver-by-maneuver instructions are not yet rendered |
 | 9 | Bookmarks | R2 | Implemented | Frontend/Backend/DB | Bookmarks page now loads user bookmarks and custom lists, supports list create/rename/delete, and supports adding/removing locations in lists |
 | 10 | Search history | R2 | Partial (API) | Backend/Frontend | API exists, UI not wired |
 | 11 | POI filtering | R2 | Partial (UI) | Frontend/Backend | Filter pills only |
