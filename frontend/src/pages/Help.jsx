@@ -1,7 +1,7 @@
 export default function Help() {
     const cardStyle = {
-        background: "#fff",
-        border: "1px solid #e5e5e5",
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
         borderRadius: 16,
         padding: "20px 22px",
         boxShadow: "0 6px 16px rgba(0,0,0,0.05)",
@@ -11,12 +11,12 @@ export default function Help() {
     const sectionTitle = {
         marginTop: 0,
         marginBottom: 10,
-        color: "#101828",
+        color: "var(--text)",
     };
 
     const text = {
         margin: 0,
-        color: "#555",
+        color: "var(--muted)",
         lineHeight: 1.6,
     };
 
@@ -37,7 +37,7 @@ export default function Help() {
             {/* Navigation */}
             <div style={cardStyle}>
                 <h2 style={sectionTitle}>Navigation Guide</h2>
-                <ul style={{ margin: 0, paddingLeft: "18px", color: "#444", lineHeight: 1.7 }}>
+                <ul style={{ margin: 0, paddingLeft: "18px", color: "var(--muted)", lineHeight: 1.7 }}>
                     <li><strong>Home:</strong> Overview and quick access to features</li>
                     <li><strong>Map:</strong> View campus locations and navigate</li>
                     <li><strong>Search:</strong> Find buildings and places</li>
@@ -50,7 +50,7 @@ export default function Help() {
             {/* Map */}
             <div style={cardStyle}>
                 <h2 style={sectionTitle}>Using the Map</h2>
-                <ul style={{ margin: 0, paddingLeft: "18px", color: "#444", lineHeight: 1.7 }}>
+                <ul style={{ margin: 0, paddingLeft: "18px", color: "var(--muted)", lineHeight: 1.7 }}>
                     <li>Zoom using your mouse wheel or trackpad</li>
                     <li>Click on locations to view details</li>
                     <li>Use "View on Map" buttons from events or bookmarks</li>
@@ -60,7 +60,7 @@ export default function Help() {
             {/* Events */}
             <div style={cardStyle}>
                 <h2 style={sectionTitle}>Managing Events</h2>
-                <ul style={{ margin: 0, paddingLeft: "18px", color: "#444", lineHeight: 1.7 }}>
+                <ul style={{ margin: 0, paddingLeft: "18px", color: "var(--muted)", lineHeight: 1.7 }}>
                     <li>Browse events from the Events page</li>
                     <li>Use filters and calendar to find events by date</li>
                     <li>Click "Register" to join an event</li>
@@ -72,7 +72,7 @@ export default function Help() {
             {/* Troubleshooting */}
             <div style={cardStyle}>
                 <h2 style={sectionTitle}>Troubleshooting</h2>
-                <ul style={{ margin: 0, paddingLeft: "18px", color: "#444", lineHeight: 1.7 }}>
+                <ul style={{ margin: 0, paddingLeft: "18px", color: "var(--muted)", lineHeight: 1.7 }}>
                     <li>If events are not loading, try refreshing the page</li>
                     <li>Make sure you are logged in to register for events</li>
                     <li>Check your internet connection if maps do not load</li>

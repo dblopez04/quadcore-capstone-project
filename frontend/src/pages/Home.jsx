@@ -16,21 +16,21 @@ const primaryBtn = {
 const secondaryBtn = {
     padding: "0.8rem 1.1rem",
     borderRadius: "10px",
-    border: "1px solid #cfd8d3",
-    background: "white",
-    color: "#134",
+    border: "1px solid var(--border)",
+    background: "var(--surface)",
+    color: "var(--text)",
     fontWeight: 600,
     cursor: "pointer",
 };
 
 const actionCard = {
     padding: "1.25rem",
-    background: "white",
+    background: "var(--surface)",
     borderRadius: "14px",
-    border: "1px solid rgba(0,0,0,0.08)",
+    border: "1px solid var(--border)",
     boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
     cursor: "pointer",
-
+    color: "var(--text)",
     transform: "translateY(0px)",
     transition: "transform 0.2s ease, box-shadow 0.2s ease",
 };
@@ -43,7 +43,7 @@ const actionTitle = {
 
 const actionSub = {
     fontSize: "0.95rem",
-    color: "#556",
+    color: "var(--muted)",
 };
 
 const sectionHeaderRow = {
@@ -56,7 +56,7 @@ const sectionHeaderRow = {
 const viewAllBtn = {
     background: "none",
     border: "none",
-    color: "#006633",
+    color: "var(--unt-green)",
     fontWeight: 700,
     cursor: "pointer",
     fontSize: "0.95rem",
@@ -68,8 +68,8 @@ const eventCard = {
     justifyContent: "space-between",
     padding: "20px 22px",
     borderRadius: 18,
-    border: "1px solid #e4e7ec",
-    background: "#fff",
+    border: "1px solid var(--border)",
+    background: "var(--surface)",
     boxShadow: "0 8px 22px rgba(0,0,0,0.06)",
     cursor: "pointer",
     transition: "transform 0.18s ease, box-shadow 0.18s ease",
@@ -80,7 +80,7 @@ const eventTitle = {
     fontSize: 18,
     fontWeight: 700,
     lineHeight: 1.2,
-    color: "#101828",
+    color: "var(--text)",
     margin: 0,
 };
 
@@ -93,8 +93,8 @@ const calendarHeader = {
 
 const calendarCell = {
     minHeight: "72px",
-    background: "#f8faf8",
-    border: "1px solid #d8e2d8",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: "12px",
     padding: "8px",
     display: "flex",
@@ -108,7 +108,7 @@ const calendarNavBtn = {
     cursor: "pointer",
     fontWeight: 500,
     fontSize: "1rem",
-    color: "#111827",
+    color: "var(--text)",
     padding: "4px 10px",
 };
 
@@ -120,7 +120,7 @@ const calendarGrid = {
 
 const calendarDayName = {
     fontWeight: 600,
-    color: "#555",
+    color: "var(--muted)",
     textAlign: "center",
     paddingBottom: "2px",
     fontSize: "0.95rem",
@@ -137,16 +137,15 @@ const calendarEventPill = {
     fontSize: "11px",
     padding: "6px 8px",
     borderRadius: "10px",
-    background: "#dff3e4",
-    color: "#166534",
-    border: "1px solid #a7d8b4",
+    background: "var(--unt-green-50)",
+    color: "var(--unt-green)",
+    border: "1px solid var(--border)",
     cursor: "pointer",
     fontWeight: 600,
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
 };
-
 function cleanText(value) {
     if (value == null) return "";
     return String(value).trim();
@@ -352,13 +351,13 @@ export default function Home() {
                     style={{
                         fontSize: "2.5rem",
                         marginBottom: "0.5rem",
-                        color: "#006633", 
+                        color: "var(--unt-green)", 
                         fontWeight: 800,
                     }}
                 >
                     Getting Around UNT
                 </h1>
-                <p style={{ fontSize: "1.1rem", color: "#555" }}>
+                <p style={{ fontSize: "1.1rem", color: "var(--muted)" }}>
                     Find buildings, events, routes, and more 😊 all in one place.
                 </p>
 
@@ -378,9 +377,9 @@ export default function Home() {
                 style={{
                     marginBottom: "2.5rem",
                     padding: "2rem",
-                    background: "white",
+                    background: "var(--surface)",
                     borderRadius: "18px",
-                    border: "1px solid rgba(0,0,0,0.08)",
+                    border: "1px solid var(--border)",
                     boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
                 }}
             >
@@ -477,9 +476,9 @@ export default function Home() {
                         style={{
                             padding: "24px",
                             borderRadius: 16,
-                            border: "1px solid #e4e7ec",
-                            background: "#fff",
-                            color: "#667085",
+                            border: "1px solid var(--border)",
+                            background: "var(--surface)",
+                            color: "var(--muted)",
                             textAlign: "center",
                         }}
                     >
@@ -490,9 +489,9 @@ export default function Home() {
                         style={{
                             padding: "28px 24px",
                             borderRadius: 16,
-                            border: "1px solid #e4e7ec",
-                            background: "#fff",
-                            color: "#667085",
+                            border: "1px solid var(--border)",
+                            background: "var(--surface)",
+                            color: "var(--muted)",
                             textAlign: "center",
                             display: "flex",
                             flexDirection: "column",
@@ -500,11 +499,11 @@ export default function Home() {
                             gap: 14,
                         }}
                     >
-                        <div style={{ fontSize: 16, fontWeight: 600, color: "#101828" }}>
+                            <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>
                             No registered events yet
                         </div>
 
-                        <div style={{ fontSize: 14, color: "#667085" }}>
+                            <div style={{ fontSize: 14, color: "var(--muted)" }}>
                             Browse campus events and register to see them here.
                         </div>
 
@@ -527,9 +526,9 @@ export default function Home() {
                     <div
                         style={{
                             padding: "16px",
-                            background: "#ffffff",
+                            background: "var(--surface)",
                             borderRadius: "18px",
-                            border: "1px solid #e4e7ec",
+                            border: "1px solid var(--border)",
                             boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
                             maxWidth: "780px",
                             margin: "0 auto",
@@ -552,7 +551,7 @@ export default function Home() {
                                 ←
                             </button>
 
-                            <h3 style={{ margin: 0, color: "#006633" }}>
+                             <h3 style={{ margin: 0, color: "var(--unt-green)" }}>
                                 {currentMonth.toLocaleString("en-US", {
                                     month: "long",
                                     year: "numeric",
@@ -604,7 +603,7 @@ export default function Home() {
                                         <div
                                             style={{
                                                 fontWeight: 700,
-                                                color: "#101828",
+                                                color: "var(--text)",
                                                 fontSize: "0.95rem",
                                             }}
                                         >

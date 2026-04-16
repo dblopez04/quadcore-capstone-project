@@ -47,7 +47,8 @@ export default function Login() {
         <div
             style={{
                 minHeight: "100vh",
-                background: "#f6f8f7",
+                background: "var(--bg)",
+                color: "var(--text)",
                 display: "flex",
                 flexDirection: "column",
                 fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
@@ -95,10 +96,11 @@ export default function Login() {
                         width: "100%",
                         maxWidth: 420,
                         textAlign: "center",
-                        background: "#fff",
+                        background: "var(--surface)",
                         padding: "32px 24px",
                         borderRadius: 18,
-                        border: "1px solid #e5e7eb",
+                        border: "1px solid var(--border)",
+                        color: "var(--text)",
                         boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
                     }}
                 >
@@ -131,10 +133,11 @@ export default function Login() {
                             width: "100%",
                             padding: "14px 16px",
                             marginBottom: 14,
-                            border: "1px solid #d0d5dd",
+                            border: "1px solid var(--input-border)",
                             borderRadius: 12,
                             fontSize: 16,
-                            backgroundColor: "#fff",
+                            backgroundColor: "var(--input-bg)",
+                            color: "var(--input-text)",
                             boxSizing: "border-box",
                             outline: "none",
                         }}
@@ -192,7 +195,7 @@ export default function Login() {
                             style={{
                                 textDecoration: "none",
                                 fontWeight: 600,
-                                color: "#101828",
+                                color: "var(--text)",
                                 fontSize: 15,
                             }}
                         >
@@ -205,7 +208,7 @@ export default function Login() {
                                 background: "none",
                                 border: "none",
                                 padding: 0,
-                                color: "#667085",
+                                color: "var(--muted)",
                                 cursor: "pointer",
                                 fontSize: 15,
                                 fontWeight: 500,

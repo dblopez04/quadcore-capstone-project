@@ -64,20 +64,21 @@ export default function Admin() {
         width: "100%",
         padding: "12px 14px",
         borderRadius: 12,
-        border: "1px solid #d1d5db",
+        border: "1px solid var(--input-border)",
         fontSize: 16,
         outline: "none",
-        background: "#fff",
+        background: "var(--input-bg)",
+        color: "var(--input-text)",
         boxSizing: "border-box",
     };
 
     const handleFieldFocus = (e) => {
-        e.target.style.border = "1px solid #006A31";
+        e.target.style.border = "1px solid var(--unt-green)";
         e.target.style.boxShadow = "0 0 0 2px rgba(0,106,49,0.15)";
     };
 
     const handleFieldBlur = (e) => {
-        e.target.style.border = "1px solid #d1d5db";
+        e.target.style.border = "1px solid var(--input-border)";
         e.target.style.boxShadow = "none";
     };
 
@@ -277,7 +278,7 @@ export default function Admin() {
             }}
         >
             <h1 style={{ marginBottom: 8 }}>Admin Panel</h1>
-            <p style={{ marginTop: 0, marginBottom: 20, color: "#555" }}>
+            <p style={{ marginTop: 0, marginBottom: 20, color: "var(--muted)" }}>
                 Welcome, {user?.first_name || "Admin"}.
             </p>
 
@@ -288,14 +289,14 @@ export default function Admin() {
                         padding: "10px 12px",
                         borderRadius: 10,
                         background: message.toLowerCase().includes("error")
-                            ? "#fdecec"
-                            : "#edf7ed",
+                            ? "rgba(220, 38, 38, 0.10)"
+                            : "var(--unt-green-50)",
                         border: message.toLowerCase().includes("error")
-                            ? "1px solid #f5c2c7"
-                            : "1px solid #b7dfb9",
+                            ? "1px solid rgba(220, 38, 38, 0.35)"
+                            : "1px solid var(--border)",
                         color: message.toLowerCase().includes("error")
-                            ? "#842029"
-                            : "#1e4620",
+                            ? "#dc2626"
+                            : "var(--unt-green)",
                         fontSize: 14,
                     }}
                 >
@@ -305,13 +306,14 @@ export default function Admin() {
 
             <div
                 style={{
-                    background: "#fff",
-                    border: "1px solid #e5e5e5",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
                     borderRadius: 16,
                     padding: 20,
                     boxShadow: "0 6px 16px rgba(0,0,0,0.04)",
                     marginBottom: 24,
-                }}
+                  }} 
+                
             >
                 <h2 style={{ marginTop: 0, marginBottom: 12 }}>Manage Events</h2>
 
@@ -326,10 +328,10 @@ export default function Admin() {
                             <div
                                 key={ev.id}
                                 style={{
-                                    border: "1px solid #e5e5e5",
+                                    border: "1px solid var(--border)",
                                     borderRadius: 16,
                                     padding: 16,
-                                    background: "#fff",
+                                    background: "var(--surface)",
                                     boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                                     transition: "transform 0.15s ease, box-shadow 0.15s ease",
                                 }}
@@ -344,21 +346,21 @@ export default function Admin() {
                             >
                                 <h3 style={{ margin: 0, marginBottom: 6 }}>{ev.title}</h3>
 
-                                <p style={{ margin: "6px 0", color: "#444", lineHeight: 1.5 }}>
+                                    <p style={{ margin: "6px 0", color: "var(--text)", lineHeight: 1.5 }}>
                                     <strong>{ev.eventType}</strong>
                                     {ev.description ? ` - ${ev.description}` : ""}
                                 </p>
 
-                                <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
+                                <p style={{ margin: "6px 0", fontSize: 14, color: "var(--muted)" }}>
                                     Location: {allLocations.find((loc) => loc.id === ev.locationId)?.name || "Unknown location"}
                                 </p>
 
-                                <p style={{ margin: "6px 0", fontSize: 14, color: "#666" }}>
+                                <p style={{ margin: "6px 0", fontSize: 14, color: "var(--muted)" }}>
                                     {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
                                     {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
                                 </p>
 
-                                <p style={{ margin: "6px 0", fontSize: 13, color: "#666" }}>
+                                <p style={{ margin: "6px 0", fontSize: 13, color: "var(--muted)" }}>
                                     Status: {ev.status}
                                 </p>
 
@@ -451,9 +453,9 @@ export default function Admin() {
                                 style={{
                                     padding: "8px 14px",
                                     borderRadius: 10,
-                                    border: "1px solid #d0d5dd",
-                                    background: currentPage === 1 ? "#f2f4f7" : "#fff",
-                                    color: currentPage === 1 ? "#98a2b3" : "#111827",
+                                    border: "1px solid var(--border)",
+                                    background: currentPage === 1 ? "var(--bg)" : "var(--surface)",
+                                    color: currentPage === 1 ? "var(--muted)" : "var(--text)",
                                     cursor: currentPage === 1 ? "not-allowed" : "pointer",
                                     fontWeight: 500,
                                 }}
@@ -461,7 +463,7 @@ export default function Admin() {
                                 Prev
                             </button>
 
-                            <span style={{ fontSize: 14, color: "#344054", fontWeight: 500 }}>
+                            <span style={{ fontSize: 14, color: "var(--text)", fontWeight: 500 }}>
                                 Page {currentPage} of {totalPages || 1}
                             </span>
 
@@ -472,11 +474,15 @@ export default function Admin() {
                                 style={{
                                     padding: "8px 14px",
                                     borderRadius: 10,
-                                    border: "1px solid #d0d5dd",
+                                    border: "1px solid var(--border)",
                                     background:
-                                        currentPage === totalPages || totalPages === 0 ? "#f2f4f7" : "#fff",
+                                        currentPage === totalPages || totalPages === 0
+                                            ? "var(--bg)"
+                                            : "var(--surface)",
                                     color:
-                                        currentPage === totalPages || totalPages === 0 ? "#98a2b3" : "#111827",
+                                        currentPage === totalPages || totalPages === 0
+                                            ? "var(--muted)"
+                                            : "var(--text)",
                                     cursor:
                                         currentPage === totalPages || totalPages === 0 ? "not-allowed" : "pointer",
                                     fontWeight: 500,
@@ -491,8 +497,8 @@ export default function Admin() {
 
             <div
                 style={{
-                    background: "#fff",
-                    border: "1px solid #e5e5e5",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
                     borderRadius: 16,
                     padding: 20,
                     boxShadow: "0 6px 16px rgba(0,0,0,0.04)",
@@ -505,7 +511,7 @@ export default function Admin() {
                     </h2>
 
                     {editingEventId && (
-                        <p style={{ margin: 0, fontSize: 14, color: "#666" }}>
+                        <p style={{ margin: 0, fontSize: 14, color: "var(--muted)" }}>
                             You are editing an existing event. Save changes when finished.
                         </p>
                     )}
@@ -566,7 +572,7 @@ export default function Admin() {
                         />
 
                         {searchingLocations && (
-                            <div style={{ marginTop: 6, fontSize: 12, color: "#666" }}>
+                            <div style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
                                 Searching locations...
                             </div>
                         )}
@@ -578,8 +584,8 @@ export default function Admin() {
                                     top: "100%",
                                     left: 0,
                                     right: 0,
-                                    background: "#fff",
-                                    border: "1px solid #ddd",
+                                    background: "var(--surface)",
+                                    border: "1px solid var(--border)",
                                     borderRadius: 10,
                                     marginTop: 6,
                                     zIndex: 20,
@@ -599,7 +605,8 @@ export default function Admin() {
                                             textAlign: "left",
                                             padding: "12px 14px",
                                             border: "none",
-                                            background: "white",
+                                            background: "var(--surface)",
+                                            color: "var(--text)",
                                             cursor: "pointer",
                                             fontSize: 15,
                                         }}
@@ -612,7 +619,7 @@ export default function Admin() {
                     </div>
 
                     {form.location_id && (
-                        <div style={{ fontSize: 13, color: "#444" }}>
+                        <div style={{ fontSize: 13, color: "var(--muted)" }}>
                             Selected location: {allLocations.find((loc) => loc.id === form.location_id)?.name || "Unknown location"}
                         </div>
                     )}
@@ -681,9 +688,9 @@ export default function Admin() {
                                     flex: 1,
                                     padding: "12px 14px",
                                     borderRadius: 12,
-                                    border: "1px solid #ccc",
-                                    background: "#f7f7f7",
-                                    color: "#222",
+                                    border: "1px solid var(--border)",
+                                    background: "var(--surface)",
+                                    color: "var(--text)",
                                     fontWeight: 600,
                                     fontSize: 15,
                                     cursor: "pointer",

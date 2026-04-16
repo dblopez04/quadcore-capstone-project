@@ -435,7 +435,8 @@ export default function Events() {
                     style={{
                         padding: "16px",
                         borderRadius: "12px",
-                        background: "#f8f8f8",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
                     }}
                 >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -465,7 +466,7 @@ export default function Events() {
                             style={{
                                 marginTop: 18,
                                 paddingTop: "12px",
-                                borderTop: "1px solid #e5e5e5",
+                                borderTop: "1px solid var(--border)",
                             }}
                         >
                             <div style={{ fontWeight: 700, marginBottom: 8 }}>
@@ -479,7 +480,7 @@ export default function Events() {
                             </div>
 
                             {selectedDateEvents.length === 0 ? (
-                                <div style={{ fontSize: 14, color: "#666" }}>
+                                <div style={{ fontSize: 14, color: "var(--muted)" }}>
                                     No events scheduled for this date.
                                 </div>
                             ) : (
@@ -494,23 +495,23 @@ export default function Events() {
                                             style={{
                                                 padding: "10px 12px",
                                                 borderRadius: 10,
-                                                background: "#fff",
-                                                border: "1px solid #dcdcdc",
+                                                background: "var(--surface)",
+                                                border: "1px solid var(--border)",
                                                 cursor: "pointer",
                                                 boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
                                                 transition: "transform 0.15s ease, box-shadow 0.15s ease",
                                             }}
                                         >
                                             <div style={{ fontWeight: 600 }}>{ev.title}</div>
-                                            <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+                                            <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>
                                                 {formatTime(ev.start)}
                                                 {ev.end ? ` - ${formatTime(ev.end)}` : ""}
                                             </div>
-                                            <div style={{ fontSize: 13, color: "#555", marginTop: 2 }}>
+                                            <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 2 }}>
                                                 {formatEventLocation(ev)}
                                             </div>
                                             {ev.description && (
-                                                <div style={{ fontSize: 12, color: "#666", marginTop: 4, lineHeight: 1.4 }}>
+                                                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, lineHeight: 1.4 }}>
                                                     {ev.description.length > 120
                                                         ? `${ev.description.slice(0, 120)}...`
                                                         : ev.description}
@@ -533,7 +534,7 @@ export default function Events() {
                         }}
                     >
                         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                            <div key={d} style={{ fontWeight: 700, textAlign: "center", opacity: 0.75 }}>
+                            <div key={d} style={{ fontWeight: 700, textAlign: "center", color: "var(--muted)" }}>
                                 {d}
                             </div>
                         ))}
@@ -557,19 +558,20 @@ export default function Events() {
                                         padding: "10px 0",
                                         borderRadius: 10,
                                         border: isSelected
-                                            ? "2px solid #006A31"
+                                            ? "2px solid var(--unt-green)"
                                             : isToday
                                                 ? "2px solid #1d4ed8"
-                                                : "1px solid #ddd",
+                                                : "1px solid var(--border)",
                                         cursor: "pointer",
                                         fontWeight: 700,
+                                        color: "var(--text)",
                                         background: isSelected
-                                            ? "rgba(0, 128, 0, 0.18)"
+                                            ? "var(--unt-green-50)"
                                             : isToday
-                                                ? "rgba(29, 78, 216, 0.08)"
+                                                ? "rgba(29, 78, 216, 0.12)"
                                                 : hasEvent
-                                                    ? "rgba(0, 128, 0, 0.10)"
-                                                    : "white",
+                                                    ? "var(--surface)"
+                                                    : "var(--surface)",
                                     }}
                                 >
                                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.1 }}>
@@ -632,7 +634,9 @@ export default function Events() {
                             padding: "10px",
                             flex: 1,
                             borderRadius: "8px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--input-border)",
+                            background: "var(--input-bg)",
+                            color: "var(--input-text)",
                         }}
                     />
 
@@ -642,7 +646,9 @@ export default function Events() {
                         style={{
                             padding: "10px",
                             borderRadius: "8px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--input-border)",
+                            background: "var(--input-bg)",
+                            color: "var(--input-text)",
                             minWidth: "160px",
                         }}
                     >
@@ -653,42 +659,53 @@ export default function Events() {
                             </option>
                         ))}
                     </select>
-                    <button type="submit" style={{ padding: "10px 14px", borderRadius: "8px" }}>
+                    <button
+                        type="submit"
+                        style={{
+                            padding: "10px 14px",
+                            borderRadius: "8px",
+                            background: "var(--unt-green)",
+                            color: "#fff",
+                            border: "none",
+                            fontWeight: 600,
+                        }}
+                    >
                         Search
                     </button>
                 </form>
+
+                {feedback && (
+                    <div
+                        style={{
+                            margin: "12px 0",
+                            padding: "10px 12px",
+                            borderRadius: 10,
+                            background: feedback.toLowerCase().includes("failed")
+                                ? "rgba(220, 38, 38, 0.10)"
+                                : "var(--unt-green-50)",
+                            border: feedback.toLowerCase().includes("failed")
+                                ? "1px solid rgba(220, 38, 38, 0.35)"
+                                : "1px solid var(--border)",
+                            color: feedback.toLowerCase().includes("failed")
+                                ? "#dc2626"
+                                : "var(--unt-green)",
+                            fontSize: 14,
+                        }}
+                    >
+                        {feedback}
+                    </div>
+                )}
             </div>
 
-            {feedback && (
-                <div
-                    style={{
-                        margin: "12px 0",
-                        padding: "10px 12px",
-                        borderRadius: 10,
-                        background: feedback.toLowerCase().includes("failed")
-                            ? "#fdecec"
-                            : "#edf7ed",
-                        border: feedback.toLowerCase().includes("failed")
-                            ? "1px solid #f5c2c7"
-                            : "1px solid #b7dfb9",
-                        color: feedback.toLowerCase().includes("failed")
-                            ? "#842029"
-                            : "#1e4620",
-                        fontSize: 14,
-                    }}
-                >
-                    {feedback}
-                </div>
-            )}
 
             {registeredEvents.length > 0 && (
                 <div
                     style={{
                         margin: "16px 0 20px 0",
                         padding: "16px",
-                        border: "1px solid #e5e5e5",
+                        border: "1px solid var(--border)",
                         borderRadius: "16px",
-                        background: "#fff",
+                        background: "var(--surface)",
                         boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                     }}
                 >
@@ -718,19 +735,19 @@ export default function Events() {
                                     }
                                 }}
                                 style={{
-                                    border: "1px solid #e5e5e5",
+                                    border: "1px solid var(--border)",
                                     borderRadius: "12px",
                                     padding: "14px",
-                                    background: "#f9fbf9",
+                                    background: "var(--surface)",
                                     cursor: "pointer",
                                 }}
                             >
                                 <div style={{ fontWeight: 700 }}>{ev.title}</div>
-                                <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
+                                <div style={{ fontSize: "14px", color: "var(--muted)", marginTop: 6 }}>
                                     {ev.start ? formatTime(ev.start) : "Start: N/A"}
                                     {ev.end ? ` - ${formatTime(ev.end)}` : ""}
                                 </div>
-                                <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
+                                <div style={{ fontSize: "14px", color: "var(--muted)", marginTop: 6 }}>
                                     {formatEventLocation(ev)}
                                 </div>
                                 <div style={{ display: "flex", gap: "10px", marginTop: 12, flexWrap: "wrap" }}>
@@ -778,9 +795,9 @@ export default function Events() {
                         margin: "8px 0 14px 0",
                         padding: "10px 12px",
                         borderRadius: 10,
-                        background: "#f7f7f7",
-                        border: "1px solid #e5e5e5",
-                        color: "#444",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        color: "var(--text)",
                         fontSize: 14,
                     }}
                 >
@@ -813,10 +830,10 @@ export default function Events() {
                                     if (el) eventCardRefs.current[ev.id] = el;
                                 }}
                                 style={{
-                                    border: "1px solid #e5e5e5",
+                                    border: "1px solid var(--border)",
                                     borderRadius: "16px",
                                     padding: "18px",
-                                    background: "white",
+                                    background: "var(--surface)",
                                     boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                                 }}
                             >
@@ -830,7 +847,7 @@ export default function Events() {
                                     }}
                                 >
                                     <div>
-                                        <h3 style={{ margin: 0, fontSize: "28px", lineHeight: 1.2 }}>
+                                        <h3 style={{ margin: 0, fontSize: "28px", lineHeight: 1.2, color: "var(--text)" }}>
                                             {ev.title}
                                         </h3>
 
@@ -840,8 +857,8 @@ export default function Events() {
                                                 marginTop: 10,
                                                 padding: "4px 10px",
                                                 borderRadius: "999px",
-                                                background: "#eef6ff",
-                                                color: "#1d4ed8",
+                                                background: "var(--unt-green-50)",
+                                                color: "var(--unt-green)",
                                                 fontSize: "12px",
                                                 fontWeight: 700,
                                                 letterSpacing: "0.3px",
@@ -857,7 +874,7 @@ export default function Events() {
                                     <p
                                         style={{
                                             margin: "14px 0 10px 0",
-                                            color: "#444",
+                                            color: "var(--text)",
                                             lineHeight: 1.7,
                                             fontSize: "15px",
                                         }}
@@ -867,13 +884,13 @@ export default function Events() {
                                 )}
 
                                 <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
-                                    <div style={{ fontSize: "14px", color: "#555" }}>
+                                    <div style={{ fontSize: "14px", color: "var(--muted)" }}>
                                         <strong>When:</strong>{" "}
                                         {ev.start ? formatEventDateTime(ev.start) : "Start: N/A"}
                                         {ev.end ? ` - ${formatTime(ev.end)}` : ""}
                                     </div>
 
-                                    <div style={{ fontSize: "14px", color: "#555" }}>
+                                    <div style={{ fontSize: "14px", color: "var(--muted)" }}>
                                         <strong>Location:</strong>{" "}
                                         {formatEventLocation(ev)}
                                     </div>
