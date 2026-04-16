@@ -5,7 +5,6 @@ import { requestPasswordReset } from "../api/auth";
 export default function Settings() {
     const { theme, setTheme } = useTheme();
     const [activeSection, setActiveSection] = useState(null);
-    const [displayName, setDisplayName] = useState("");
     const [message, setMessage] = useState("");
     const [resetEmail, setResetEmail] = useState("");
     const [resetLoading, setResetLoading] = useState(false);
@@ -30,28 +29,15 @@ export default function Settings() {
 
     return (
         <div className="container phone-demo">
-            <div className="phone-card" style={{ padding: 16 }}>
+            <div style={{ maxWidth: 820, margin: "0 auto", padding: 24 }}>
                 <h2 className="h2" style={{ marginBottom: 12 }}>Settings</h2>
 
-                <div className="panel" style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 16 }}>
                     <div style={{ fontWeight: 600, marginBottom: 8 }}>Profile</div>
                     <div style={{ color: "var(--muted)", fontSize: 14, marginBottom: 12 }}>
                         
                     </div>
                     <div style={{ display: "grid", gap: 8 }}>
-                        <button
-                            className="btn"
-                            onClick={() => {
-                                setActiveSection("displayName");
-                                setMessage("");
-                                setResetError("");
-                            }}
-                        >
-                            Change Display Name
-                        </button>
-                        <button className="btn" onClick={() => setActiveSection("email")}>
-                            Update Email
-                        </button>
                         <button
                             className="btn"
                             onClick={() => {
@@ -65,7 +51,7 @@ export default function Settings() {
                     </div>
                 </div>
 
-                <div className="panel" style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 20 }}>
                     <div style={{ fontWeight: 600, marginBottom: 8 }}>Preferences</div>
                     <div style={{ display: "grid", gap: 8 }}>
                         <button
@@ -103,36 +89,7 @@ export default function Settings() {
                     </div>
                 </div>
 
-                {activeSection === "displayName" && (
-                    <div className="panel" style={{ marginBottom: 16 }}>
-                        <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                            Change Display Name
-                        </div>
-
-                        <input
-                            type="text"
-                            placeholder="Enter new display name"
-                            className="search-input"
-                            value={displayName}
-                            onChange={(e) => setDisplayName(e.target.value)}
-                            style={{ marginBottom: 8 }}
-                        />
-
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => {
-                                setMessage("Display name updated successfully!");
-                            }}
-                        >
-                            Save
-                        </button>
-                        {message && (
-                            <div style={{ marginTop: 8, color: "green", fontSize: 14 }}>
-                                {message}
-                            </div>
-                        )}
-                    </div>
-                )}
+                
 
                 {activeSection === "password" && (
                     <div className="panel" style={{ marginBottom: 16 }}>
@@ -248,29 +205,30 @@ export default function Settings() {
                     </div>
                 )}
 
-                <div className="panel">
-                    <div className="panel" style={{ marginBottom: 16 }}>
-                        <div style={{ fontWeight: 600, marginBottom: 8 }}>Appearance</div>
-                        <div style={{ color: "var(--muted)", fontSize: 14, marginBottom: 12 }}>
-                            Choose how the app looks.
-                        </div>
-
-                        <select
-                            className="search-input"
-                            value={theme}
-                            onChange={(e) => setTheme(e.target.value)}
-                        >
-                            <option value="system">Match System</option>
-                            <option value="light">Light Mode</option>
-                            <option value="dark">Dark Mode</option>
-                        </select>
-
-                        <div style={{ marginTop: 8, fontSize: 13, color: "var(--muted)" }}>
-                            "Match System"" will automatically follow your computer's light/dark mode.
-                        </div>
+                <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 8 }}>Appearance</div>
+                    <div style={{ color: "var(--muted)", fontSize: 14, marginBottom: 12 }}>
+                        Choose how the app looks.
                     </div>
 
-                    <div style={{ fontWeight: 600, marginBottom: 8 }}>Danger Zone</div>
+                    <select
+                        className="search-input"
+                        value={theme}
+                        onChange={(e) => setTheme(e.target.value)}
+                    >
+                        <option value="system">Match System</option>
+                        <option value="light">Light Mode</option>
+                        <option value="dark">Dark Mode</option>
+                    </select>
+
+                    <div style={{ marginTop: 8, fontSize: 13, color: "var(--muted)" }}>
+                        "Match System" will automatically follow your computer&apos;s light/dark mode.
+                    </div>
+
+                    <div style={{ fontWeight: 600, marginTop: 20, marginBottom: 8 }}>
+                        Danger Zone
+                    </div>
+
                     <button
                         className="btn btn-primary"
                         onClick={() => {
@@ -290,6 +248,7 @@ export default function Settings() {
                     >
                         Clear Local Data
                     </button>
+
                     {message && (
                         <div style={{ marginTop: 8, color: "green", fontSize: 14 }}>
                             {message}
