@@ -1,6 +1,7 @@
 ﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerRequest } from "../api/auth";
+import useTheme from "../hooks/useTheme";
 
 export default function Register() {
     const [email, setEmail] = useState("");
@@ -11,6 +12,7 @@ export default function Register() {
     const [userRole, setUserRole] = useState("STUDENT"); // default
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const { theme } = useTheme();
 
     const navigate = useNavigate();
 
@@ -46,10 +48,11 @@ export default function Register() {
         width: "100%",
         padding: "14px 16px",
         marginBottom: 12,
-        border: "1px solid #d0d5dd",
+        border: "1px solid var(--input-border)",
         borderRadius: 12,
         fontSize: 16,
-        backgroundColor: "#fff",
+        backgroundColor: "var(--input-bg)",
+        color: "var(--input-text)",
         boxSizing: "border-box",
         outline: "none",
     };
@@ -58,7 +61,8 @@ export default function Register() {
         <div
             style={{
                 minHeight: "100vh",
-                background: "#ffffff",
+                background: "var(--bg)",
+                color:"var(--text)",
                 display: "flex",
                 flexDirection: "column",
                 fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
@@ -106,7 +110,9 @@ export default function Register() {
                         width: "100%",
                         maxWidth: 480,
                         textAlign: "center",
-                        background: "#fff",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        color: "var(--text)",
                         padding: 24,
                         borderRadius: 12,
                         boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
@@ -119,7 +125,7 @@ export default function Register() {
                         style={{ width: 120, margin: "0 auto 12px" }}
                     />
 
-                    <h2 style={{ color: "#006A31", marginBottom: 20 }}>
+                    <h2 style={{ color: "var(--unt-green)", marginBottom: 20 }}>
                         Create Your UNT Account
                     </h2>
 

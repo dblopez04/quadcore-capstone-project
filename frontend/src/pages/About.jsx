@@ -1,7 +1,7 @@
 export default function About() {
     const cardStyle = {
-        background: "#fff",
-        border: "1px solid #e5e5e5",
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
         borderRadius: 16,
         padding: "20px 22px",
         boxShadow: "0 6px 16px rgba(0,0,0,0.05)",
@@ -11,12 +11,12 @@ export default function About() {
     const sectionTitle = {
         marginTop: 0,
         marginBottom: 10,
-        color: "#101828",
+        color: "var(--text)",
     };
 
     const paragraph = {
         margin: 0,
-        color: "#555",
+        color: "var(--muted)",
         lineHeight: 1.6,
     };
 
@@ -38,7 +38,7 @@ export default function About() {
             {/* Features */}
             <div style={cardStyle}>
                 <h2 style={sectionTitle}>Key Features</h2>
-                <ul style={{ margin: 0, paddingLeft: "18px", color: "#444", lineHeight: 1.7 }}>
+                <ul style={{ margin: 0, paddingLeft: "18px", color: "var(--muted)", lineHeight: 1.7 }}>
                     <li>Interactive campus map using Leaflet</li>
                     <li>Search for buildings and campus locations</li>
                     <li>Event calendar with filtering and date selection</li>
@@ -61,7 +61,7 @@ export default function About() {
             {/* Tech */}
             <div style={cardStyle}>
                 <h2 style={sectionTitle}>Technology Stack</h2>
-                <ul style={{ margin: 0, paddingLeft: "18px", color: "#444", lineHeight: 1.7 }}>
+                <ul style={{ margin: 0, paddingLeft: "18px", color: "var(--muted)", lineHeight: 1.7 }}>
                     <li>React + Vite for the frontend</li>
                     <li>React Router for navigation</li>
                     <li>Leaflet + OpenStreetMap for mapping</li>
@@ -79,7 +79,7 @@ export default function About() {
                 </p>
             </div>
 
-            <div style={{ textAlign: "center", marginTop: 20, color: "#777", fontSize: 14 }}>
+            <div style={{ textAlign: "center", marginTop: 20, color: "var(--muted)", fontSize: 14 }}>
                 Developed as part of an Information Technology project at UNT
             </div>
 
