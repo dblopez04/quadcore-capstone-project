@@ -72,7 +72,7 @@ const router = createBrowserRouter([
     {
         path: '/admin',
         element: (
-            <Layout narrow>
+            <Layout>
                 <Admin />
             </Layout>
         ),

@@ -1,69 +1,110 @@
-import { buildApiUrl } from "./client";
+import { apiRequest } from "./client";
 
-export async function createEventRequest(payload) {
-    const response = await fetch(buildApiUrl("/api/admin/events"), {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(payload),
+function buildQueryString(filters = {}) {
+    const params = new URLSearchParams();
+
+    Object.entries(filters).forEach(([key, value]) => {
+        if (value == null) return;
+
+        const normalizedValue = typeof value === "string" ? value.trim() : value;
+        if (normalizedValue === "") return;
+
+        params.set(key, String(normalizedValue));
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Failed to create event");
-    }
-
-    return data;
+    const query = params.toString();
+    return query ? `?${query}` : "";
 }
 
-export async function fetchAdminEvents() {
-    const response = await fetch(buildApiUrl("/api/admin/events"), {
+function adminGet(path, filters) {
+    return apiRequest(`${path}${buildQueryString(filters)}`, {
         method: "GET",
-        credentials: "include",
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Failed to load admin events");
-    }
-
-    return data;
 }
 
-export async function deleteAdminEvent(eventId) {
-    const response = await fetch(buildApiUrl(`/api/admin/events/${eventId}`), {
-        method: "DELETE",
-        credentials: "include",
+function adminWrite(path, method, payload) {
+    return apiRequest(path, {
+        method,
+        body: payload == null ? undefined : JSON.stringify(payload),
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || "Failed to delete event");
-    }
-
-    return data;
 }
 
-export async function updateAdminEvent(eventId, payload) {
-    const response = await fetch(buildApiUrl(`/api/admin/events/${eventId}`), {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(payload),
-    });
+export function fetchAdminLocations(filters) {
+    return adminGet("/api/admin/locations", filters);
+}
 
-    const data = await response.json();
+export function createAdminLocation(payload) {
+    return adminWrite("/api/admin/locations", "POST", payload);
+}
 
-    if (!response.ok) {
-        throw new Error(data.message || "Failed to update event");
-    }
+export function updateAdminLocation(locationId, payload) {
+    return adminWrite(`/api/admin/locations/${locationId}`, "PUT", payload);
+}
 
-    return data;
+export function deleteAdminLocation(locationId) {
+    return adminWrite(`/api/admin/locations/${locationId}`, "DELETE");
+}
+
+export function fetchAdminPois(filters) {
+    return adminGet("/api/admin/pois", filters);
+}
+
+export function createAdminPoi(payload) {
+    return adminWrite("/api/admin/pois", "POST", payload);
+}
+
+export function updateAdminPoi(poiId, payload) {
+    return adminWrite(`/api/admin/pois/${poiId}`, "PUT", payload);
+}
+
+export function deleteAdminPoi(poiId) {
+    return adminWrite(`/api/admin/pois/${poiId}`, "DELETE");
+}
+
+export function fetchAdminEvents(filters) {
+    return adminGet("/api/admin/events", filters);
+}
+
+export function createAdminEvent(payload) {
+    return adminWrite("/api/admin/events", "POST", payload);
+}
+
+export function updateAdminEvent(eventId, payload) {
+    return adminWrite(`/api/admin/events/${eventId}`, "PUT", payload);
+}
+
+export function deleteAdminEvent(eventId) {
+    return adminWrite(`/api/admin/events/${eventId}`, "DELETE");
+}
+
+export function fetchAdminReports(filters) {
+    return adminGet("/api/admin/reports", filters);
+}
+
+export function updateAdminReport(reportId, payload) {
+    return adminWrite(`/api/admin/reports/${reportId}`, "PUT", payload);
+}
+
+export function deleteAdminReport(reportId) {
+    return adminWrite(`/api/admin/reports/${reportId}`, "DELETE");
+}
+
+export function fetchAdminUsers() {
+    return adminGet("/api/admin/users");
+}
+
+export function grantAdminPrivileges(userId) {
+    return adminWrite(`/api/admin/users/${userId}/grant-admin`, "POST");
+}
+
+export function revokeAdminPrivileges(userId) {
+    return adminWrite(`/api/admin/users/${userId}/revoke-admin`, "POST");
+}
+
+export function grantOwnerPrivileges(userId) {
+    return adminWrite(`/api/admin/users/${userId}/grant-owner`, "POST");
+}
+
+export function revokeOwnerPrivileges(userId) {
+    return adminWrite(`/api/admin/users/${userId}/revoke-owner`, "POST");
 }
