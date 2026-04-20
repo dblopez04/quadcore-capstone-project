@@ -1,16 +1,7 @@
 {
   "ExpandedNodes": [
     "",
-    "\\backend\\app",
-    "\\backend\\app\\controllers",
-    "\\backend\\app\\models",
-    "\\backend\\app\\routes",
-    "\\backend\\app\\services",
-    "\\frontend\\src",
-    "\\frontend\\src\\api",
-    "\\frontend\\src\\components",
     "\\scripts"
   ],
-  "SelectedNode": "\\.env",
   "PreviewInSolutionExplorer": false
 }

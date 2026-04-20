@@ -261,8 +261,8 @@ body {
     display: flex;
     gap: 12px;
     justify-content: center;
-    margin: 12px 0 20px;
-    border-bottom: 1px solid var(--border);
+    margin: 20px 0 28px;
+    border-bottom: none;
 }
 
 .tab {
@@ -429,7 +429,7 @@ select {
 
 
 .tabs {
-    border-bottom: 1px solid rgba(17, 24, 39, 0.10);
+    border-bottom: none;
     padding-top: 8px;
 }
 
