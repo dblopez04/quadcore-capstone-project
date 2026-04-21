@@ -9,7 +9,8 @@ import { isGuestMode } from "../utils/authMode";
 
 const pageShellStyle = {
     padding: "32px 20px 48px",
-    background: "#f4f7f6",
+    background: "var(--bg)",
+    color: "var(--text)",
     minHeight: "100vh",
     fontFamily: "system-ui, sans-serif",
 };
@@ -17,8 +18,8 @@ const pageShellStyle = {
 const searchCardStyle = {
     maxWidth: 980,
     margin: "0 auto",
-    background: "#ffffff",
-    border: "1px solid #e4e7ec",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
     borderRadius: 24,
     boxShadow: "0 12px 32px rgba(16, 24, 40, 0.08)",
     padding: "32px",
@@ -52,13 +53,13 @@ const sectionTitleStyle = {
     margin: 0,
     fontSize: 28,
     fontWeight: 700,
-    color: "#101828",
+    color: "var(--text)",
 };
 
 const sectionSubtitleStyle = {
     margin: 0,
     fontSize: 15,
-    color: "#667085",
+    color: "var(--muted)",
     lineHeight: 1.6,
 };
 
@@ -67,25 +68,25 @@ const labelStyle = {
     marginBottom: 8,
     fontSize: 14,
     fontWeight: 600,
-    color: "#344054",
+    color: "var(--text)",
 };
 
 const selectStyle = {
     width: "100%",
-    border: "1px solid #d0d5dd",
+    border: "1px solid var(--input-border)",
     borderRadius: 14,
     padding: "14px 16px",
     fontSize: 15,
-    background: "#fff",
-    color: "#101828",
+    background: "var(--input-bg)",
+    color: "var(--input-text)",
     boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
 };
 
 const subtleCardStyle = {
-    border: "1px solid #eaecf0",
+    border: "1px solid var(--border)",
     borderRadius: 18,
     padding: "18px",
-    background: "#fcfcfd",
+    background: "var(--surface)",
 };
 
 const recentHeaderStyle = {
@@ -100,17 +101,17 @@ const recentChipStyle = {
     alignItems: "center",
     padding: "10px 14px",
     borderRadius: 999,
-    border: "1px solid #d0d5dd",
-    background: "#ecfdf3",
-    color: "#027a48",
+    border: "1px solid var(--border)",
+    background: "var(--unt-green-50)",
+    color: "var(--unt-green)",
     fontWeight: 600,
     cursor: "pointer",
 };
 
 const clearBtnStyle = {
-    border: "1px solid #d0d5dd",
-    background: "#fff",
-    color: "#344054",
+    border: "1px solid var(--border)",
+    background: "var(--surface)",
+    color: "var(--text)",
     borderRadius: 999,
     padding: "8px 14px",
     cursor: "pointer",
@@ -122,9 +123,9 @@ const resultCardModernStyle = {
     justifyContent: "space-between",
     alignItems: "center",
     padding: "18px 18px",
-    border: "1px solid #eaecf0",
+    border: "1px solid var(--border)",
     borderRadius: 18,
-    background: "#ffffff",
+    background: "var(--surface)",
     boxShadow: "0 6px 18px rgba(16, 24, 40, 0.06)",
 };
 
@@ -137,34 +138,34 @@ const filterRowStyle = {
 const filterBtnBaseStyle = {
     borderRadius: 999,
     padding: "10px 16px",
-    border: "1px solid #d0d5dd",
-    background: "#fff",
-    color: "#344054",
+    border: "1px solid var(--border)",
+    background: "var(--surface)",
+    color: "var(--text)",
     fontWeight: 600,
     cursor: "pointer",
     transition: "all 0.2s ease",
 };
 
 const filterBtnActiveStyle = {
-    background: "#e7f6ec",
-    border: "1px solid #079455",
-    color: "#067647",
+    background: "var(--unt-green-50)",
+    border: "1px solid var(--unt-green)",
+    color: "var(--unt-green)",
 };
 
 const statusBoxStyle = {
-    border: "1px solid #eaecf0",
+    border: "1px solid var(--border)",
     borderRadius: 16,
     padding: "16px 18px",
-    background: "#f9fafb",
-    color: "#667085",
+    background: "var(--surface)",
+    color: "var(--muted)",
     fontSize: 14,
 };
 
 const routesCardStyle = {
-    border: "1px solid #eaecf0",
+    border: "1px solid var(--border)",
     borderRadius: 20,
     padding: "24px",
-    background: "#fcfcfd",
+    background: "var(--surface)",
     boxShadow: "0 4px 14px rgba(16, 24, 40, 0.04)",
 };
 
@@ -411,15 +412,7 @@ export default function Search() {
                     </button>
                 </div>
 
-                <main
-                    style={{
-                        maxWidth: 900,
-                        margin: "0 auto",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 28,
-                    }}
-                >
+                <main style={searchCardStyle}>
                     {tab === "search" && (
                         <>
                             {/* Search input */}
@@ -436,7 +429,8 @@ export default function Search() {
                                         gap: 12,
                                         padding: "14px 16px",
                                         borderRadius: 18,
-                                        background: "#ffffff",
+                                        background: "var(--surface)",
+                                        border: "1px solid var(--border)",
                                         boxShadow: "0 6px 18px rgba(16, 24, 40, 0.06)",
                                     }}
                                 >
@@ -448,7 +442,7 @@ export default function Search() {
                                             width: 34,
                                             height: 34,
                                             borderRadius: 999,
-                                            background: "#f2f4f7",
+                                            background: "var(--bg)",
                                             fontSize: "16px",
                                         }}
                                     >
@@ -467,7 +461,7 @@ export default function Search() {
                                             width: "100%",
                                             fontSize: "18px",
                                             lineHeight: "28px",
-                                            color: "#101828",
+                                            color: "var(--input-text)",
                                             padding: "8px 4px",
                                         }}
                                     />
@@ -481,7 +475,7 @@ export default function Search() {
                                             }}
                                             style={{
                                                 border: "none",
-                                                background: "#f2f4f7",
+                                                background: "var(--bg)",
                                                 cursor: "pointer",
                                                 width: 34,
                                                 height: 34,
@@ -493,7 +487,7 @@ export default function Search() {
                                             }}
                                             title="Clear search"
                                         >
-                                            <span style={{ fontSize: "16px", color: "#667085" }}>×</span>
+                                            <span style={{ fontSize: "16px", color: "var(--muted)" }}>×</span>
                                         </button>
                                     )}
                                 </div>
@@ -555,9 +549,9 @@ export default function Search() {
                             )}
 
                             {/* Status text */}
-                            {loading && <div style={{ marginBottom: 12, color: "#666" }}>Searching…</div>}
+                            {loading && <div style={{ marginBottom: 12, color: "var(--muted)" }}>Searching…</div>}
                             {!loading && query.trim() && results.length > 0 && (
-                                <div style={{ marginBottom: 12, color: "#666", fontSize: 14 }}>
+                                <div style={{ marginBottom: 12, color: "var(--muted)", fontSize: 14 }}>
                                     {results.length} result{results.length !== 1 ? "s" : ""} found
                                 </div>
                             )}
@@ -565,7 +559,7 @@ export default function Search() {
                             {/* Results */}
                             <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "grid", gap: 10 }}>
                                 {!loading && query.trim() && results.length === 0 && (
-                                    <li style={{ padding: "10px 0", color: "#666" }}>No matches found.</li>
+                                    <li style={{ padding: "10px 0", color: "var(--muted)" }}>No matches found.</li>
                                 )}
 
                                 {results.map((loc) => {
@@ -598,11 +592,11 @@ export default function Search() {
                                                     padding: 0,
                                                 }}
                                             >
-                                                <div style={{ fontSize: "15px", fontWeight: 700, color: "#101828" }}>
+                                                <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>
                                                     {loc.name}
                                                 </div>
 
-                                                <div style={{ fontSize: "12px", color: "#667085", marginTop: 4 }}>
+                                                <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: 4 }}>
                                                     {isBookmarked ? "Saved in bookmarks" : "Tap to view on map"}
                                                 </div>
                                             </button>
@@ -616,9 +610,9 @@ export default function Search() {
                                                     padding: window.innerWidth < 500 ? "6px 10px" : "10px 14px",
                                                     fontSize: window.innerWidth < 500 ? "12px" : "14px",
                                                     borderRadius: 10,
-                                                    background: isBookmarked ? "var(--unt-green)" : "#f8fafc",
-                                                    color: isBookmarked ? "#fff" : "#344054",
-                                                    border: isBookmarked ? "1px solid var(--unt-green)" : "1px solid #d0d5dd",
+                                                    background: isBookmarked ? "var(--unt-green)" : "var(--surface)",
+                                                    color: isBookmarked ? "#fff" : "var(--text)",
+                                                    border: isBookmarked ? "1px solid var(--unt-green)" : "1px solid var(--border)",
                                                     fontWeight: 700,
                                                     boxShadow: isBookmarked ? "0 6px 14px rgba(0,106,49,0.18)" : "none",
                                                     flexShrink: 0,
@@ -643,7 +637,7 @@ export default function Search() {
 
                             {/* Filters */}
                             <div style={sectionStyle}>
-                                <h3 style={{ margin: 0, color: "#667085" }}>Filters</h3>
+                                <h3 style={{ margin: 0, color: "var(--text)" }}>Filters</h3>
 
                                 <div style={filterRowStyle}>
                                     {filters.map((f) => {
@@ -666,7 +660,7 @@ export default function Search() {
                                 </div>
 
                                 {activeFilter && (
-                                    <div style={{ fontSize: 14, color: "#667085" }}>
+                                    <div style={{ fontSize: 14, color: "var(--muted)" }}>
                                         Active filter: <strong>{activeFilter}</strong>
                                     </div>
                                 )}
@@ -684,7 +678,7 @@ export default function Search() {
                             <button className="btn-primary btn" style={{ marginTop: 12, width: "auto" }}>
                                 Find Route
                             </button>
-                            <div style={{ color: "#777", marginTop: 8, fontSize: 14 }}>
+                            <div style={{ color: "var(--muted)", marginTop: 8, fontSize: 14 }}>
                                 Accessibility & well-lit options supported.
                             </div>
                         </div>
