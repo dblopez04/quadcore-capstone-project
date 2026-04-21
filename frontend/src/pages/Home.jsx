@@ -355,7 +355,7 @@ export default function Home() {
                         fontWeight: 800,
                     }}
                 >
-                    Getting Around UNT
+                    Mean Green Guide
                 </h1>
                 <p style={{ fontSize: "1.1rem", color: "var(--muted)" }}>
                     Find buildings, events, routes, and more 😊 all in one place.

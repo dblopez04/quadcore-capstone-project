@@ -28,7 +28,7 @@ export default function About() {
             <div style={cardStyle}>
                 <h2 style={sectionTitle}>Project Overview</h2>
                 <p style={paragraph}>
-                    Getting Around UNT is a campus navigation and event discovery web application
+                    Mean Green Guide is a campus navigation and event discovery web application
                     designed to help students, faculty, and visitors explore the University of North Texas
                     more efficiently. It combines maps, search, events, bookmarks, and registration tools
                     into a single, easy-to-use interface.

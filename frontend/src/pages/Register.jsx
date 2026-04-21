@@ -85,7 +85,7 @@ export default function Register() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     {/* logo lives in /public, so use absolute path */}
                     <img src="/UNT-logo2.png" alt="UNT" style={{ height: 28 }} />
-                    <span style={{ fontWeight: 800 }}>Getting Around UNT</span>
+                    <span style={{ fontWeight: 800 }}>Mean Green Guide</span>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
                     <a href="/help" style={{ color: "#fff", textDecoration: "none" }}>

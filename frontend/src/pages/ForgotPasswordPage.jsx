@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
             >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <img src="/UNT-logo2.png" alt="UNT" style={{ height: 28 }} />
-                    <span style={{ fontWeight: 800 }}>Getting Around UNT</span>
+                    <span style={{ fontWeight: 800 }}>Mean Green Guide</span>
                 </div>
             </div>
 

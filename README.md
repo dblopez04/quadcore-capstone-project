@@ -1,4 +1,4 @@
-# Getting Around UNT 
+# Mean Green Guide
 **Built by Quadcore for UNT's IT Capstone program**
 
 
