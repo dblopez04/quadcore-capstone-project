@@ -1,6 +1,9 @@
 const db = require("../models");
 const { Op } = require("sequelize");
-const { sendEventRegistrationEmail } = require("../services/email.service");
+const {
+    sendEventRegistrationEmail,
+    sendEventSavedEmail,
+} = require("../services/email.service");
 
 const Event = db.Event;
 const EventBookmark = db.EventBookmark;
@@ -396,7 +399,9 @@ exports.unregisterFromEvent = async (req, res) => {
 exports.bookmarkEvent = async (req, res) => {
     try {
         const eventId = req.params.eventId;
-        const event = await Event.findByPk(eventId);
+        const event = await Event.findByPk(eventId, {
+            include: buildEventInclude(),
+        });
         if (!event) {
             return res.status(404).send({ message: "Event not found." });
         }
@@ -408,6 +413,28 @@ exports.bookmarkEvent = async (req, res) => {
 
         if (!created) {
             return res.status(200).send({ message: "Event already bookmarked." });
+        }
+
+        const user = await User.findByPk(req.user_id);
+
+        if (user?.email) {
+            sendEventSavedEmail({
+                to: user.email,
+                user: {
+                    firstName: user.first_name,
+                    lastName: user.last_name,
+                },
+                event: {
+                    title: event.title,
+                    description: event.description,
+                    startDateTime: event.start_date_time,
+                    endDateTime: event.end_date_time,
+                    locationName: event.Location?.name,
+                    roomDetail: event.details?.room_detail,
+                },
+            }).catch((error) => {
+                console.error("Failed to send saved event email:", error.message);
+            });
         }
 
         res.status(201).send({

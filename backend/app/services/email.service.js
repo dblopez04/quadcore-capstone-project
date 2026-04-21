@@ -115,6 +115,54 @@ function buildEventRegistrationEmail({ user, event, eventsUrl }) {
     };
 }
 
+function buildEventSavedEmail({ user, event, eventsUrl }) {
+    const safeTitle = escapeHtml(event?.title || "your event");
+    const safeFirstName = escapeHtml(user?.firstName || "");
+    const safeDescription = escapeHtml(event?.description || "");
+    const safeLocation = escapeHtml(buildLocationLabel(event));
+    const whenLabel = formatEventDateTime(event?.startDateTime);
+    const endLabel = formatEventDateTime(event?.endDateTime);
+    const greeting = safeFirstName ? `Hi ${safeFirstName},` : "Hello,";
+    const reminderNote = "If you want a 24-hour reminder, enable Email Reminder from your saved events.";
+    const hasEventsUrl = Boolean(eventsUrl);
+
+    return {
+        subject: `Event saved: ${event?.title || "Event"}`,
+        html: `
+            <div style="font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #1a1a1a;">
+                <h2 style="margin-bottom: 8px;">You saved ${safeTitle}</h2>
+                <p style="margin-top: 0;">${greeting} this event has been added to your saved events.</p>
+                <p><strong>When:</strong> ${escapeHtml(whenLabel)}</p>
+                <p><strong>Ends:</strong> ${escapeHtml(endLabel)}</p>
+                <p><strong>Where:</strong> ${safeLocation}</p>
+                ${safeDescription ? `<p>${safeDescription}</p>` : ""}
+                <p>${escapeHtml(reminderNote)}</p>
+                ${hasEventsUrl ? `
+                    <p>
+                        <a
+                            href="${escapeHtml(eventsUrl)}"
+                            style="display: inline-block; padding: 12px 18px; border-radius: 6px; background: ${DEFAULT_BRAND_COLOR}; color: #ffffff; text-decoration: none; font-weight: 600;"
+                        >
+                            View Saved Events
+                        </a>
+                    </p>
+                ` : ""}
+            </div>
+        `,
+        text: [
+            `You saved ${event?.title || "your event"}`,
+            "",
+            `${safeFirstName ? `Hi ${user.firstName}, ` : ""}this event has been added to your saved events.`,
+            `When: ${whenLabel}`,
+            `Ends: ${endLabel}`,
+            `Where: ${buildLocationLabel(event)}`,
+            event?.description ? `Description: ${event.description}` : null,
+            reminderNote,
+            hasEventsUrl ? `View saved events: ${eventsUrl}` : null,
+        ].filter(Boolean).join("\n"),
+    };
+}
+
 async function sendResendEmail({ to, subject, html, text }) {
     const apiKey = String(process.env.RESEND_API_KEY || "").trim();
     const from = String(process.env.RESEND_FROM_EMAIL || "").trim();
@@ -171,9 +219,24 @@ async function sendEventRegistrationEmail({ to, user, event }) {
     });
 }
 
+async function sendEventSavedEmail({ to, user, event }) {
+    const frontendUrl = String(process.env.FRONTEND_URL || "").trim().replace(/\/$/, "");
+    const eventsUrl = frontendUrl ? `${frontendUrl}/events` : "";
+    const message = buildEventSavedEmail({ user, event, eventsUrl });
+
+    return sendResendEmail({
+        to,
+        subject: message.subject,
+        html: message.html,
+        text: message.text,
+    });
+}
+
 module.exports = {
+    buildEventSavedEmail,
     buildEventRegistrationEmail,
     buildResetPasswordEmail,
+    sendEventSavedEmail,
     sendEventRegistrationEmail,
     sendPasswordResetEmail,
 };
