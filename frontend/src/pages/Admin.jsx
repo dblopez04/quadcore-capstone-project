@@ -933,21 +933,38 @@ export default function Admin() {
                     </div>
 
                     <form
-                        className="admin-toolbar admin-toolbar--compact"
                         onSubmit={(event) => {
                             event.preventDefault();
-                            loadLocations();
+                            loadEvents();
+                        }}
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 10,
+                            alignItems: "flex-start",
                         }}
                     >
-                        <input
+                        <select
                             className="admin-input"
-                            value={locationFilters.search}
+                            value={eventFilters.status}
                             onChange={(event) =>
-                                setLocationFilters({ search: event.target.value })
+                                setEventFilters({ status: event.target.value })
                             }
-                            placeholder="Search locations by name"
-                        />
-                        <button type="submit" className="admin-button admin-button--primary">
+                            style={{ width: "100%" }}
+                        >
+                            <option value="">All statuses</option>
+                            {EVENT_STATUSES.map((status) => (
+                                <option key={status} value={status}>
+                                    {status}
+                                </option>
+                            ))}
+                        </select>
+
+                        <button
+                            type="submit"
+                            className="admin-button admin-button--primary"
+                            style={{ width: "auto", whiteSpace: "nowrap" }}
+                        >
                             Apply
                         </button>
                     </form>
