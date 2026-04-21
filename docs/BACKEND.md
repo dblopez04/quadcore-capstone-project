@@ -47,6 +47,7 @@
 - First-owner bootstrap logic exists for owner assignment.
 - Password reset uses single-use hashed reset tokens stored outside the `users` table.
 - Reset emails are delivered through Resend and point users to the frontend reset page.
+- Event registrations now attempt a Resend confirmation email when the user has an email on file and email env vars are configured.
 
 ## Tests
 Run from `backend/`:
