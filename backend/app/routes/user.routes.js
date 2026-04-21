@@ -87,6 +87,38 @@ router.post("/profile", middleware.verifyToken, controller.getProfile);
 
 /**
  * @swagger
+ * /api/user/profile/email:
+ *   patch:
+ *     summary: Update the current user's email
+ *     description: Updates the authenticated user's email address used by account-related notifications
+ *     tags:
+ *       - User
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Email updated successfully
+ *       400:
+ *         description: Invalid email or email already in use
+ *       404:
+ *         description: User not found
+ */
+router.patch("/profile/email", middleware.verifyToken, controller.updateEmail);
+
+/**
+ * @swagger
  * /api/user/search-history:
  *   get:
  *     summary: Get search history

@@ -34,6 +34,8 @@
 - Forgot-password submits to `/api/auth/forgot-password`, and reset-password submits the emailed token to `/api/auth/reset-password`.
 - Search, bookmarks, lists, and event flows already call the backend.
 - Event cards use backend event details to show room/location detail when available.
+- Events support save/unsave actions and per-saved-event email reminder toggles.
+- Settings loads and updates the account email used for event-related emails.
 - Event normalization must coerce `details` payloads into plain text before rendering; `details` objects are for metadata, not direct JSX output.
 
 ## Conventions
@@ -43,6 +45,5 @@
 - Reuse theme tokens from `frontend/src/index.css` instead of hard-coded colors.
 
 ## Current Gaps
-- Settings is mostly static.
 - Map still lacks live routing, route drawing, and current location behavior.
 - POI-specific UI is thinner than the backend/data model implies.

@@ -1,11 +1,20 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+    bookmarkEvent,
+    createReminder,
+    deleteReminder,
+    fetchBookmarkedEvents,
     fetchEvents,
-    registerForEvent,
     fetchRegisteredEvents,
+    fetchReminders,
+    registerForEvent,
+    removeBookmarkedEvent,
     unregisterFromEvent,
 } from "../api/eventService";
+import { fetchProfile } from "../api/userService";
+import { useToast } from "../components/ToastProvider";
+import { isGuestMode } from "../utils/authMode";
 
 function pad2(n) {
     return String(n).padStart(2, "0");
@@ -14,6 +23,7 @@ function pad2(n) {
 function toDateStr(d) {
     return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
+
 function eventDateStr(value) {
     if (!value) return "";
     const d = new Date(value);
@@ -31,7 +41,7 @@ function buildMonthGrid(viewDate) {
     const first = new Date(year, month, 1);
     const last = new Date(year, month + 1, 0);
 
-    const startDay = first.getDay(); // 0=Sun
+    const startDay = first.getDay();
     const daysInMonth = last.getDate();
 
     const cells = [];
@@ -134,7 +144,6 @@ function formatEventLocation(ev) {
     return roomLabel ? `${baseLocation}, ${roomLabel}` : baseLocation;
 }
 
-// Try to support both your old mock shape + backend shape
 function normalizeEvent(ev) {
     const startRaw =
         ev.start_date_time ||
@@ -189,34 +198,62 @@ function normalizeEvent(ev) {
             "",
         sourceLocationName,
         roomDetail,
-        lat:
-            ev.lat ??
-            ev.latitude ??
-            parsedCoords.lat,
-        lng:
-            ev.lng ??
-            ev.longitude ??
-            parsedCoords.lng,
+        lat: ev.lat ?? ev.latitude ?? parsedCoords.lat,
+        lng: ev.lng ?? ev.longitude ?? parsedCoords.lng,
         start,
         end,
     };
 }
+
+function buildReminderTime(eventStart) {
+    return new Date(new Date(eventStart).getTime() - 24 * 60 * 60 * 1000);
+}
+
+function getReminderAvailability(eventStart) {
+    if (!eventStart) {
+        return { enabled: false, message: "Event time is not available." };
+    }
+
+    const reminderTime = buildReminderTime(eventStart);
+    if (Number.isNaN(reminderTime.getTime())) {
+        return { enabled: false, message: "Event time is not available." };
+    }
+
+    if (reminderTime <= new Date()) {
+        return { enabled: false, message: "Too late for a 24-hour reminder." };
+    }
+
+    return { enabled: true, message: `Reminder will send on ${reminderTime.toLocaleString()}.` };
+}
+
+function formatEventWindow(ev) {
+    return `${ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}${ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}`;
+}
+
 export default function Events() {
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
     const [q, setQ] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [selectedDate, setSelectedDate] = useState(""); // YYYY-MM-DD
+    const [selectedDate, setSelectedDate] = useState("");
     const [viewDate, setViewDate] = useState(() => new Date());
     const [selectedCategory, setSelectedCategory] = useState("");
     const [registeringId, setRegisteringId] = useState(null);
     const [unregisteringId, setUnregisteringId] = useState(null);
+    const [bookmarkingId, setBookmarkingId] = useState(null);
+    const [togglingReminderId, setTogglingReminderId] = useState(null);
     const [feedback, setFeedback] = useState("");
     const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
     const [registeredEvents, setRegisteredEvents] = useState([]);
+    const [bookmarkedEventIds, setBookmarkedEventIds] = useState(new Set());
+    const [bookmarkedEvents, setBookmarkedEvents] = useState([]);
+    const [emailRemindersByEventId, setEmailRemindersByEventId] = useState({});
+    const [profileEmail, setProfileEmail] = useState("");
 
     const navigate = useNavigate();
+    const { showToast } = useToast();
+    const guestMode = isGuestMode();
 
     const eventDays = useMemo(() => {
         const s = new Set();
@@ -241,7 +278,6 @@ export default function Events() {
 
     const selectedDateEvents = useMemo(() => {
         if (!selectedDate) return [];
-
         return allEvents.filter((ev) => eventDateStr(ev.start) === selectedDate);
     }, [allEvents, selectedDate]);
 
@@ -255,19 +291,15 @@ export default function Events() {
             setLoading(true);
             setError("");
 
-            const data = await fetchEvents(filters); // expects { events: [] }
+            const data = await fetchEvents(filters);
             const raw = Array.isArray(data?.events) ? data.events : [];
             const normalized = raw.map(normalizeEvent);
+            setAllEvents(normalized);
 
-            const finalEvents = normalized;
-
-            setAllEvents(finalEvents);
-
-            // if a date filter is active, keep it applied
             if (selectedDate) {
-                setEvents(finalEvents.filter((ev) => ev.start?.startsWith(selectedDate)));
+                setEvents(normalized.filter((ev) => ev.start?.startsWith(selectedDate)));
             } else {
-                setEvents(finalEvents);
+                setEvents(normalized);
             }
         } catch (e) {
             console.error(e);
@@ -280,6 +312,12 @@ export default function Events() {
     }
 
     async function loadRegisteredEvents() {
+        if (guestMode) {
+            setRegisteredEvents([]);
+            setRegisteredEventIds(new Set());
+            return;
+        }
+
         try {
             const data = await fetchRegisteredEvents();
             const raw = Array.isArray(data?.events)
@@ -298,6 +336,80 @@ export default function Events() {
             console.error("Failed to load registrations:", e);
             setRegisteredEvents([]);
             setRegisteredEventIds(new Set());
+        }
+    }
+
+    async function loadBookmarkedEvents() {
+        if (guestMode) {
+            setBookmarkedEvents([]);
+            setBookmarkedEventIds(new Set());
+            return;
+        }
+
+        try {
+            const data = await fetchBookmarkedEvents();
+            const raw = Array.isArray(data?.events)
+                ? data.events
+                : Array.isArray(data)
+                    ? data
+                    : [];
+
+            const normalized = raw
+                .map((item) => normalizeEvent(item.event || item))
+                .filter((ev) => ev.id);
+
+            setBookmarkedEvents(normalized);
+            setBookmarkedEventIds(new Set(normalized.map((ev) => ev.id)));
+        } catch (e) {
+            console.error("Failed to load bookmarks:", e);
+            setBookmarkedEvents([]);
+            setBookmarkedEventIds(new Set());
+        }
+    }
+
+    async function loadReminders() {
+        if (guestMode) {
+            setEmailRemindersByEventId({});
+            return;
+        }
+
+        try {
+            const data = await fetchReminders();
+            const raw = Array.isArray(data?.reminders)
+                ? data.reminders
+                : Array.isArray(data)
+                    ? data
+                    : [];
+
+            const emailReminders = raw.reduce((acc, reminder) => {
+                const eventId = reminder?.event?.event_id || reminder?.event_id;
+                if (!eventId || reminder.channel !== "EMAIL") {
+                    return acc;
+                }
+
+                acc[eventId] = reminder;
+                return acc;
+            }, {});
+
+            setEmailRemindersByEventId(emailReminders);
+        } catch (e) {
+            console.error("Failed to load reminders:", e);
+            setEmailRemindersByEventId({});
+        }
+    }
+
+    async function loadProfileEmail() {
+        if (guestMode) {
+            setProfileEmail("");
+            return;
+        }
+
+        try {
+            const data = await fetchProfile();
+            setProfileEmail(data?.user?.email || "");
+        } catch (e) {
+            console.error("Failed to load profile email:", e);
+            setProfileEmail("");
         }
     }
 
@@ -333,11 +445,91 @@ export default function Events() {
         }
     }
 
+    async function handleBookmarkToggle(eventId) {
+        if (guestMode) {
+            showToast("Sign in to save events and manage reminders.", "error");
+            return;
+        }
+
+        try {
+            setBookmarkingId(eventId);
+            setFeedback("");
+
+            const existingReminder = emailRemindersByEventId[eventId];
+
+            if (bookmarkedEventIds.has(eventId)) {
+                if (existingReminder) {
+                    await deleteReminder(existingReminder.event_reminder_id);
+                }
+                await removeBookmarkedEvent(eventId);
+                setFeedback(existingReminder
+                    ? "Saved event removed and reminder canceled."
+                    : "Event removed from saved events.");
+            } else {
+                await bookmarkEvent(eventId);
+                setFeedback("Event saved successfully.");
+            }
+
+            await Promise.all([loadBookmarkedEvents(), loadReminders()]);
+        } catch (e) {
+            console.error(e);
+            setFeedback(e?.message || "Failed to update saved event.");
+        } finally {
+            setBookmarkingId(null);
+        }
+    }
+
+    async function handleReminderToggle(event) {
+        if (guestMode) {
+            showToast("Sign in to manage email reminders.", "error");
+            return;
+        }
+
+        if (!profileEmail) {
+            showToast("Add an email in Settings before enabling reminders.", "error");
+            return;
+        }
+
+        const availability = getReminderAvailability(event.start);
+        const existingReminder = emailRemindersByEventId[event.id];
+
+        if (!existingReminder && !availability.enabled) {
+            showToast(availability.message, "error");
+            return;
+        }
+
+        try {
+            setTogglingReminderId(event.id);
+            setFeedback("");
+
+            if (existingReminder) {
+                await deleteReminder(existingReminder.event_reminder_id);
+                setFeedback("Reminder removed.");
+            } else {
+                await createReminder(event.id, {
+                    remind_at: buildReminderTime(event.start).toISOString(),
+                    channel: "EMAIL",
+                });
+                setFeedback("Reminder enabled.");
+            }
+
+            await loadReminders();
+        } catch (e) {
+            console.error(e);
+            setFeedback(e?.message || "Failed to update reminder.");
+        } finally {
+            setTogglingReminderId(null);
+        }
+    }
+
     useEffect(() => {
         loadEvents();
         loadRegisteredEvents();
+        loadBookmarkedEvents();
+        loadReminders();
+        loadProfileEmail();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [guestMode]);
 
     const onSearch = (e) => {
         e.preventDefault();
@@ -390,6 +582,34 @@ export default function Events() {
         <div style={{ padding: "24px" }}>
             <h2>Campus Events</h2>
 
+            {!guestMode && (
+                <div
+                    style={{
+                        margin: "0 0 16px 0",
+                        padding: "14px 16px",
+                        borderRadius: 14,
+                        background: "#f4fbf6",
+                        border: "1px solid #cfe5d4",
+                    }}
+                >
+                    <div style={{ fontWeight: 700, marginBottom: 4 }}>Reminder email</div>
+                    <div style={{ color: "#35594a", fontSize: 14 }}>
+                        {profileEmail || "No email set yet."}
+                    </div>
+                    <div style={{ marginTop: 6, fontSize: 13, color: "#56725f" }}>
+                        Used for registration confirmations and 24-hour event reminders.
+                    </div>
+                    {!profileEmail && (
+                        <button
+                            onClick={() => navigate("/settings")}
+                            style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8 }}
+                        >
+                            Add email in Settings
+                        </button>
+                    )}
+                </div>
+            )}
+
             <div
                 style={{
                     margin: "16px 0 20px 0",
@@ -400,7 +620,6 @@ export default function Events() {
                     boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                 }}
             >
-                {/* Calendar */}
                 <div
                     style={{
                         padding: "12px",
@@ -411,9 +630,7 @@ export default function Events() {
                 >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <button
-                            onClick={() =>
-                                setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))
-                            }
+                            onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
                             style={{ padding: "6px 10px", borderRadius: 8 }}
                         >
                             Prev
@@ -422,9 +639,7 @@ export default function Events() {
                         <div style={{ fontWeight: 700 }}>{monthLabel(viewDate)}</div>
 
                         <button
-                            onClick={() =>
-                                setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))
-                            }
+                            onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
                             style={{ padding: "6px 10px", borderRadius: 8 }}
                         >
                             Next
@@ -463,8 +678,7 @@ export default function Events() {
                                         >
                                             <div style={{ fontWeight: 600 }}>{ev.title}</div>
                                             <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
-                                                {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                                {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                                {formatEventWindow(ev)}
                                             </div>
                                         </div>
                                     ))}
@@ -608,19 +822,100 @@ export default function Events() {
                         margin: "12px 0",
                         padding: "10px 12px",
                         borderRadius: 10,
-                        background: feedback.toLowerCase().includes("failed")
+                        background: feedback.toLowerCase().includes("failed") || feedback.toLowerCase().includes("not")
                             ? "#fdecec"
                             : "#edf7ed",
-                        border: feedback.toLowerCase().includes("failed")
+                        border: feedback.toLowerCase().includes("failed") || feedback.toLowerCase().includes("not")
                             ? "1px solid #f5c2c7"
                             : "1px solid #b7dfb9",
-                        color: feedback.toLowerCase().includes("failed")
+                        color: feedback.toLowerCase().includes("failed") || feedback.toLowerCase().includes("not")
                             ? "#842029"
                             : "#1e4620",
                         fontSize: 14,
                     }}
                 >
                     {feedback}
+                </div>
+            )}
+
+            {!guestMode && (
+                <div
+                    style={{
+                        margin: "16px 0 20px 0",
+                        padding: "16px",
+                        border: "1px solid #e5e5e5",
+                        borderRadius: "16px",
+                        background: "#fff",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                    }}
+                >
+                    <h3 style={{ marginTop: 0, marginBottom: 12 }}>My Saved Events</h3>
+                    {bookmarkedEvents.length === 0 ? (
+                        <div style={{ fontSize: 14, color: "#666" }}>
+                            Save an event to turn on a 24-hour email reminder.
+                        </div>
+                    ) : (
+                        <div style={{ display: "grid", gap: "12px" }}>
+                            {bookmarkedEvents.map((ev) => {
+                                const reminder = emailRemindersByEventId[ev.id];
+                                const availability = getReminderAvailability(ev.start);
+                                const isTooLate = !availability.enabled && !reminder;
+
+                                return (
+                                    <div
+                                        key={`saved-${ev.id}`}
+                                        style={{
+                                            border: "1px solid #e5e5e5",
+                                            borderRadius: "12px",
+                                            padding: "14px",
+                                            background: "#f9fbf9",
+                                        }}
+                                    >
+                                        <div style={{ fontWeight: 700 }}>{ev.title}</div>
+                                        <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
+                                            {formatEventWindow(ev)}
+                                        </div>
+                                        <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
+                                            {formatEventLocation(ev)}
+                                        </div>
+                                        <div style={{ marginTop: 10, fontSize: 13, color: reminder ? "#1e4620" : "#666" }}>
+                                            {reminder ? `Email reminder on. ${new Date(reminder.remind_at).toLocaleString()}` : availability.message}
+                                        </div>
+                                        <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+                                            <button
+                                                onClick={() => handleBookmarkToggle(ev.id)}
+                                                disabled={bookmarkingId === ev.id}
+                                                style={{ padding: "10px 14px", borderRadius: 10 }}
+                                            >
+                                                {bookmarkingId === ev.id ? "Saving..." : "Unsave"}
+                                            </button>
+                                            <button
+                                                onClick={() => handleReminderToggle(ev)}
+                                                disabled={togglingReminderId === ev.id || isTooLate || !profileEmail}
+                                                style={{
+                                                    padding: "10px 14px",
+                                                    borderRadius: 10,
+                                                    background: reminder ? "#b42318" : "#1d4ed8",
+                                                    color: "white",
+                                                    border: "none",
+                                                    fontWeight: 600,
+                                                    cursor: (togglingReminderId === ev.id || isTooLate || !profileEmail) ? "not-allowed" : "pointer",
+                                                    opacity: (togglingReminderId === ev.id || isTooLate || !profileEmail) ? 0.7 : 1,
+                                                }}
+                                            >
+                                                {togglingReminderId === ev.id ? "Updating..." : reminder ? "Remove Reminder" : "Email Reminder"}
+                                            </button>
+                                        </div>
+                                        {!profileEmail && (
+                                            <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>
+                                                Add an email in Settings before enabling reminders.
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -649,8 +944,7 @@ export default function Events() {
                             >
                                 <div style={{ fontWeight: 700 }}>{ev.title}</div>
                                 <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
-                                    {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                    {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                    {formatEventWindow(ev)}
                                 </div>
                                 <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
                                     {formatEventLocation(ev)}
@@ -709,6 +1003,9 @@ export default function Events() {
                     {events.map((ev) => {
                         const canMap = Boolean(ev.locationId) || (ev.lat != null && ev.lng != null);
                         const isRegistered = registeredEventIds.has(ev.id);
+                        const isBookmarked = bookmarkedEventIds.has(ev.id);
+                        const reminder = emailRemindersByEventId[ev.id];
+                        const availability = getReminderAvailability(ev.start);
 
                         return (
                             <div
@@ -735,23 +1032,55 @@ export default function Events() {
                                             {ev.title}
                                         </h3>
 
-                                        <div
-                                            style={{
-                                                display: "inline-block",
-                                                marginTop: 10,
-                                                padding: "4px 10px",
-                                                borderRadius: "999px",
-                                                background: "#eef6ff",
-                                                color: "#1d4ed8",
-                                                fontSize: "12px",
-                                                fontWeight: 700,
-                                                letterSpacing: "0.3px",
-                                            }}
-                                        >
-                                            {ev.category}
+                                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                                            <div
+                                                style={{
+                                                    display: "inline-block",
+                                                    padding: "4px 10px",
+                                                    borderRadius: "999px",
+                                                    background: "#eef6ff",
+                                                    color: "#1d4ed8",
+                                                    fontSize: "12px",
+                                                    fontWeight: 700,
+                                                    letterSpacing: "0.3px",
+                                                }}
+                                            >
+                                                {ev.category}
+                                            </div>
+                                            {isBookmarked && (
+                                                <div
+                                                    style={{
+                                                        display: "inline-block",
+                                                        padding: "4px 10px",
+                                                        borderRadius: "999px",
+                                                        background: "#edf7ed",
+                                                        color: "#1e4620",
+                                                        fontSize: "12px",
+                                                        fontWeight: 700,
+                                                        letterSpacing: "0.3px",
+                                                    }}
+                                                >
+                                                    Saved
+                                                </div>
+                                            )}
+                                            {reminder && (
+                                                <div
+                                                    style={{
+                                                        display: "inline-block",
+                                                        padding: "4px 10px",
+                                                        borderRadius: "999px",
+                                                        background: "#fff4e5",
+                                                        color: "#8a4b00",
+                                                        fontSize: "12px",
+                                                        fontWeight: 700,
+                                                        letterSpacing: "0.3px",
+                                                    }}
+                                                >
+                                                    Email reminder on
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-
                                 </div>
 
                                 {ev.description && (
@@ -769,15 +1098,18 @@ export default function Events() {
 
                                 <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
                                     <div style={{ fontSize: "14px", color: "#555" }}>
-                                        <strong>When:</strong>{" "}
-                                        {ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}
-                                        {ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}
+                                        <strong>When:</strong> {formatEventWindow(ev)}
                                     </div>
 
                                     <div style={{ fontSize: "14px", color: "#555" }}>
-                                        <strong>Location:</strong>{" "}
-                                        {formatEventLocation(ev)}
+                                        <strong>Location:</strong> {formatEventLocation(ev)}
                                     </div>
+
+                                    {isBookmarked && (
+                                        <div style={{ fontSize: "13px", color: reminder ? "#1e4620" : "#666" }}>
+                                            {reminder ? `Email reminder on. ${new Date(reminder.remind_at).toLocaleString()}` : availability.message}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div style={{ display: "flex", gap: "10px", marginTop: 16, flexWrap: "wrap" }}>
@@ -798,9 +1130,7 @@ export default function Events() {
                                     </button>
 
                                     <button
-                                        onClick={() => (
-                                            isRegistered ? handleUnregister(ev.id) : handleRegister(ev.id)
-                                        )}
+                                        onClick={() => (isRegistered ? handleUnregister(ev.id) : handleRegister(ev.id))}
                                         disabled={registeringId === ev.id || unregisteringId === ev.id}
                                         style={{
                                             padding: "10px 14px",
@@ -809,14 +1139,8 @@ export default function Events() {
                                             color: "white",
                                             border: "none",
                                             fontWeight: 600,
-                                            cursor:
-                                                registeringId === ev.id || unregisteringId === ev.id
-                                                    ? "not-allowed"
-                                                    : "pointer",
-                                            opacity:
-                                                registeringId === ev.id || unregisteringId === ev.id
-                                                    ? 0.7
-                                                    : 1,
+                                            cursor: registeringId === ev.id || unregisteringId === ev.id ? "not-allowed" : "pointer",
+                                            opacity: registeringId === ev.id || unregisteringId === ev.id ? 0.7 : 1,
                                         }}
                                     >
                                         {registeringId === ev.id
@@ -827,7 +1151,61 @@ export default function Events() {
                                                     ? "Unregister"
                                                     : "Register"}
                                     </button>
+
+                                    <button
+                                        onClick={() => handleBookmarkToggle(ev.id)}
+                                        disabled={bookmarkingId === ev.id || guestMode}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: isBookmarked ? "#475467" : "#006A31",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: bookmarkingId === ev.id || guestMode ? "not-allowed" : "pointer",
+                                            opacity: bookmarkingId === ev.id || guestMode ? 0.7 : 1,
+                                        }}
+                                    >
+                                        {bookmarkingId === ev.id ? "Updating..." : isBookmarked ? "Unsave" : "Save Event"}
+                                    </button>
+
+                                    {isBookmarked && (
+                                        <button
+                                            onClick={() => handleReminderToggle(ev)}
+                                            disabled={togglingReminderId === ev.id || !profileEmail || (!availability.enabled && !reminder)}
+                                            style={{
+                                                padding: "10px 14px",
+                                                borderRadius: 10,
+                                                background: reminder ? "#b42318" : "#7c3aed",
+                                                color: "white",
+                                                border: "none",
+                                                fontWeight: 600,
+                                                cursor: togglingReminderId === ev.id || !profileEmail || (!availability.enabled && !reminder) ? "not-allowed" : "pointer",
+                                                opacity: togglingReminderId === ev.id || !profileEmail || (!availability.enabled && !reminder) ? 0.7 : 1,
+                                            }}
+                                        >
+                                            {togglingReminderId === ev.id ? "Updating..." : reminder ? "Remove Reminder" : "Email Reminder"}
+                                        </button>
+                                    )}
                                 </div>
+
+                                {!isBookmarked && !guestMode && (
+                                    <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>
+                                        Save this event to enable a 24-hour email reminder.
+                                    </div>
+                                )}
+
+                                {isBookmarked && !profileEmail && (
+                                    <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>
+                                        Add an email in Settings before enabling reminders.
+                                    </div>
+                                )}
+
+                                {isBookmarked && !emailRemindersByEventId[ev.id] && !availability.enabled && (
+                                    <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>
+                                        Too late for a 24-hour reminder.
+                                    </div>
+                                )}
 
                                 {!canMap && (
                                     <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>

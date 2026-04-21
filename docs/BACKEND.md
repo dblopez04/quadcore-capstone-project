@@ -32,7 +32,7 @@
 
 ## Route Groups
 - `/api/auth` - register, login, logout, refresh, forgot-password, reset-password
-- `/api/user` - profile and search history
+- `/api/user` - profile, email updates, and search history
 - `/api/search` - federated search across locations and POIs
 - `/api/locations` - list, detail, share links, bookmarks, recently viewed, custom lists
 - `/api/events` - event listing plus bookmarks, registrations, reminders, conflicts, tags

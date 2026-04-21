@@ -40,3 +40,40 @@ export async function unregisterFromEvent(eventId) {
         method: "DELETE",
     });
 }
+
+export async function fetchBookmarkedEvents() {
+    return apiRequest("/api/events/bookmarks", {
+        method: "GET",
+    });
+}
+
+export async function bookmarkEvent(eventId) {
+    return apiRequest(`/api/events/${eventId}/bookmark`, {
+        method: "POST",
+    });
+}
+
+export async function removeBookmarkedEvent(eventId) {
+    return apiRequest(`/api/events/${eventId}/bookmark`, {
+        method: "DELETE",
+    });
+}
+
+export async function fetchReminders() {
+    return apiRequest("/api/events/reminders", {
+        method: "GET",
+    });
+}
+
+export async function createReminder(eventId, payload) {
+    return apiRequest(`/api/events/${eventId}/reminders`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function deleteReminder(reminderId) {
+    return apiRequest(`/api/events/reminders/${reminderId}`, {
+        method: "DELETE",
+    });
+}
