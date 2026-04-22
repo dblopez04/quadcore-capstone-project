@@ -26,6 +26,6 @@ Status legend:
 | 14 | Calendar | R3 | Partial (API) | Backend/DB/Frontend | Event bookmarks, search, tags, reminders, registrations, conflicts, and ICS export added; public UNT calendar SQL seeding now available through `scripts/scrape_unt_events.py`, imported source metadata is stored in `event_details`, but no UI yet |
 | 15 | Administrator access | R3 | Partial (API) | Backend/Frontend | Owner-gated admin delegation API exists (`grant/revoke admin`, `grant/revoke owner`), but no admin UI yet |
 | 16 | Accessibility | R3 | Not started | Map/Frontend | No data or filters |
-| 17 | Safety | R3 | Not started | Map/Frontend | No well-lit routing data |
+| 17 | Safety | R3 | Partial (API) | Map/DB/Backend | `well_lit_paths` schema and public safety API exist; no routing preference or map UI yet |
 | 18 | Mobile responsiveness | R2 | Partial (UI) | Frontend | Mobile-first layout exists |
 | 19 | UI consistency | R2 | Partial (UI) | Frontend | Theme tokens exist |

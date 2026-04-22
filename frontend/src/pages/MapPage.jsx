@@ -3,6 +3,7 @@ import { useLocation, useSearchParams } from "react-router-dom";
 import MapView from "../MapView";
 import { searchLocations } from "../api/locationService";
 import { getRoute } from "../api/osrmService";
+import { getWellLitPaths } from "../api/safetyService";
 import { useToast } from "../components/ToastProvider";
 
 function buildRoutePoint(point, fallbackName) {
@@ -140,6 +141,8 @@ export default function MapPage() {
     const [isRouting, setIsRouting] = useState(false);
     const [activePickMode, setActivePickMode] = useState("");
     const [followUser, setFollowUser] = useState(true);
+    const [showWellLitPaths, setShowWellLitPaths] = useState(true);
+    const [wellLitPaths, setWellLitPaths] = useState(null);
 
     useEffect(() => {
         if (!target) {
@@ -193,6 +196,30 @@ export default function MapPage() {
             clearTimeout(timer);
         };
     }, [startQuery, endQuery]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadWellLitPaths() {
+            try {
+                const data = await getWellLitPaths({ preferred: true });
+                if (!cancelled) {
+                    setWellLitPaths(data.geojson || null);
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    setWellLitPaths(null);
+                    showToast("Well-lit path overlay is unavailable right now.", "error");
+                }
+            }
+        }
+
+        loadWellLitPaths();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [showToast]);
 
     function clearRoute() {
         setRoute(null);
@@ -326,6 +353,13 @@ export default function MapPage() {
                         <button
                             type="button"
                             className="route-chip-btn"
+                            onClick={() => setShowWellLitPaths((current) => !current)}
+                        >
+                            {showWellLitPaths ? "Hide well-lit paths" : "Show well-lit paths"}
+                        </button>
+                        <button
+                            type="button"
+                            className="route-chip-btn"
                             onClick={() => setFollowUser((current) => !current)}
                         >
                             {followUser ? "Following you" : "Follow me"}
@@ -376,6 +410,11 @@ export default function MapPage() {
                                 <div className="route-status-note">
                                     Live route loaded from the OSRM walking network.
                                 </div>
+                                {showWellLitPaths && wellLitPaths && (
+                                    <div className="route-status-note">
+                                        Orange dashed lines show your curated well-lit network.
+                                    </div>
+                                )}
                             </>
                         ) : (
                             <div className="route-status-note">
@@ -392,6 +431,8 @@ export default function MapPage() {
                         target={endPoint ?? target}
                         route={route}
                         routeGeometry={routeGeometry}
+                        wellLitPaths={wellLitPaths}
+                        showWellLitPaths={showWellLitPaths}
                         onUserLocation={setUserLocation}
                         onMapPick={handleMapPick}
                         activePickMode={activePickMode}

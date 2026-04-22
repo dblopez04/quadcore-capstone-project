@@ -54,6 +54,8 @@ See `docs/REQUIREMENTS.md` for status.
 - React pages: login, register, home, map, search, bookmarks, settings, about, help.
 - Map view uses Leaflet + OpenStreetMap tiles, browser geolocation, destination
   search, and OSRM route rendering for walking directions.
+- Safety path metadata can now be stored in PostGIS through `well_lit_paths`
+  and served to clients through `/api/safety/well-lit-paths`.
 - Swagger docs are generated from route files.
 - Jest test suite for backend controllers, middleware, and routes.
 

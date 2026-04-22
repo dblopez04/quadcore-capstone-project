@@ -11,6 +11,9 @@ To build and run all services at the same time, clone the repository in your ter
 Once you've built the containers, you can run the containers without rebuilding them by using
 `docker compose up`
 
+If you want OSRM routing and map-backed path data, run `bash import_osm.sh`
+before starting the stack so `osrm-data/denton-map.osm.pbf` and related imports
+exist for the database and OSRM services.
 
 Then, make a copy of .env.example with the name .env, and put the file in ./backend and ./frontend, and the project's root directory. 
 
@@ -36,6 +39,15 @@ If you would like to use different credentials for the Postgres database, all yo
 | Backend (Express)   | http://localhost:4000      |
 | API Docs (Swagger)  | http://localhost:4000/docs |
 | Database (Postgres) | http://localhost:5433      |
+
+## Well-Lit Path Data
+Well-lit sidewalks and streets are stored in the PostGIS `well_lit_paths` table.
+Use `database/well_lit_paths_seed.sql` as the template for entering campus-safe
+segments as `LINESTRING` geometry in longitude/latitude order, then apply that
+SQL to the database.
+
+The backend exposes the data at `GET /api/safety/well-lit-paths`, returning both
+metadata rows and a GeoJSON `FeatureCollection` for map rendering.
 
 ## Dev Workflow with AI Agents
 You can use AI agents (Codex, Claude, etc.) to accelerate work. They are best at:

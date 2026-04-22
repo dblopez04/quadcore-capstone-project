@@ -39,6 +39,8 @@
   apply client-side fuzzy ranking for location results.
 - Routing UI uses `frontend/src/api/osrmService.js` to call `/api/osrm/route`
   and render OSRM GeoJSON responses on the map.
+- Safety overlays use `frontend/src/api/safetyService.js` to fetch
+  `/api/safety/well-lit-paths` and render curated well-lit segments on the map.
 - Bookmarks UI strips the demo seed phrase (`Seeded from local OSM extract`)
   from subtitle text before rendering.
 - Bookmarks UI now calls `/api/locations/bookmarks` and `/api/locations/lists`
@@ -52,9 +54,10 @@
 ## Map UI Notes
 - `frontend/src/pages/MapPage.jsx` now includes a directions panel with
   start/end search, current-location start, point picking from the map, route
-  swap/clear actions, and walking ETA + distance summary.
+  swap/clear actions, a well-lit path overlay toggle, and walking ETA + distance summary.
 - `frontend/src/MapView.jsx` renders the main Leaflet map, current-location
-  marker, route start/destination markers, and OSRM GeoJSON route overlays.
+  marker, route start/destination markers, OSRM route geometry, and well-lit
+  path overlays.
 - Turn-by-turn maneuver text is still pending.
 
 ## Filters and Categories
@@ -65,7 +68,7 @@ POI categories defined in the database:
 User roles (from requirements) should influence UI filtering:
 - STUDENT, FACULTY, ADMIN, VISITOR.
 
-## Accessibility and Safety (planned)
+## Accessibility and Safety
 - Provide toggles for accessible routes and well-lit paths.
 - Surface accessibility details (ramps, elevators, auto doors) in POI detail views.
 

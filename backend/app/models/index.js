@@ -18,6 +18,7 @@ const defineLocationList = require('./locationList.model');
 const defineLocationListItem = require('./locationListItem.model');
 const defineRecentlyViewedLocation = require('./recentlyViewedLocation.model');
 const defineReport = require('./report.model');
+const defineWellLitPath = require('./wellLitPath.model');
 
 const db = {};
 db.sequelize = sequelize;
@@ -42,6 +43,7 @@ db.LocationList = defineLocationList(sequelize, Sequelize.DataTypes);
 db.LocationListItem = defineLocationListItem(sequelize, Sequelize.DataTypes);
 db.RecentlyViewedLocation = defineRecentlyViewedLocation(sequelize, Sequelize.DataTypes);
 db.Report = defineReport(sequelize, Sequelize.DataTypes);
+db.WellLitPath = defineWellLitPath(sequelize, Sequelize.DataTypes);
 
 // User associations
 db.User.hasOne(db.Student, { foreignKey: 'user_id', onDelete: 'CASCADE' });

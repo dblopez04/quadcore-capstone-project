@@ -46,6 +46,8 @@ export default function MapView({
     target,
     route,
     routeGeometry,
+    wellLitPaths,
+    showWellLitPaths = false,
     onUserLocation,
     onMapPick,
     activePickMode,
@@ -92,6 +94,18 @@ export default function MapView({
                             color: "#006A31",
                             weight: 6,
                             opacity: 0.95,
+                        }}
+                    />
+                )}
+
+                {showWellLitPaths && wellLitPaths && (
+                    <GeoJSON
+                        data={wellLitPaths}
+                        style={{
+                            color: "#f97316",
+                            weight: 4,
+                            opacity: 0.9,
+                            dashArray: "10 6",
                         }}
                     />
                 )}

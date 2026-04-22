@@ -153,6 +153,8 @@ All admin routes are prefixed with `/api/admin` and protected by `requireAdmin` 
 - `User` - main auth table with roles and `search_history`.
 - `Student`, `Faculty`, `Visitor` - role-specific tables (DB has `admin` too).
 - `EventDetail` - one-to-one structured metadata for imported event source fields.
+- `WellLitPath` - geospatial `LINESTRING` segments representing manually curated
+  well-lit sidewalks/streets.
 
 ## Role-Based Access
 - `verifyToken` enforces authenticated access for user-only routes.
@@ -160,9 +162,13 @@ All admin routes are prefixed with `/api/admin` and protected by `requireAdmin` 
 - `requireOwner` gates privilege delegation endpoints to site owners.
 - Bootstrap behavior: when no owner exists yet, admin users can only call `grant-owner` to establish the first owner.
 
-## OSRM Integration (planned)
-- `OSRM_URL` is provided in `compose.yaml` but not used yet.
-- For routing, OSRM `/route/v1/foot` can provide steps and geometry.
+## OSRM and Safety Integration
+- `OSRM_URL` is provided in `compose.yaml` and is used by `/api/osrm/route` to
+  proxy walking routes from the OSRM container.
+- `GET /api/safety/well-lit-paths` returns manually curated well-lit path
+  segments as both row metadata and a GeoJSON `FeatureCollection`.
+- The safety path data is not yet used to alter OSRM route selection; it is
+  currently available for map overlays and future route preference logic.
 
 ## Local Development
 ```bash
@@ -198,4 +204,6 @@ The API allows credentials for local frontend origins and `FRONTEND_URL`
 - Legacy location text search via `/api/locations?search=` was removed in favor of `/api/search`.
 - There is no frontend wiring yet for location custom lists/recently viewed/share links.
 - There is no frontend admin management UI yet for owner/admin assignment.
+- Well-lit path data is exposed through the API, but no backend route scoring or
+  filtering uses it yet.
 - Role-based access checks for non-admin routes (student/faculty/visitor-specific behavior) are still limited.

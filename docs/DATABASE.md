@@ -38,9 +38,12 @@ container starts.
 - `location_list_items` - join table linking custom lists to locations.
 - `recently_viewed_locations` - per-user recency log for viewed places.
 - `reports` - user-submitted reports.
+- `well_lit_paths` - curated sidewalk/street `LineString` geometry for safer
+  campus walking overlays and future route preference logic.
 
 ## Geospatial Notes
 - `locations.coordinates` uses SRID 4326 (lat/lng).
+- `well_lit_paths.geom` uses SRID 4326 `LineString` geometry in lon/lat order.
 - Use PostGIS helpers like `ST_AsGeoJSON`, `ST_DWithin`, and `ST_Distance` for map queries.
 
 ## ID Strategy
@@ -64,5 +67,7 @@ container starts.
   `location_lists`, `location_list_items`, and `recently_viewed_locations`.
 - Existing environments can apply `database/migration_event_details.sql` to drop
   `events.organizer_id` and add `event_details`.
+- Add curated safety segments through `database/well_lit_paths_seed.sql` and
+  apply that SQL after the base schema exists.
 - There is no migration tool yet; update `database/init.sql` directly and document
   decisions in `docs/DECISIONS.md`.

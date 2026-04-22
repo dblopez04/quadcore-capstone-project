@@ -18,6 +18,29 @@ Decision:
 
 Consequences:
 
+## 2026-04-20 - Store Well-Lit Walking Segments in PostGIS and Expose a Public Safety API
+Status: accepted
+
+Context:
+The app needs a place to store campus-specific safety knowledge, beginning with
+well-lit sidewalks and streets that are not represented as a first-class routing
+signal in OpenStreetMap or OSRM. Team members need a repeatable way to seed and
+query that data without hard-coding path lists into frontend components.
+
+Decision:
+Add a `well_lit_paths` PostGIS table with `LINESTRING` geometry plus metadata
+(`name`, `path_type`, `lighting_level`, `is_preferred`, and `notes`). Add a
+template seed file at `database/well_lit_paths_seed.sql` for manual segment
+entry, and expose a public backend endpoint at `GET /api/safety/well-lit-paths`
+that returns both record metadata and a GeoJSON `FeatureCollection`.
+
+Consequences:
+Well-lit segments now have a canonical storage model and can be displayed in the
+map UI or used by future routing-preference logic. The team still needs to enter
+actual coordinates for campus segments, and OSRM does not yet automatically
+prefer those paths during route generation. Existing databases need
+`database/migration_well_lit_paths.sql` before the seed file can be applied.
+
 ## 2026-03-18 - Drop Event Organizer and Store Import Metadata in `event_details`
 Status: accepted
 
