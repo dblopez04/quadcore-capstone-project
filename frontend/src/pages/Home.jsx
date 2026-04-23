@@ -23,6 +23,21 @@ const secondaryBtn = {
     cursor: "pointer",
 };
 
+const videoSection = {
+    marginBottom: "2.5rem",
+};
+
+const videoFrame = {
+    width: "100%",
+    maxWidth: "780px",
+    aspectRatio: "16 / 9",
+    display: "block",
+    margin: "0 auto",
+    border: "1px solid var(--border)",
+    borderRadius: "14px",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+};
+
 const actionCard = {
     padding: "1.25rem",
     background: "var(--surface)",
@@ -60,28 +75,6 @@ const viewAllBtn = {
     fontWeight: 700,
     cursor: "pointer",
     fontSize: "0.95rem",
-};
-
-const eventCard = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "20px 22px",
-    borderRadius: 18,
-    border: "1px solid var(--border)",
-    background: "var(--surface)",
-    boxShadow: "0 8px 22px rgba(0,0,0,0.06)",
-    cursor: "pointer",
-    transition: "transform 0.18s ease, box-shadow 0.18s ease",
-    marginBottom: 14,
-};
-
-const eventTitle = {
-    fontSize: 18,
-    fontWeight: 700,
-    lineHeight: 1.2,
-    color: "var(--text)",
-    margin: 0,
 };
 
 const calendarHeader = {
@@ -318,31 +311,6 @@ export default function Home() {
         return grouped;
     }, [registeredEvents]);
 
-    const groupedEvents = useMemo(() => {
-        const groups = {};
-
-        registeredEvents.forEach((event) => {
-            if (!event.date) return;
-
-            const d = new Date(event.date);
-            if (isNaN(d)) return;
-
-            const dayKey = d.toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "short",
-                day: "numeric",
-            });
-
-            if (!groups[dayKey]) {
-                groups[dayKey] = [];
-            }
-
-            groups[dayKey].push(event);
-        });
-
-        return groups;
-    }, [registeredEvents]);
-
     return (
         <section style={{ padding: "2rem", maxWidth: "1000px", margin: "0 auto 3rem" }}>
             {/* HERO SECTION */}
@@ -370,6 +338,19 @@ export default function Home() {
                         Use My Location
                     </button>
                 </div>
+            </div>
+
+            {/* INTRO VIDEO */}
+            <div style={videoSection}>
+                <iframe
+                    style={videoFrame}
+                    src="https://www.youtube.com/embed/uoXEPKsCx3c?si=gRVHRLyugGJM15Wv"
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                />
             </div>
 
             {/* QUICK ACTIONS */}
