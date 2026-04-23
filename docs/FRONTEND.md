@@ -37,6 +37,8 @@
 - Events support save/unsave actions and per-saved-event email reminder toggles.
 - Settings loads and updates the account email used for event-related emails,
   supports password-reset requests, and stores local route/map preferences.
+- The events page lets signed-in users subscribe or unsubscribe from weekly email
+  digests for event categories returned by the event list.
 - Event normalization must coerce `details` payloads into plain text before rendering; `details` objects are for metadata, not direct JSX output.
 - `/admin` now fronts the full admin backend surface: locations, POIs, events, reports, and owner-only privilege delegation.
 

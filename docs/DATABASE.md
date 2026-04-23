@@ -23,7 +23,7 @@
 ## Main Tables
 - Auth: `users`, `students`, `faculty`, `visitors`, `admin`, `password_reset_tokens`
 - Places: `locations`, `points_of_interest`
-- Events: `events`, `event_details`, `event_registrations`, `event_bookmarks`, `event_tags`, `event_tag_assignments`, `event_reminders`
+- Events: `events`, `event_details`, `event_registrations`, `event_bookmarks`, `event_tags`, `event_tag_assignments`, `event_reminders`, `event_category_subscriptions`
 - Saved places: `location_bookmarks`, `location_lists`, `location_list_items`, `recently_viewed_locations`
 - Reporting: `reports`
 
@@ -31,6 +31,7 @@
 - Place geometry uses PostGIS `Point` with SRID 4326.
 - Primary keys use `gen_random_uuid()`.
 - `password_reset_tokens` stores a SHA-256 hash of each reset token plus expiry and used timestamps.
+- `event_category_subscriptions` stores one weekly digest subscription per user and event category.
 - `database/seed_locations.sql` is safe to re-run for demo data.
 - `scripts/scrape_unt_events.py` may create missing `locations` rows for matched UNT event venues.
 - There is no formal migration framework yet.

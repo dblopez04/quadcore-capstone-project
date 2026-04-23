@@ -11,6 +11,7 @@ const defineEventDetail = require('./eventDetail.model');
 const defineEventRegistration = require('./eventRegistration.model');
 const defineEventBookmark = require('./eventBookmark.model');
 const defineEventReminder = require('./eventReminder.model');
+const defineEventCategorySubscription = require('./eventCategorySubscription.model');
 const defineLocationBookmark = require('./locationBookmark.model');
 const defineLocationList = require('./locationList.model');
 const defineLocationListItem = require('./locationListItem.model');
@@ -34,6 +35,7 @@ db.EventDetail = defineEventDetail(sequelize, Sequelize.DataTypes);
 db.EventRegistration = defineEventRegistration(sequelize, Sequelize.DataTypes);
 db.EventBookmark = defineEventBookmark(sequelize, Sequelize.DataTypes);
 db.EventReminder = defineEventReminder(sequelize, Sequelize.DataTypes);
+db.EventCategorySubscription = defineEventCategorySubscription(sequelize, Sequelize.DataTypes);
 db.LocationBookmark = defineLocationBookmark(sequelize, Sequelize.DataTypes);
 db.LocationList = defineLocationList(sequelize, Sequelize.DataTypes);
 db.LocationListItem = defineLocationListItem(sequelize, Sequelize.DataTypes);
@@ -78,6 +80,10 @@ db.User.hasMany(db.EventReminder, { foreignKey: 'user_id', onDelete: 'CASCADE' }
 db.EventReminder.belongsTo(db.User, { foreignKey: 'user_id' });
 db.Event.hasMany(db.EventReminder, { foreignKey: 'event_id', onDelete: 'CASCADE' });
 db.EventReminder.belongsTo(db.Event, { foreignKey: 'event_id' });
+
+// Event category subscription associations
+db.User.hasMany(db.EventCategorySubscription, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+db.EventCategorySubscription.belongsTo(db.User, { foreignKey: 'user_id' });
 
 // Location bookmark associations
 db.User.hasMany(db.LocationBookmark, { foreignKey: 'user_id', onDelete: 'CASCADE' });

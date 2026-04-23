@@ -27,7 +27,9 @@ map views, event support, and future accessibility/safety routing.
 - Event registrations can also trigger a confirmation email through Resend when email delivery is configured.
 - Backend exposes auth, user, search, locations, events, and admin route groups.
 - Search, location bookmarks/lists, event bookmarks/registrations/reminders, and
-  admin CRUD flows exist in the API.
+  event category digest subscriptions exist in the API.
+- Weekly event category digest emails can be sent through the backend digest runner.
+- Admin CRUD flows exist in the API.
 - Swagger is generated from route files.
 
 ## Known Gaps

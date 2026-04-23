@@ -35,6 +35,25 @@ export async function fetchRegisteredEvents() {
     });
 }
 
+export async function fetchEventCategorySubscriptions() {
+    return apiRequest("/api/events/category-subscriptions", {
+        method: "GET",
+    });
+}
+
+export async function subscribeToEventCategory(eventType) {
+    return apiRequest("/api/events/category-subscriptions", {
+        method: "POST",
+        body: JSON.stringify({ event_type: eventType }),
+    });
+}
+
+export async function unsubscribeFromEventCategory(subscriptionId) {
+    return apiRequest(`/api/events/category-subscriptions/${subscriptionId}`, {
+        method: "DELETE",
+    });
+}
+
 export async function unregisterFromEvent(eventId) {
     return apiRequest(`/api/events/${eventId}/register`, {
         method: "DELETE",
