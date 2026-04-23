@@ -3,6 +3,7 @@ const { Op } = require("sequelize");
 
 const Event = db.Event;
 const EventBookmark = db.EventBookmark;
+const EventCategorySubscription = db.EventCategorySubscription;
 const EventDetail = db.EventDetail;
 const EventRegistration = db.EventRegistration;
 const EventReminder = db.EventReminder;
@@ -16,6 +17,8 @@ const parseList = (value) => {
         .map((item) => item.trim())
         .filter(Boolean);
 };
+
+const normalizeEventType = (value) => String(value || "").trim();
 
 const buildDateRange = (start, end) => {
     if (!start && !end) return { where: {} };
@@ -263,6 +266,76 @@ exports.getRegistrations = async (req, res) => {
         res.send({ events });
     } catch (err) {
         res.status(500).send({ message: err.message || "Error retrieving registrations." });
+    }
+};
+
+exports.getCategorySubscriptions = async (req, res) => {
+    try {
+        const subscriptions = await EventCategorySubscription.findAll({
+            where: { user_id: req.user_id },
+            order: [["event_type", "ASC"]],
+        });
+
+        res.send({
+            subscriptions: subscriptions.map((subscription) => ({
+                subscription_id: subscription.subscription_id,
+                event_type: subscription.event_type,
+                last_digest_sent_at: subscription.last_digest_sent_at,
+                created_at: subscription.created_at,
+            })),
+        });
+    } catch (err) {
+        res.status(500).send({ message: err.message || "Error retrieving category subscriptions." });
+    }
+};
+
+exports.createCategorySubscription = async (req, res) => {
+    try {
+        const eventType = normalizeEventType(req.body.event_type || req.body.category);
+
+        if (!eventType) {
+            return res.status(400).send({ message: "event_type is required." });
+        }
+
+        if (eventType.length > 255) {
+            return res.status(400).send({ message: "event_type must be 255 characters or fewer." });
+        }
+
+        const [subscription, created] = await EventCategorySubscription.findOrCreate({
+            where: { user_id: req.user_id, event_type: eventType },
+            defaults: { user_id: req.user_id, event_type: eventType },
+        });
+
+        return res.status(created ? 201 : 200).send({
+            message: created ? "Category subscription created." : "Already subscribed to this category.",
+            subscription: {
+                subscription_id: subscription.subscription_id,
+                event_type: subscription.event_type,
+                last_digest_sent_at: subscription.last_digest_sent_at,
+                created_at: subscription.created_at,
+            },
+        });
+    } catch (err) {
+        return res.status(500).send({ message: err.message || "Error creating category subscription." });
+    }
+};
+
+exports.deleteCategorySubscription = async (req, res) => {
+    try {
+        const deleted = await EventCategorySubscription.destroy({
+            where: {
+                subscription_id: req.params.subscriptionId,
+                user_id: req.user_id,
+            },
+        });
+
+        if (deleted === 0) {
+            return res.status(404).send({ message: "Category subscription not found." });
+        }
+
+        return res.send({ message: "Category subscription removed." });
+    } catch (err) {
+        return res.status(500).send({ message: err.message || "Error removing category subscription." });
     }
 };
 

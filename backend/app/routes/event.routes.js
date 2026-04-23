@@ -96,6 +96,27 @@ const { verifyToken } = require("../middleware/auth.middleware");
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/EventReminder'
+ *     EventCategorySubscription:
+ *       type: object
+ *       properties:
+ *         subscription_id:
+ *           type: string
+ *           format: uuid
+ *         event_type:
+ *           type: string
+ *         last_digest_sent_at:
+ *           type: string
+ *           format: date-time
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *     EventCategorySubscriptionListResponse:
+ *       type: object
+ *       properties:
+ *         subscriptions:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/EventCategorySubscription'
  */
 
 /**
@@ -143,6 +164,42 @@ router.get("/bookmarks", verifyToken, controller.getBookmarkedEvents);
  *       - cookieAuth: []
  */
 router.get("/registrations", verifyToken, controller.getRegistrations);
+
+/**
+ * @swagger
+ * /api/events/category-subscriptions:
+ *   get:
+ *     summary: Get weekly digest category subscriptions for the current user
+ *     tags:
+ *       - Events
+ *     security:
+ *       - cookieAuth: []
+ */
+router.get("/category-subscriptions", verifyToken, controller.getCategorySubscriptions);
+
+/**
+ * @swagger
+ * /api/events/category-subscriptions:
+ *   post:
+ *     summary: Subscribe to weekly email digests for an event category
+ *     tags:
+ *       - Events
+ *     security:
+ *       - cookieAuth: []
+ */
+router.post("/category-subscriptions", verifyToken, controller.createCategorySubscription);
+
+/**
+ * @swagger
+ * /api/events/category-subscriptions/{subscriptionId}:
+ *   delete:
+ *     summary: Remove a weekly digest category subscription
+ *     tags:
+ *       - Events
+ *     security:
+ *       - cookieAuth: []
+ */
+router.delete("/category-subscriptions/:subscriptionId", verifyToken, controller.deleteCategorySubscription);
 
 /**
  * @swagger

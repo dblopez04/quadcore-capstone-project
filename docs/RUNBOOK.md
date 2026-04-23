@@ -43,6 +43,18 @@ npm test
 npm run test:coverage
 ```
 
+Weekly event category digests:
+```bash
+cd backend
+npm run send:event-digests -- --dry-run
+npm run send:event-digests
+```
+
+Notes:
+- Digest emails use `RESEND_API_KEY` and `RESEND_FROM_EMAIL`.
+- `WEEKLY_DIGEST_WINDOW_DAYS` controls the upcoming event window; the default is 7 days.
+- Schedule `npm run send:event-digests` weekly with cron or the deployment scheduler.
+
 ## Map Refresh
 Linux:
 ```bash

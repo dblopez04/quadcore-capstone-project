@@ -22,6 +22,7 @@
 - `RESEND_FROM_EMAIL`
 - `PASSWORD_RESET_URL_BASE`
 - `PASSWORD_RESET_TOKEN_TTL_MINUTES`
+- `WEEKLY_DIGEST_WINDOW_DAYS`
 - `OSRM_URL`
 - `DB_CONNECT_MAX_ATTEMPTS`
 - `DB_CONNECT_RETRY_DELAY_MS`
@@ -35,7 +36,7 @@
 - `/api/user` - profile and search history
 - `/api/search` - federated search across locations and POIs
 - `/api/locations` - list, detail, share links, bookmarks, recently viewed, custom lists
-- `/api/events` - event listing plus bookmarks, registrations, reminders, conflicts, tags
+- `/api/events` - event listing plus bookmarks, registrations, reminders, conflicts, category subscriptions, tags
 - `/api/admin` - admin CRUD for locations, POIs, events, reports, and owner/admin delegation
 - `/healthz` - liveness check
 
@@ -47,6 +48,8 @@
 - First-owner bootstrap logic exists for owner assignment.
 - Password reset uses single-use hashed reset tokens stored outside the `users` table.
 - Reset emails are delivered through Resend and point users to the frontend reset page.
+- Weekly event category digests use the same Resend configuration and can be run with
+  `npm run send:event-digests` from `backend/`.
 
 ## Tests
 Run from `backend/`:

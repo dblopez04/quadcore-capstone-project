@@ -4,6 +4,9 @@ import {
     fetchEvents,
     registerForEvent,
     fetchRegisteredEvents,
+    fetchEventCategorySubscriptions,
+    subscribeToEventCategory,
+    unsubscribeFromEventCategory,
     unregisterFromEvent,
 } from "../api/eventService";
 
@@ -235,6 +238,9 @@ export default function Events() {
     const [feedback, setFeedback] = useState("");
     const [registeredEventIds, setRegisteredEventIds] = useState(new Set());
     const [registeredEvents, setRegisteredEvents] = useState([]);
+    const [categorySubscriptions, setCategorySubscriptions] = useState([]);
+    const [categorySubscriptionsLoaded, setCategorySubscriptionsLoaded] = useState(false);
+    const [subscriptionBusyCategory, setSubscriptionBusyCategory] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const eventsPerPage = 12;
 
@@ -282,6 +288,13 @@ export default function Events() {
         return Array.from(new Set(allEvents.map((event) => event.category).filter(Boolean)))
             .sort((a, b) => a.localeCompare(b));
     }, [allEvents]);
+
+    const categorySubscriptionByType = useMemo(() => {
+        return new Map(categorySubscriptions.map((subscription) => [
+            subscription.event_type,
+            subscription,
+        ]));
+    }, [categorySubscriptions]);
 
     async function loadEvents(filters = {}) {
         try {
@@ -334,6 +347,47 @@ export default function Events() {
         }
     }
 
+    async function loadCategorySubscriptions() {
+        try {
+            const data = await fetchEventCategorySubscriptions();
+            const raw = Array.isArray(data?.subscriptions) ? data.subscriptions : [];
+            setCategorySubscriptions(raw.filter((subscription) => subscription.event_type));
+        } catch (e) {
+            if (e?.status !== 401 && e?.status !== 403) {
+                console.error("Failed to load category subscriptions:", e);
+            }
+            setCategorySubscriptions([]);
+        } finally {
+            setCategorySubscriptionsLoaded(true);
+        }
+    }
+
+    async function handleToggleCategorySubscription(category) {
+        const existingSubscription = categorySubscriptionByType.get(category);
+
+        try {
+            setSubscriptionBusyCategory(category);
+            setFeedback("");
+
+            if (existingSubscription) {
+                await unsubscribeFromEventCategory(existingSubscription.subscription_id);
+                setFeedback(`Weekly ${category} digest unsubscribed.`);
+            } else {
+                await subscribeToEventCategory(category);
+                setFeedback(`Weekly ${category} digest subscribed.`);
+            }
+
+            await loadCategorySubscriptions();
+        } catch (e) {
+            console.error(e);
+            setFeedback(e?.status === 401 || e?.status === 403
+                ? "Please log in to manage weekly digest subscriptions."
+                : "Failed to update weekly digest subscription.");
+        } finally {
+            setSubscriptionBusyCategory("");
+        }
+    }
+
     async function handleRegister(eventId) {
         try {
             setRegisteringId(eventId);
@@ -369,6 +423,7 @@ export default function Events() {
     useEffect(() => {
         loadEvents();
         loadRegisteredEvents();
+        loadCategorySubscriptions();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -673,6 +728,77 @@ export default function Events() {
                         Search
                     </button>
                 </form>
+
+                {categoryOptions.length > 0 && (
+                    <div
+                        style={{
+                            marginTop: "14px",
+                            padding: "14px",
+                            borderRadius: "12px",
+                            background: "var(--surface)",
+                            border: "1px solid var(--border)",
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                gap: 12,
+                                flexWrap: "wrap",
+                                marginBottom: 10,
+                            }}
+                        >
+                            <div>
+                                <div style={{ fontWeight: 700 }}>Weekly category digests</div>
+                                <div style={{ color: "var(--muted)", fontSize: 14, marginTop: 2 }}>
+                                    Subscribe to categories and get upcoming events by email each week.
+                                </div>
+                            </div>
+                            {categorySubscriptionsLoaded && categorySubscriptions.length > 0 && (
+                                <div style={{ color: "var(--muted)", fontSize: 14 }}>
+                                    {categorySubscriptions.length} active
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                            {categoryOptions.map((category) => {
+                                const isSubscribed = categorySubscriptionByType.has(category);
+                                const isBusy = subscriptionBusyCategory === category;
+
+                                return (
+                                    <button
+                                        key={`subscription-${category}`}
+                                        type="button"
+                                        onClick={() => handleToggleCategorySubscription(category)}
+                                        disabled={isBusy}
+                                        style={{
+                                            padding: "8px 12px",
+                                            borderRadius: 999,
+                                            border: isSubscribed
+                                                ? "1px solid var(--unt-green)"
+                                                : "1px solid var(--border)",
+                                            background: isSubscribed
+                                                ? "var(--unt-green-50)"
+                                                : "var(--surface)",
+                                            color: isSubscribed ? "var(--unt-green)" : "var(--text)",
+                                            fontWeight: 700,
+                                            cursor: isBusy ? "not-allowed" : "pointer",
+                                            opacity: isBusy ? 0.7 : 1,
+                                        }}
+                                    >
+                                        {isBusy
+                                            ? "Updating..."
+                                            : isSubscribed
+                                                ? `${category} subscribed`
+                                                : `Subscribe ${category}`}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {feedback && (
                     <div
