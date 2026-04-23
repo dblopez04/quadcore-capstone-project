@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     bookmarkEvent,
@@ -34,6 +34,26 @@ function monthLabel(d) {
     return d.toLocaleString(undefined, { month: "long", year: "numeric" });
 }
 
+function formatTime(value) {
+    if (!value) return "N/A";
+
+    return new Date(value).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
+
+function formatEventDateTime(value) {
+    if (!value) return "N/A";
+
+    return new Date(value).toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
 function buildMonthGrid(viewDate) {
     const year = viewDate.getFullYear();
     const month = viewDate.getMonth();
@@ -230,6 +250,10 @@ function formatEventWindow(ev) {
     return `${ev.start ? new Date(ev.start).toLocaleString() : "Start: N/A"}${ev.end ? ` - ${new Date(ev.end).toLocaleString()}` : ""}`;
 }
 
+function isFeedbackError(message) {
+    return /failed|fail|not found|unable|error/i.test(message);
+}
+
 export default function Events() {
     const [events, setEvents] = useState([]);
     const [allEvents, setAllEvents] = useState([]);
@@ -250,10 +274,15 @@ export default function Events() {
     const [bookmarkedEvents, setBookmarkedEvents] = useState([]);
     const [emailRemindersByEventId, setEmailRemindersByEventId] = useState({});
     const [profileEmail, setProfileEmail] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const eventsPerPage = 12;
+
+    const eventCardRefs = useRef({});
 
     const navigate = useNavigate();
     const { showToast } = useToast();
     const guestMode = isGuestMode();
+    const allEventsRef = useRef(null);
 
     const eventDays = useMemo(() => {
         const s = new Set();
@@ -281,10 +310,31 @@ export default function Events() {
         return allEvents.filter((ev) => eventDateStr(ev.start) === selectedDate);
     }, [allEvents, selectedDate]);
 
+    const paginatedEvents = useMemo(() => {
+        const startIndex = (currentPage - 1) * eventsPerPage;
+        const endIndex = startIndex + eventsPerPage;
+        return events.slice(startIndex, endIndex);
+    }, [events, currentPage]);
+
+    const totalPages = Math.ceil(events.length / eventsPerPage);
+
     const categoryOptions = useMemo(() => {
         return Array.from(new Set(allEvents.map((event) => event.category).filter(Boolean)))
             .sort((a, b) => a.localeCompare(b));
     }, [allEvents]);
+
+    useEffect(() => {
+        if (totalPages === 0) {
+            if (currentPage !== 1) {
+                setCurrentPage(1);
+            }
+            return;
+        }
+
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
 
     async function loadEvents(filters = {}) {
         try {
@@ -558,6 +608,7 @@ export default function Events() {
         }
 
         setEvents(filtered);
+        setCurrentPage(1);
     };
 
     function handleViewOnMap(ev) {
@@ -577,6 +628,8 @@ export default function Events() {
         });
         navigate(`/map?${params.toString()}`);
     }
+
+    const todayStr = toDateStr(new Date());
 
     return (
         <div style={{ padding: "24px" }}>
@@ -613,19 +666,14 @@ export default function Events() {
             <div
                 style={{
                     margin: "16px 0 20px 0",
-                    padding: "16px",
-                    border: "1px solid #e5e5e5",
-                    borderRadius: "16px",
-                    background: "#fff",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                 }}
             >
                 <div
                     style={{
-                        padding: "12px",
-                        border: "1px solid #e5e5e5",
+                        padding: "16px",
                         borderRadius: "12px",
-                        background: "#fafafa",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
                     }}
                 >
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -649,19 +697,23 @@ export default function Events() {
                     {selectedDate && (
                         <div
                             style={{
-                                marginTop: 14,
-                                padding: "12px",
-                                border: "1px solid #e5e5e5",
-                                borderRadius: 12,
-                                background: "#f9fbf9",
+                                marginTop: 18,
+                                paddingTop: "12px",
+                                borderTop: "1px solid var(--border)",
                             }}
                         >
                             <div style={{ fontWeight: 700, marginBottom: 8 }}>
-                                Events on {selectedDate}
+                                Events on{" "}
+                                {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
+                                    weekday: "long",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                })}
                             </div>
 
                             {selectedDateEvents.length === 0 ? (
-                                <div style={{ fontSize: 14, color: "#666" }}>
+                                <div style={{ fontSize: 14, color: "var(--muted)" }}>
                                     No events scheduled for this date.
                                 </div>
                             ) : (
@@ -669,17 +721,36 @@ export default function Events() {
                                     {selectedDateEvents.map((ev) => (
                                         <div
                                             key={`calendar-${ev.id}`}
+                                            onClick={() => {
+                                                setEvents(allEvents.filter((eventItem) => eventDateStr(eventItem.start) === selectedDate));
+                                                setCurrentPage(1);
+                                                allEventsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                            }}
                                             style={{
                                                 padding: "10px 12px",
                                                 borderRadius: 10,
-                                                background: "#fff",
-                                                border: "1px solid #e5e5e5",
+                                                background: "var(--surface)",
+                                                border: "1px solid var(--border)",
+                                                cursor: "pointer",
+                                                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+                                                transition: "transform 0.15s ease, box-shadow 0.15s ease",
                                             }}
                                         >
                                             <div style={{ fontWeight: 600 }}>{ev.title}</div>
-                                            <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
-                                                {formatEventWindow(ev)}
+                                            <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>
+                                                {formatTime(ev.start)}
+                                                {ev.end ? ` - ${formatTime(ev.end)}` : ""}
                                             </div>
+                                            <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 2 }}>
+                                                {formatEventLocation(ev)}
+                                            </div>
+                                            {ev.description && (
+                                                <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, lineHeight: 1.4 }}>
+                                                    {ev.description.length > 120
+                                                        ? `${ev.description.slice(0, 120)}...`
+                                                        : ev.description}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -697,7 +768,7 @@ export default function Events() {
                         }}
                     >
                         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                            <div key={d} style={{ fontWeight: 700, textAlign: "center", opacity: 0.75 }}>
+                            <div key={d} style={{ fontWeight: 700, textAlign: "center", color: "var(--muted)" }}>
                                 {d}
                             </div>
                         ))}
@@ -708,6 +779,7 @@ export default function Events() {
                             const dStr = toDateStr(dateObj);
                             const hasEvent = eventDays.has(dStr);
                             const isSelected = selectedDate === dStr;
+                            const isToday = dStr === todayStr;
 
                             return (
                                 <button
@@ -715,18 +787,26 @@ export default function Events() {
                                     onClick={() => {
                                         setSelectedDate(dStr);
                                         setEvents(allEvents.filter((ev) => eventDateStr(ev.start) === dStr));
+                                        setCurrentPage(1);
                                     }}
                                     style={{
                                         padding: "10px 0",
                                         borderRadius: 10,
-                                        border: "1px solid #ddd",
+                                        border: isSelected
+                                            ? "2px solid var(--unt-green)"
+                                            : isToday
+                                                ? "2px solid #1d4ed8"
+                                                : "1px solid var(--border)",
                                         cursor: "pointer",
                                         fontWeight: 700,
+                                        color: "var(--text)",
                                         background: isSelected
-                                            ? "rgba(0, 128, 0, 0.18)"
-                                            : hasEvent
-                                                ? "rgba(0, 128, 0, 0.10)"
-                                                : "white",
+                                            ? "var(--unt-green-50)"
+                                            : isToday
+                                                ? "rgba(29, 78, 216, 0.12)"
+                                                : hasEvent
+                                                    ? "var(--surface)"
+                                                    : "var(--surface)",
                                     }}
                                 >
                                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.1 }}>
@@ -758,6 +838,7 @@ export default function Events() {
                             onClick={() => {
                                 setSelectedDate("");
                                 setEvents(allEvents);
+                                setCurrentPage(1);
                             }}
                             style={{ padding: "6px 10px", borderRadius: 8 }}
                         >
@@ -789,7 +870,9 @@ export default function Events() {
                             padding: "10px",
                             flex: 1,
                             borderRadius: "8px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--input-border)",
+                            background: "var(--input-bg)",
+                            color: "var(--input-text)",
                         }}
                     />
 
@@ -799,7 +882,9 @@ export default function Events() {
                         style={{
                             padding: "10px",
                             borderRadius: "8px",
-                            border: "1px solid #ddd",
+                            border: "1px solid var(--input-border)",
+                            background: "var(--input-bg)",
+                            color: "var(--input-text)",
                             minWidth: "160px",
                         }}
                     >
@@ -810,33 +895,43 @@ export default function Events() {
                             </option>
                         ))}
                     </select>
-                    <button type="submit" style={{ padding: "10px 14px", borderRadius: "8px" }}>
+                    <button
+                        type="submit"
+                        style={{
+                            padding: "10px 14px",
+                            borderRadius: "8px",
+                            background: "var(--unt-green)",
+                            color: "#fff",
+                            border: "none",
+                            fontWeight: 600,
+                        }}
+                    >
                         Search
                     </button>
                 </form>
-            </div>
 
-            {feedback && (
-                <div
-                    style={{
-                        margin: "12px 0",
-                        padding: "10px 12px",
-                        borderRadius: 10,
-                        background: feedback.toLowerCase().includes("failed") || feedback.toLowerCase().includes("not")
-                            ? "#fdecec"
-                            : "#edf7ed",
-                        border: feedback.toLowerCase().includes("failed") || feedback.toLowerCase().includes("not")
-                            ? "1px solid #f5c2c7"
-                            : "1px solid #b7dfb9",
-                        color: feedback.toLowerCase().includes("failed") || feedback.toLowerCase().includes("not")
-                            ? "#842029"
-                            : "#1e4620",
-                        fontSize: 14,
-                    }}
-                >
-                    {feedback}
-                </div>
-            )}
+                {feedback && (
+                    <div
+                        style={{
+                            margin: "12px 0",
+                            padding: "10px 12px",
+                            borderRadius: 10,
+                            background: isFeedbackError(feedback)
+                                ? "rgba(220, 38, 38, 0.10)"
+                                : "var(--unt-green-50)",
+                            border: isFeedbackError(feedback)
+                                ? "1px solid rgba(220, 38, 38, 0.35)"
+                                : "1px solid var(--border)",
+                            color: isFeedbackError(feedback)
+                                ? "#dc2626"
+                                : "var(--unt-green)",
+                            fontSize: 14,
+                        }}
+                    >
+                        {feedback}
+                    </div>
+                )}
+            </div>
 
             {!guestMode && (
                 <div
@@ -924,9 +1019,9 @@ export default function Events() {
                     style={{
                         margin: "16px 0 20px 0",
                         padding: "16px",
-                        border: "1px solid #e5e5e5",
+                        border: "1px solid var(--border)",
                         borderRadius: "16px",
-                        background: "#fff",
+                        background: "var(--surface)",
                         boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                     }}
                 >
@@ -935,21 +1030,59 @@ export default function Events() {
                         {registeredEvents.map((ev) => (
                             <div
                                 key={`registered-${ev.id}`}
+                                onClick={() => {
+                                    const matchingIndex = events.findIndex((eventItem) => eventItem.id === ev.id);
+
+                                    if (matchingIndex !== -1) {
+                                        const pageForEvent = Math.floor(matchingIndex / eventsPerPage) + 1;
+                                        setCurrentPage(pageForEvent);
+
+                                        setTimeout(() => {
+                                            eventCardRefs.current[ev.id]?.scrollIntoView({
+                                                behavior: "smooth",
+                                                block: "center",
+                                            });
+                                        }, 100);
+                                    } else {
+                                        allEventsRef.current?.scrollIntoView({
+                                            behavior: "smooth",
+                                            block: "start",
+                                        });
+                                    }
+                                }}
                                 style={{
-                                    border: "1px solid #e5e5e5",
+                                    border: "1px solid var(--border)",
                                     borderRadius: "12px",
                                     padding: "14px",
-                                    background: "#f9fbf9",
+                                    background: "var(--surface)",
+                                    cursor: "pointer",
                                 }}
                             >
                                 <div style={{ fontWeight: 700 }}>{ev.title}</div>
-                                <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
-                                    {formatEventWindow(ev)}
+                                <div style={{ fontSize: "14px", color: "var(--muted)", marginTop: 6 }}>
+                                    {ev.start ? formatTime(ev.start) : "Start: N/A"}
+                                    {ev.end ? ` - ${formatTime(ev.end)}` : ""}
                                 </div>
-                                <div style={{ fontSize: "14px", color: "#555", marginTop: 6 }}>
+                                <div style={{ fontSize: "14px", color: "var(--muted)", marginTop: 6 }}>
                                     {formatEventLocation(ev)}
                                 </div>
-                                <div style={{ marginTop: 12 }}>
+                                <div style={{ display: "flex", gap: "10px", marginTop: 12, flexWrap: "wrap" }}>
+                                    <button
+                                        onClick={() => handleViewOnMap(ev)}
+                                        disabled={!(ev.locationId || (ev.lat != null && ev.lng != null))}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: 10,
+                                            background: ev.locationId || (ev.lat != null && ev.lng != null) ? "#0a5" : "#aaa",
+                                            color: "white",
+                                            border: "none",
+                                            fontWeight: 600,
+                                            cursor: ev.locationId || (ev.lat != null && ev.lng != null) ? "pointer" : "not-allowed",
+                                        }}
+                                    >
+                                        View on Map
+                                    </button>
+
                                     <button
                                         onClick={() => handleUnregister(ev.id)}
                                         disabled={unregisteringId === ev.id}
@@ -978,9 +1111,9 @@ export default function Events() {
                         margin: "8px 0 14px 0",
                         padding: "10px 12px",
                         borderRadius: 10,
-                        background: "#f7f7f7",
-                        border: "1px solid #e5e5e5",
-                        color: "#444",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        color: "var(--text)",
                         fontSize: 14,
                     }}
                 >
@@ -990,7 +1123,9 @@ export default function Events() {
                     {selectedDate && <> on <strong>{selectedDate}</strong></>}
                 </div>
             )}
-            <h3 style={{ margin: "20px 0 12px 0" }}>All Events</h3>
+            <h3 ref={allEventsRef} style={{ margin: "20px 0 12px 0" }}>
+                All Events
+            </h3>
 
             {loading ? (
                 <p>Loading events...</p>
@@ -1000,7 +1135,7 @@ export default function Events() {
                 <p>No events found.</p>
             ) : (
                 <div style={{ display: "grid", gap: "12px" }}>
-                    {events.map((ev) => {
+                    {paginatedEvents.map((ev) => {
                         const canMap = Boolean(ev.locationId) || (ev.lat != null && ev.lng != null);
                         const isRegistered = registeredEventIds.has(ev.id);
                         const isBookmarked = bookmarkedEventIds.has(ev.id);
@@ -1010,11 +1145,14 @@ export default function Events() {
                         return (
                             <div
                                 key={ev.id}
+                                ref={(el) => {
+                                    if (el) eventCardRefs.current[ev.id] = el;
+                                }}
                                 style={{
-                                    border: "1px solid #e5e5e5",
+                                    border: "1px solid var(--border)",
                                     borderRadius: "16px",
                                     padding: "18px",
-                                    background: "white",
+                                    background: "var(--surface)",
                                     boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                                 }}
                             >
@@ -1028,7 +1166,7 @@ export default function Events() {
                                     }}
                                 >
                                     <div>
-                                        <h3 style={{ margin: 0, fontSize: "28px", lineHeight: 1.2 }}>
+                                        <h3 style={{ margin: 0, fontSize: "28px", lineHeight: 1.2, color: "var(--text)" }}>
                                             {ev.title}
                                         </h3>
 
@@ -1038,8 +1176,8 @@ export default function Events() {
                                                     display: "inline-block",
                                                     padding: "4px 10px",
                                                     borderRadius: "999px",
-                                                    background: "#eef6ff",
-                                                    color: "#1d4ed8",
+                                                    background: "var(--unt-green-50)",
+                                                    color: "var(--unt-green)",
                                                     fontSize: "12px",
                                                     fontWeight: 700,
                                                     letterSpacing: "0.3px",
@@ -1050,15 +1188,16 @@ export default function Events() {
                                             {isBookmarked && (
                                                 <div
                                                     style={{
-                                                        display: "inline-block",
-                                                        padding: "4px 10px",
-                                                        borderRadius: "999px",
-                                                        background: "#edf7ed",
-                                                        color: "#1e4620",
-                                                        fontSize: "12px",
-                                                        fontWeight: 700,
-                                                        letterSpacing: "0.3px",
-                                                    }}
+                                                    display: "inline-block",
+                                                    padding: "4px 10px",
+                                                    borderRadius: "999px",
+                                                    background: "var(--surface)",
+                                                    color: "var(--unt-green)",
+                                                    border: "1px solid var(--border)",
+                                                    fontSize: "12px",
+                                                    fontWeight: 700,
+                                                    letterSpacing: "0.3px",
+                                                }}
                                                 >
                                                     Saved
                                                 </div>
@@ -1066,15 +1205,15 @@ export default function Events() {
                                             {reminder && (
                                                 <div
                                                     style={{
-                                                        display: "inline-block",
-                                                        padding: "4px 10px",
-                                                        borderRadius: "999px",
-                                                        background: "#fff4e5",
-                                                        color: "#8a4b00",
-                                                        fontSize: "12px",
-                                                        fontWeight: 700,
-                                                        letterSpacing: "0.3px",
-                                                    }}
+                                                    display: "inline-block",
+                                                    padding: "4px 10px",
+                                                    borderRadius: "999px",
+                                                    background: "rgba(29, 78, 216, 0.12)",
+                                                    color: "#1d4ed8",
+                                                    fontSize: "12px",
+                                                    fontWeight: 700,
+                                                    letterSpacing: "0.3px",
+                                                }}
                                                 >
                                                     Email reminder on
                                                 </div>
@@ -1087,7 +1226,7 @@ export default function Events() {
                                     <p
                                         style={{
                                             margin: "14px 0 10px 0",
-                                            color: "#444",
+                                            color: "var(--text)",
                                             lineHeight: 1.7,
                                             fontSize: "15px",
                                         }}
@@ -1097,12 +1236,15 @@ export default function Events() {
                                 )}
 
                                 <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
-                                    <div style={{ fontSize: "14px", color: "#555" }}>
-                                        <strong>When:</strong> {formatEventWindow(ev)}
+                                    <div style={{ fontSize: "14px", color: "var(--muted)" }}>
+                                        <strong>When:</strong>{" "}
+                                        {ev.start ? formatEventDateTime(ev.start) : "Start: N/A"}
+                                        {ev.end ? ` - ${formatTime(ev.end)}` : ""}
                                     </div>
 
-                                    <div style={{ fontSize: "14px", color: "#555" }}>
-                                        <strong>Location:</strong> {formatEventLocation(ev)}
+                                    <div style={{ fontSize: "14px", color: "var(--muted)" }}>
+                                        <strong>Location:</strong>{" "}
+                                        {formatEventLocation(ev)}
                                     </div>
 
                                     {isBookmarked && (
@@ -1215,6 +1357,50 @@ export default function Events() {
                             </div>
                         );
                     })}
+                </div>
+            )}
+            {totalPages > 1 && (
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        gap: "8px",
+                        marginTop: "20px",
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        style={{
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            border: "1px solid #ddd",
+                            background: currentPage === 1 ? "#f3f3f3" : "white",
+                            cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                        }}
+                    >
+                        Prev
+                    </button>
+
+                    <span style={{ fontSize: "14px", color: "#444" }}>
+                        Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong>
+                    </span>
+
+                    <button
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        style={{
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            border: "1px solid #ddd",
+                            background: currentPage === totalPages ? "#f3f3f3" : "white",
+                            cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                        }}
+                    >
+                        Next
+                    </button>
                 </div>
             )}
         </div>

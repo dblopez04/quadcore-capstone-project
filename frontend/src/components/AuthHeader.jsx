@@ -18,7 +18,7 @@ export default function AuthHeader() {
                     alt="UNT"
                     style={{ height: 28 }}
                 />
-                <span style={{ fontWeight: 700 }}>Getting Around UNT</span>
+                <span style={{ fontWeight: 700 }}>Mean Green Guide</span>
             </div>
 
             <nav style={{ display: "flex", gap: 12 }}>

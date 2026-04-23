@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { requestPasswordReset } from "../api/auth";
+import useTheme from "../hooks/useTheme";
 
 export default function ForgotPasswordPage() {
+    const { theme } = useTheme();
     const navigate = useNavigate();
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
@@ -29,7 +31,8 @@ export default function ForgotPasswordPage() {
         <div
             style={{
                 minHeight: "100vh",
-                background: "#ffffff",
+                background: "var(--bg)",
+                color: "var(--text)",
                 display: "flex",
                 flexDirection: "column",
                 fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
@@ -50,7 +53,7 @@ export default function ForgotPasswordPage() {
             >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <img src="/UNT-logo2.png" alt="UNT" style={{ height: 28 }} />
-                    <span style={{ fontWeight: 800 }}>Getting Around UNT</span>
+                    <span style={{ fontWeight: 800 }}>Mean Green Guide</span>
                 </div>
             </div>
 
@@ -69,7 +72,9 @@ export default function ForgotPasswordPage() {
                         width: "100%",
                         maxWidth: 420,
                         textAlign: "center",
-                        background: "#fff",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        color: "var(--text)",
                         padding: 24,
                         borderRadius: 12,
                         boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
@@ -84,7 +89,7 @@ export default function ForgotPasswordPage() {
                     <h2 style={{ color: "#006A31", marginBottom: 12 }}>
                         Forgot Password
                     </h2>
-                    <p style={{ marginTop: 0, marginBottom: 20, color: "#555" }}>
+                    <p style={{ marginTop: 0, marginBottom: 20, color: "var(--muted)" }}>
                         Enter your email and we&apos;ll send you a password reset link.
                     </p>
 
@@ -98,10 +103,11 @@ export default function ForgotPasswordPage() {
                             width: "100%",
                             padding: 12,
                             marginBottom: 12,
-                            border: "1px solid #d9d9d9",
+                            border: "1px solid var(--input-border)",
                             borderRadius: 8,
                             fontSize: 16,
-                            backgroundColor: "#f9faff",
+                            backgroundColor: "var(--input-bg)",
+                            color: "var(--input-text)",
                         }}
                     />
 
@@ -120,7 +126,7 @@ export default function ForgotPasswordPage() {
                     </button>
 
                     {message && (
-                        <p style={{ marginTop: 0, marginBottom: 12, color: "#1f5f2c" }}>
+                        <p style={{ marginTop: 0, marginBottom: 12, color: "var(--unt-green)" }}>
                             {message}
                         </p>
                     )}

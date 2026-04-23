@@ -1,6 +1,7 @@
 ﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerRequest } from "../api/auth";
+import useTheme from "../hooks/useTheme";
 
 export default function Register() {
     const [email, setEmail] = useState("");
@@ -11,6 +12,7 @@ export default function Register() {
     const [userRole, setUserRole] = useState("STUDENT"); // default
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const { theme } = useTheme();
 
     const navigate = useNavigate();
 
@@ -42,11 +44,25 @@ export default function Register() {
         }
     };
 
+    const fieldStyle = {
+        width: "100%",
+        padding: "14px 16px",
+        marginBottom: 12,
+        border: "1px solid var(--input-border)",
+        borderRadius: 12,
+        fontSize: 16,
+        backgroundColor: "var(--input-bg)",
+        color: "var(--input-text)",
+        boxSizing: "border-box",
+        outline: "none",
+    };
+
     return (
         <div
             style={{
                 minHeight: "100vh",
-                background: "#ffffff",
+                background: "var(--bg)",
+                color:"var(--text)",
                 display: "flex",
                 flexDirection: "column",
                 fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
@@ -69,7 +85,7 @@ export default function Register() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     {/* logo lives in /public, so use absolute path */}
                     <img src="/UNT-logo2.png" alt="UNT" style={{ height: 28 }} />
-                    <span style={{ fontWeight: 800 }}>Getting Around UNT</span>
+                    <span style={{ fontWeight: 800 }}>Mean Green Guide</span>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
                     <a href="/help" style={{ color: "#fff", textDecoration: "none" }}>
@@ -94,7 +110,9 @@ export default function Register() {
                         width: "100%",
                         maxWidth: 480,
                         textAlign: "center",
-                        background: "#fff",
+                        background: "var(--surface)",
+                        border: "1px solid var(--border)",
+                        color: "var(--text)",
                         padding: 24,
                         borderRadius: 12,
                         boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
@@ -107,7 +125,7 @@ export default function Register() {
                         style={{ width: 120, margin: "0 auto 12px" }}
                     />
 
-                    <h2 style={{ color: "#006A31", marginBottom: 20 }}>
+                    <h2 style={{ color: "var(--unt-green)", marginBottom: 20 }}>
                         Create Your UNT Account
                     </h2>
 
@@ -118,15 +136,7 @@ export default function Register() {
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         required
-                        style={{
-                            width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
-                        }}
+                        style={fieldStyle}
                     />
 
                     {/* Last Name */}
@@ -136,15 +146,7 @@ export default function Register() {
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         required
-                        style={{
-                            width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
-                        }}
+                        style={fieldStyle}
                     />
 
                     {/* Email */}
@@ -154,15 +156,7 @@ export default function Register() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        style={{
-                            width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
-                        }}
+                        style={fieldStyle}
                     />
 
                     {/* Phone Number */}
@@ -171,30 +165,14 @@ export default function Register() {
                         placeholder="Phone Number"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
-                        style={{
-                            width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
-                        }}
+                        style={fieldStyle}
                     />
 
                     {/* Role */}
                     <select
                         value={userRole}
                         onChange={(e) => setUserRole(e.target.value)}
-                        style={{
-                            width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
-                        }}
+                        style={fieldStyle}
                     >
                         <option value="STUDENT">Student</option>
                         <option value="FACULTY">Faculty</option>
@@ -209,13 +187,8 @@ export default function Register() {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         style={{
-                            width: "100%",
-                            padding: 12,
+                            ...fieldStyle,
                             marginBottom: 16,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
-                            fontSize: 16,
-                            backgroundColor: "#f9faff",
                         }}
                     />
 

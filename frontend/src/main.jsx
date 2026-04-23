@@ -21,6 +21,21 @@ import Settings from './pages/Settings.jsx'
 import Events from './pages/Events.jsx'
 import { ToastProvider } from './components/ToastProvider'
 
+const savedTheme = window.localStorage.getItem("theme-preference");
+
+const resolvedTheme =
+    savedTheme === "dark"
+        ? "dark"
+        : savedTheme === "light"
+            ? "light"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+
+document.body.classList.remove("theme-light", "theme-dark");
+document.body.classList.add(resolvedTheme === "dark" ? "theme-dark" : "theme-light");
+document.body.style.colorScheme = resolvedTheme; 
+
 const router = createBrowserRouter([
     { path: '/', element: <Login /> },
     { path: '/register', element: <Register /> },
@@ -72,7 +87,7 @@ const router = createBrowserRouter([
     {
         path: '/admin',
         element: (
-            <Layout narrow>
+            <Layout>
                 <Admin />
             </Layout>
         ),

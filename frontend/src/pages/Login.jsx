@@ -47,7 +47,8 @@ export default function Login() {
         <div
             style={{
                 minHeight: "100vh",
-                background: "#ffffff",
+                background: "var(--bg)",
+                color: "var(--text)",
                 display: "flex",
                 flexDirection: "column",
                 fontFamily: "system-ui, Avenir, Helvetica, Arial, sans-serif",
@@ -69,7 +70,7 @@ export default function Login() {
             >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <img src="/UNT-logo2.png" alt="UNT" style={{ height: 28 }} />
-                    <span style={{ fontWeight: 800 }}>Getting Around UNT</span>
+                    <span style={{ fontWeight: 800 }}>Mean Green Guide</span>
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
                     <a href="/help" style={{ color: "#fff", textDecoration: "none" }}>
@@ -94,21 +95,31 @@ export default function Login() {
                         width: "100%",
                         maxWidth: 420,
                         textAlign: "center",
-                        background: "#fff",
-                        padding: 24,
-                        borderRadius: 12,
-                        boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+                        background: "var(--surface)",
+                        padding: "32px 24px",
+                        borderRadius: 18,
+                        border: "1px solid var(--border)",
+                        color: "var(--text)",
+                        boxShadow: "0 10px 28px rgba(0,0,0,0.08)",
                     }}
                 >
                     <img
                         src="/UNT-logo.png"
                         alt="UNT"
-                        style={{ width: 120, margin: "0 auto 12px" }}
+                        style={{ width: 110, margin: "0 auto 10px", display: "block" }}
                     />
 
-                    <h2 style={{ color: "#006A31", marginBottom: 20 }}>
-                        Getting Around UNT
-                    </h2>
+                    <h1
+                        style={{
+                            color: "#006A31",
+                            margin: "0 0 24px 0",
+                            fontSize: "1.8rem",
+                            fontWeight: 800,
+                            lineHeight: 1.2,
+                        }}
+                    >
+                        Mean Green Guide
+                    </h1>
 
                     {/* EMAIL INPUT */}
                     <input
@@ -119,12 +130,15 @@ export default function Login() {
                         required
                         style={{
                             width: "100%",
-                            padding: 12,
-                            marginBottom: 12,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
+                            padding: "14px 16px",
+                            marginBottom: 14,
+                            border: "1px solid var(--input-border)",
+                            borderRadius: 12,
                             fontSize: 16,
-                            backgroundColor: "#f9faff",
+                            backgroundColor: "var(--input-bg)",
+                            color: "var(--input-text)",
+                            boxSizing: "border-box",
+                            outline: "none",
                         }}
                     />
 
@@ -137,12 +151,14 @@ export default function Login() {
                         required
                         style={{
                             width: "100%",
-                            padding: 12,
-                            marginBottom: 16,
-                            border: "1px solid #d9d9d9",
-                            borderRadius: 8,
+                            padding: "14px 16px",
+                            marginBottom: 14,
+                            border: "1px solid #d0d5dd",
+                            borderRadius: 12,
                             fontSize: 16,
-                            backgroundColor: "#f9faff",
+                            backgroundColor: "#fff",
+                            boxSizing: "border-box",
+                            outline: "none",
                         }}
                     />
 
@@ -169,7 +185,8 @@ export default function Login() {
                         style={{
                             display: "flex",
                             justifyContent: "space-between",
-                            marginBottom: 12,
+                            alignItems: "center",
+                            marginBottom: 18,
                         }}
                     >
                         <a
@@ -177,17 +194,27 @@ export default function Login() {
                             style={{
                                 textDecoration: "none",
                                 fontWeight: 600,
-                                color: "#111",
+                                color: "var(--text)",
+                                fontSize: 15,
                             }}
                         >
                             Register
                         </a>
-                        <span
+                        <button
+                            type="button"
                             onClick={() => navigate("/forgot-password")}
-                            style={{ textDecoration: "none", color: "#666", cursor: "pointer" }}
+                            style={{
+                                background: "none",
+                                border: "none",
+                                padding: 0,
+                                color: "var(--muted)",
+                                cursor: "pointer",
+                                fontSize: 15,
+                                fontWeight: 500,
+                            }}
                         >
                             Forgot Password
-                        </span>
+                        </button>    
 
                     </div>
 
@@ -198,7 +225,9 @@ export default function Login() {
                         style={{
                             width: "100%",
                             fontSize: 16,
-                            fontWeight: 500,
+                            fontWeight: 600,
+                            borderRadius: 14,
+                            padding: "12px 16px",
                         }}
                     >
                         Continue as Guest

@@ -1,16 +1,7 @@
 {
   "ExpandedNodes": [
     "",
-    "\\backend\\app",
-    "\\backend\\app\\routes",
-    "\\database",
-    "\\frontend",
-    "\\frontend\\src",
-    "\\frontend\\src\\api",
-    "\\frontend\\src\\components",
-    "\\frontend\\src\\pages",
-    "\\frontend\\src\\utils"
+    "\\scripts"
   ],
-  "SelectedNode": "\\frontend\\src\\pages\\Bookmarks.jsx",
   "PreviewInSolutionExplorer": false
 }

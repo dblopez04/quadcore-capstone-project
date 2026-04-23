@@ -41,7 +41,7 @@ export default function Navbar() {
             <div className="nav-left" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <img src="/UNT-logo2.png" alt="UNT" style={{ height: 28 }} />
                 <span style={{ fontWeight: 800, letterSpacing: 0.2 }}>
-                    Getting Around UNT
+                    Mean Green Guide
                 </span>
             </div>
 

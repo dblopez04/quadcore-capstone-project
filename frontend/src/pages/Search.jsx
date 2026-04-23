@@ -7,6 +7,168 @@ import { useToast } from "../components/ToastProvider";
 import { apiRequest } from "../api/client";
 import { isGuestMode } from "../utils/authMode";
 
+const pageShellStyle = {
+    padding: "32px 20px 48px",
+    background: "var(--bg)",
+    color: "var(--text)",
+    minHeight: "100vh",
+    fontFamily: "system-ui, sans-serif",
+};
+
+const searchCardStyle = {
+    maxWidth: 980,
+    margin: "0 auto",
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
+    borderRadius: 24,
+    boxShadow: "0 12px 32px rgba(16, 24, 40, 0.08)",
+    padding: "32px",
+};
+
+const brandHeaderStyle = {
+    textAlign: "center",
+    marginBottom: 20,
+};
+
+const tabsWrapStyle = {
+    display: "flex",
+    justifyContent: "center",
+    gap: 12,
+    margin: "10px 0 30px",
+};
+
+const contentStackStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 24,
+};
+
+const sectionStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+};
+
+const sectionTitleStyle = {
+    margin: 0,
+    fontSize: 28,
+    fontWeight: 700,
+    color: "var(--text)",
+};
+
+const sectionSubtitleStyle = {
+    margin: 0,
+    fontSize: 15,
+    color: "var(--muted)",
+    lineHeight: 1.6,
+};
+
+const labelStyle = {
+    display: "block",
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: 600,
+    color: "var(--text)",
+};
+
+const selectStyle = {
+    width: "100%",
+    border: "1px solid var(--input-border)",
+    borderRadius: 14,
+    padding: "14px 16px",
+    fontSize: 15,
+    background: "var(--input-bg)",
+    color: "var(--input-text)",
+    boxShadow: "0 1px 2px rgba(16, 24, 40, 0.04)",
+};
+
+const subtleCardStyle = {
+    border: "1px solid var(--border)",
+    borderRadius: 18,
+    padding: "18px",
+    background: "var(--surface)",
+};
+
+const recentHeaderStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+};
+
+const recentChipStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "10px 14px",
+    borderRadius: 999,
+    border: "1px solid var(--border)",
+    background: "var(--unt-green-50)",
+    color: "var(--unt-green)",
+    fontWeight: 600,
+    cursor: "pointer",
+};
+
+const clearBtnStyle = {
+    border: "1px solid var(--border)",
+    background: "var(--surface)",
+    color: "var(--text)",
+    borderRadius: 999,
+    padding: "8px 14px",
+    cursor: "pointer",
+    fontWeight: 600,
+};
+
+const resultCardModernStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "18px 18px",
+    border: "1px solid var(--border)",
+    borderRadius: 18,
+    background: "var(--surface)",
+    boxShadow: "0 6px 18px rgba(16, 24, 40, 0.06)",
+};
+
+const filterRowStyle = {
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+};
+
+const filterBtnBaseStyle = {
+    borderRadius: 999,
+    padding: "10px 16px",
+    border: "1px solid var(--border)",
+    background: "var(--surface)",
+    color: "var(--text)",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+};
+
+const filterBtnActiveStyle = {
+    background: "var(--unt-green-50)",
+    border: "1px solid var(--unt-green)",
+    color: "var(--unt-green)",
+};
+
+const statusBoxStyle = {
+    border: "1px solid var(--border)",
+    borderRadius: 16,
+    padding: "16px 18px",
+    background: "var(--surface)",
+    color: "var(--muted)",
+    fontSize: 14,
+};
+
+const routesCardStyle = {
+    border: "1px solid var(--border)",
+    borderRadius: 20,
+    padding: "24px",
+    background: "var(--surface)",
+    boxShadow: "0 4px 14px rgba(16, 24, 40, 0.04)",
+};
+
 export default function Search() {
     const [tab, setTab] = useState("search");
     const filters = ["Dining", "Parking", "Accessibility Routes", "Well-Lit Paths"];
@@ -177,14 +339,14 @@ export default function Search() {
                     console.error("Failed to add to list:", err);
                 }
             }
-            
+
             setBookmarkedIds((prev) => {
                 const next = new Set(prev);
                 next.add(id);
                 return next;
             });
             showToast("Saved to bookmarks.", "success");
-            
+
         } catch (err) {
             showToast(err.message || "Failed to save bookmark.", "error");
         }
@@ -219,268 +381,310 @@ export default function Search() {
         }
     }
 
+
+
     return (
-        <div className="page" style={{ padding: 16, fontFamily: "system-ui" }}>
-            <header style={{ textAlign: "center", marginBottom: 12 }}>
-                <img src="/UNT-logo.png" alt="UNT" style={{ height: 40 }} />
-            </header>
+        <div className="page" style={pageShellStyle}>
+            <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+                <header style={brandHeaderStyle}>
+                    <img src="/UNT-logo.png" alt="UNT" style={{ height: 44, marginBottom: 8 }} />
+                </header>
 
-            {/* Tabs */}
-            <div className="tabs" role="tablist" aria-label="Search tabs">
-                <button
-                    className={`tab ${tab === "search" ? "active" : ""}`}
-                    role="tab"
-                    aria-selected={tab === "search"}
-                    onClick={() => setTab("search")}
-                >
-                    Search
-                </button>
-                <button
-                    className={`tab ${tab === "routes" ? "active" : ""}`}
-                    role="tab"
-                    aria-selected={tab === "routes"}
-                    onClick={() => setTab("routes")}
-                >
-                    Routes
-                </button>
-            </div>
+                {/* Tabs */}
+                <div style={tabsWrapStyle} className="tabs" role="tablist" aria-label="Search tabs">
+                    <button
+                        className={`tab ${tab === "search" ? "active" : ""}`}
+                        style={{ padding: "8px 18px" }}
+                        role="tab"
+                        aria-selected={tab === "search"}
+                        onClick={() => setTab("search")}
+                    >
+                        Search
+                    </button>
+                    <button
+                        className={`tab ${tab === "routes" ? "active" : ""}`}
+                        style={{ padding: "8px 18px" }}
+                        role="tab"
+                        aria-selected={tab === "routes"}
+                        onClick={() => setTab("routes")}
+                    >
+                        Routes
+                    </button>
+                </div>
 
-            <main style={{ maxWidth: 600, margin: "0 auto" }}>
-                {tab === "search" && (
-                    <>
-                        {/* Search input */}
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                border: "1px solid var(--border)",
-                                borderRadius: 8,
-                                padding: "8px 12px",
-                                marginBottom: 16,
-                            }}
-                        >
-                            <span style={{ fontSize: 18, marginRight: 8 }}>🔍</span>
-                            <input
-                                type="text"
-                                className="search-input"
-                                placeholder="Search for building or location"
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                style={{
-                                    flex: 1,
-                                    border: "none",
-                                    outline: "none",
-                                    fontSize: 16,
-                                }}
-                            />
-                            {query && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setQuery("");
-                                        setResults([]);
-                                    }}
+                <main style={searchCardStyle}>
+                    {tab === "search" && (
+                        <>
+                            {/* Search input */}
+                            <div style={sectionStyle}>
+                                <h2 style={sectionTitleStyle}>Search Campus</h2>
+                                <p style={sectionSubtitleStyle}>
+                                    Find buildings, dining, parking, and more across UNT.
+                                </p>
+
+                                <div
                                     style={{
-                                        marginLeft: 8,
-                                        border: "none",
-                                        background: "transparent",
-                                        cursor: "pointer",
-                                        fontSize: 18,
-                                        color: "#666",
-                                        padding: 0,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 12,
+                                        padding: "14px 16px",
+                                        borderRadius: 18,
+                                        background: "var(--surface)",
+                                        border: "1px solid var(--border)",
+                                        boxShadow: "0 6px 18px rgba(16, 24, 40, 0.06)",
                                     }}
-                                    title="Clear search"
                                 >
-                                    ×
-                                </button>
-                            )}
-                        </div>
-
-                        {!guestMode && bookmarkLists.length > 0 && (
-                            <div style={{ marginBottom: 16 }}>
-                                <label
-                                    htmlFor="bookmark-list-select"
-                                    style={{ display: "block", marginBottom: 6, fontSize: 14, color: "#666" }}
-                                >
-                                    Save new bookmarks to list
-                                </label>
-                                <select
-                                    id="bookmark-list-select"
-                                    className="search-input"
-                                    value={selectedListId}
-                                    onChange={(e) => setSelectedListId(e.target.value)}
-                                >
-                                    <option value="">All Bookmarks only</option>
-                                    {bookmarkLists.map((list) => (
-                                        <option key={list.list_id} value={list.list_id}>
-                                            {list.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-                        {/* Recent searches */}
-                        {recentSearches.length > 0 && (
-                            <div style={{ marginTop: -8, marginBottom: 16 }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <div style={{ fontSize: 13, color: "#777" }}>Recent</div>
-                                    <button
-                                        className="btn"
-                                        style={{ width: "auto", padding: "6px 10px" }}
-                                        type="button"
-                                        onClick={() => {
-                                            clearRecentSearches(); // remove from localStorage
-                                            setRecentSearches([]); // immediately update UI
-                                        }}
-                                    >
-                                        Clear
-                                    </button>
-                                </div>
-
-                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-                                    {recentSearches.map((term) => (
-                                        <button
-                                            key={term}
-                                            type="button"
-                                            className="pill"
-                                            style={{ cursor: "pointer", border: "1px solid var(--border)" }}
-                                            onClick={() => setQuery(term)}
-                                            title={`Search: ${term}`}
-                                        >
-                                            {term}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Status text */}
-                        {loading && <div style={{ marginBottom: 12, color: "#666" }}>Searching…</div>}
-                        {!loading && query.trim() && results.length > 0 && (
-                            <div style={{ marginBottom: 12, color: "#666", fontSize: 14 }}>
-                                {results.length} result{results.length !== 1 ? "s" : ""} found
-                            </div>
-                        )}
-
-                        {/* Results */}
-                        <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "grid", gap: 10 }}>
-                            {!loading && query.trim() && results.length === 0 && (
-                                <li style={{ padding: "10px 0", color: "#666" }}>No matches found.</li>
-                            )}
-
-                            {results.map((loc) => {
-                                console.log(loc);
-                                const locId = loc.location_id || loc.id;
-                                const isBookmarked = bookmarkedIds.has(locId);
-
-                                return (
-                                    <li
-                                        key={locId}
+                                    <span
                                         style={{
-                                            display: "flex",
-                                            justifyContent: "space-between",
+                                            display: "inline-flex",
                                             alignItems: "center",
-                                            padding: "14px 16px",
-                                            border: "1px solid rgba(0, 0, 0, 0.08)",
-                                            borderRadius: 14,
+                                            justifyContent: "center",
+                                            width: 34,
+                                            height: 34,
+                                            borderRadius: 999,
                                             background: "var(--bg)",
-                                            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                                            fontSize: "16px",
                                         }}
                                     >
-                                        {/* Select location */}
-                                        <button
-                                            onClick={() => handleSelect(loc)}
-                                            style={{
-                                                flex: 1,
-                                                border: "none",
-                                                background: "transparent",
-                                                cursor: "pointer",
-                                                textAlign: "left",
-                                                padding: 0,
-                                            }}
-                                        >
-                                            <div style={{ fontWeight: 600 }}>{loc.name}</div>
-                                            <div style={{ fontSize: 13, color: "#666", marginTop: 2 }}>
-                                                {isBookmarked ? "Saved in bookmarks" : "Tap to view on map"}
-                                            </div>
-                                        </button>
+                                        🔍
+                                    </span>
 
-                                        {/* Bookmark */}
-                                        <button
-                                            className="btn"
-                                            style={{
-                                                width: "auto",
-                                                marginLeft: 8,
-                                                background: isBookmarked ? "var(--unt-green)" : undefined,
-                                                color: isBookmarked ? "#fff" : undefined,
-                                                border: isBookmarked ? "1px solid var(--unt-green)" : undefined,
-                                            }}
-                                            onClick={() => (isBookmarked ? handleUnbookmark(loc) : handleBookmark(loc))}
-                                            disabled={guestMode}
-                                            title={
-                                                guestMode
-                                                    ? "Sign in to save bookmarks"
-                                                    : isBookmarked
-                                                        ? "Remove this bookmark"
-                                                        : "Save this location"
-                                            }
-                                        >
-                                            {guestMode ? "Sign in to bookmark" : isBookmarked ? "Remove Bookmark" : "Bookmark"}
-                                        </button>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-
-                        {/* Filters */}
-                        <h3 style={{ color: "#888", marginBottom: 10 }}>Filters</h3>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                            {filters.map((f) => {
-                                const isActive = activeFilter === f;
-
-                                return (
-                                    <button
-                                        key={f}
-                                        type="button"
-                                        className="pill"
-                                        onClick={() => setActiveFilter(isActive ? "" : f)}
+                                    <input
+                                        type="text"
+                                        className="search-plain-input"
+                                        placeholder="Search for buildings or locations..."
+                                        value={query}
+                                        onChange={(e) => setQuery(e.target.value)}
                                         style={{
-                                            cursor: "pointer",
-                                            border: isActive ? "1px solid var(--unt-green)" : "1px solid var(--border)",
-                                            background: isActive ? "rgba(0,106,49,0.12)" : undefined,
-                                            fontWeight: isActive ? 700 : 500,
+                                            all: "unset",
+                                            flex: 1,
+                                            width: "100%",
+                                            fontSize: "18px",
+                                            lineHeight: "28px",
+                                            color: "var(--input-text)",
+                                            padding: "8px 4px",
                                         }}
-                                        title={isActive ? `Remove ${f} filter` : `Apply ${f} filter`}
-                                    >
-                                        {isActive ? "✓" : "+"} {f}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        {activeFilter && (
-                            <div style={{ marginTop: 10, fontSize: 14, color: "#666" }}>
-                                Active filter: <strong>{activeFilter}</strong>
-                            </div>
-                        )}
-                    </>
-                )}
+                                    />
 
-                {tab === "routes" && (
-                    <div className="panel">
-                        <h3 style={{ marginTop: 0 }}>Plan a route</h3>
-                        <div style={{ display: "grid", gap: 8 }}>
-                            <input className="search-input" placeholder="From…" />
-                            <input className="search-input" placeholder="To…" />
+                                    {query && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setQuery("");
+                                                setResults([]);
+                                            }}
+                                            style={{
+                                                border: "none",
+                                                background: "var(--bg)",
+                                                cursor: "pointer",
+                                                width: 34,
+                                                height: 34,
+                                                borderRadius: "50%",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                flexShrink: 0,
+                                            }}
+                                            title="Clear search"
+                                        >
+                                            <span style={{ fontSize: "16px", color: "var(--muted)" }}>×</span>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {!guestMode && bookmarkLists.length > 0 && (
+                                <div style={{ marginBottom: 16 }}>
+                                    <label
+                                        htmlFor="bookmark-list-select"
+                                        style={labelStyle}
+                                    >
+                                        Save new bookmarks to list
+                                    </label>
+                                    <select
+                                        id="bookmark-list-select"
+                                        value={selectedListId}
+                                        onChange={(e) => setSelectedListId(e.target.value)}
+                                        style={selectStyle}
+                                    >
+                                        <option value="">All Bookmarks only</option>
+                                        {bookmarkLists.map((list) => (
+                                            <option key={list.list_id} value={list.list_id}>
+                                                {list.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                            {/* Recent searches */}
+                            {recentSearches.length > 0 && (
+                                <div style={subtleCardStyle}>
+                                    <div style={recentHeaderStyle}>
+                                        <h4 style={{ margin: 0 }}>Recent Searches</h4>
+                                        <button
+                                            type="button"
+                                            style={clearBtnStyle}
+                                            onClick={() => {
+                                                clearRecentSearches();
+                                                setRecentSearches([]);
+                                            }}
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+
+                                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                                        {recentSearches.map((term) => (
+                                            <button
+                                                key={term}
+                                                type="button"
+                                                style={recentChipStyle}
+                                                onClick={() => setQuery(term)}
+                                            >
+                                                {term}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Status text */}
+                            {loading && <div style={{ marginBottom: 12, color: "var(--muted)" }}>Searching…</div>}
+                            {!loading && query.trim() && results.length > 0 && (
+                                <div style={{ marginBottom: 12, color: "var(--muted)", fontSize: 14 }}>
+                                    {results.length} result{results.length !== 1 ? "s" : ""} found
+                                </div>
+                            )}
+
+                            {/* Results */}
+                            <ul style={{ listStyle: "none", padding: 0, marginBottom: 24, display: "grid", gap: 10 }}>
+                                {!loading && query.trim() && results.length === 0 && (
+                                    <li style={{ padding: "10px 0", color: "var(--muted)" }}>No matches found.</li>
+                                )}
+
+                                {results.map((loc) => {
+                                    console.log(loc);
+                                    const locId = loc.location_id || loc.id;
+                                    const isBookmarked = bookmarkedIds.has(locId);
+
+                                    return (
+                                        <li
+                                            key={locId}
+                                            style={resultCardModernStyle}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.transform = "translateY(-2px)";
+                                                e.currentTarget.style.boxShadow = "0 12px 28px rgba(16, 24, 40, 0.12)";
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.transform = "translateY(0px)";
+                                                e.currentTarget.style.boxShadow = "0 6px 18px rgba(16, 24, 40, 0.06)";
+                                            }}
+                                        >
+                                            {/* Select location */}
+                                            <button
+                                                onClick={() => handleSelect(loc)}
+                                                style={{
+                                                    flex: 1,
+                                                    border: "none",
+                                                    background: "transparent",
+                                                    cursor: "pointer",
+                                                    textAlign: "left",
+                                                    padding: 0,
+                                                }}
+                                            >
+                                                <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--text)" }}>
+                                                    {loc.name}
+                                                </div>
+
+                                                <div style={{ fontSize: "12px", color: "var(--muted)", marginTop: 4 }}>
+                                                    {isBookmarked ? "Saved in bookmarks" : "Tap to view on map"}
+                                                </div>
+                                            </button>
+
+                                            {/* Bookmark */}
+                                            <button
+                                                className="btn"
+                                                style={{
+                                                    width: "auto",
+                                                    marginLeft: 12,
+                                                    padding: window.innerWidth < 500 ? "6px 10px" : "10px 14px",
+                                                    fontSize: window.innerWidth < 500 ? "12px" : "14px",
+                                                    borderRadius: 10,
+                                                    background: isBookmarked ? "var(--unt-green)" : "var(--surface)",
+                                                    color: isBookmarked ? "#fff" : "var(--text)",
+                                                    border: isBookmarked ? "1px solid var(--unt-green)" : "1px solid var(--border)",
+                                                    fontWeight: 700,
+                                                    boxShadow: isBookmarked ? "0 6px 14px rgba(0,106,49,0.18)" : "none",
+                                                    flexShrink: 0,
+                                                }}
+                                                onClick={() => (isBookmarked ? handleUnbookmark(loc) : handleBookmark(loc))}
+                                                disabled={guestMode}
+                                                title={
+                                                    guestMode
+                                                        ? "Sign in to save bookmarks"
+                                                        : isBookmarked
+                                                            ? "Remove this bookmark"
+                                                            : "Save this location"
+                                                }
+                                            >
+                                                {guestMode ? "Sign in to bookmark" : isBookmarked ? "Remove Bookmark" : "Bookmark"}
+                                            </button>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+
+
+                            {/* Filters */}
+                            <div style={sectionStyle}>
+                                <h3 style={{ margin: 0, color: "var(--text)" }}>Filters</h3>
+
+                                <div style={filterRowStyle}>
+                                    {filters.map((f) => {
+                                        const isActive = activeFilter === f;
+
+                                        return (
+                                            <button
+                                                key={f}
+                                                type="button"
+                                                onClick={() => setActiveFilter(isActive ? "" : f)}
+                                                style={{
+                                                    ...filterBtnBaseStyle,
+                                                    ...(isActive ? filterBtnActiveStyle : {}),
+                                                }}
+                                            >
+                                                {isActive ? "✓" : "+"} {f}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {activeFilter && (
+                                    <div style={{ fontSize: 14, color: "var(--muted)" }}>
+                                        Active filter: <strong>{activeFilter}</strong>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {tab === "routes" && (
+                        <div className="panel">
+                            <h3 style={{ marginTop: 0 }}>Plan a route</h3>
+                            <div style={{ display: "grid", gap: 8 }}>
+                                <input className="search-input" placeholder="From…" />
+                                <input className="search-input" placeholder="To…" />
+                            </div>
+                            <button className="btn-primary btn" style={{ marginTop: 12, width: "auto" }}>
+                                Find Route
+                            </button>
+                            <div style={{ color: "var(--muted)", marginTop: 8, fontSize: 14 }}>
+                                Accessibility & well-lit options supported.
+                            </div>
                         </div>
-                        <button className="btn-primary btn" style={{ marginTop: 12, width: "auto" }}>
-                            Find Route
-                        </button>
-                        <div style={{ color: "#777", marginTop: 8, fontSize: 14 }}>
-                            Accessibility & well-lit options supported.
-                        </div>
-                    </div>
-                )}
-            </main>
+                    )}
+                </main>
+            </div>
         </div>
     );
 }
