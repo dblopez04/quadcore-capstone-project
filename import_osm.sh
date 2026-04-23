@@ -3,7 +3,8 @@
 set -e
 
 if [ -f ".env" ]; then
-    export $(grep -v '^#' .env | xargs)
+    # Strip Windows CRLF to avoid values like "postgres\r" when run via bash on Windows.
+    export $(grep -v '^#' .env | sed 's/\r$//' | xargs)
 fi
 
 OSM_DIR="osrm-data"
@@ -16,6 +17,7 @@ DB_HOST="db"
 DB_USER="$POSTGRES_USER"
 DB_NAME="$POSTGRES_DB"
 DB_PASS="$POSTGRES_PASSWORD"
+DB_PORT="${POSTGRES_PORT:-5432}"
 
 # UNT main campus + athletics bounding box (min_lon,min_lat,max_lon,max_lat).
 DENTON_COBOX="${DENTON_COBOX:--97.165,33.198,-97.142,33.217}"
