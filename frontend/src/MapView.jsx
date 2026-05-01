@@ -49,6 +49,7 @@ export default function MapView({
     wellLitPaths,
     showWellLitPaths = false,
     onUserLocation,
+    onLocationStatusChange,
     onMapPick,
     activePickMode,
     followUser = false,
@@ -70,9 +71,8 @@ export default function MapView({
 
                 <UserLocationMarker
                     autoCenter={followUser}
-                    onLocationFound={(latlng) => {
-                        onUserLocation(latlng);
-                    }}
+                    onLocationFound={onUserLocation}
+                    onLocationStatusChange={onLocationStatusChange}
                 />
 
                 {route?.start && (

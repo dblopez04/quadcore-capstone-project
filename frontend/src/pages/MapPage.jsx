@@ -46,6 +46,46 @@ function formatDuration(durationSeconds) {
     return minutes === 0 ? `${hours} hr` : `${hours} hr ${minutes} min`;
 }
 
+function getGeolocationErrorMessage(error) {
+    switch (error?.code) {
+    case 1:
+        return "Location access is blocked in your browser for this site.";
+    case 2:
+        return "Your device could not determine your current location.";
+    case 3:
+        return "Timed out while trying to determine your current location.";
+    default:
+        return error?.message || "Unable to get your location.";
+    }
+}
+
+function requestCurrentLocation() {
+    return new Promise((resolve, reject) => {
+        if (!("geolocation" in navigator)) {
+            reject(new Error("Geolocation is not supported by this browser."));
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                resolve({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                    name: "Current location",
+                });
+            },
+            (error) => {
+                reject(error);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 15000,
+            },
+        );
+    });
+}
+
 function RouteInput({
     label,
     value,
@@ -126,6 +166,9 @@ export default function MapPage() {
     const [followUser, setFollowUser] = useState(true);
     const [showWellLitPaths, setShowWellLitPaths] = useState(true);
     const [wellLitPaths, setWellLitPaths] = useState(null);
+    const [locationStatus, setLocationStatus] = useState("idle");
+    const [locationStatusMessage, setLocationStatusMessage] = useState("");
+    const [isLocatingUser, setIsLocatingUser] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -290,18 +333,34 @@ export default function MapPage() {
         clearRoute();
     }
 
-    function useCurrentLocation() {
-        if (!userLocation) {
-            showToast("Allow location access, then try again.", "error");
+    async function useCurrentLocation() {
+        if (isLocatingUser) {
             return;
         }
 
-        const next = buildRoutePoint(userLocation, "Current location");
-        setStartPoint(next);
-        setStartQuery(next?.name || "Current location");
-        setStartResults([]);
-        setActivePickMode("");
-        clearRoute();
+        setIsLocatingUser(true);
+
+        try {
+            const latestLocation = await requestCurrentLocation();
+            const next = buildRoutePoint(latestLocation, "Current location");
+
+            setLocationStatus("granted");
+            setLocationStatusMessage("");
+            setUserLocation(latestLocation);
+            setStartPoint(next);
+            setStartQuery(next?.name || "Current location");
+            setStartResults([]);
+            setActivePickMode("");
+            clearRoute();
+        } catch (error) {
+            const message = getGeolocationErrorMessage(error);
+
+            setLocationStatus(error?.code === 1 ? "denied" : "error");
+            setLocationStatusMessage(message);
+            showToast(message, "error");
+        } finally {
+            setIsLocatingUser(false);
+        }
     }
 
     function handleMapPick(latlng) {
@@ -395,7 +454,7 @@ export default function MapPage() {
 
                     <div className="route-actions-row">
                         <button type="button" className="route-chip-btn" onClick={useCurrentLocation}>
-                            Use my location
+                            {isLocatingUser ? "Locating..." : "Use my location"}
                         </button>
                         <button
                             type="button"
@@ -467,7 +526,11 @@ export default function MapPage() {
                             <div className="route-status-note">
                                 {activePickMode
                                     ? `Click anywhere on the map to set the ${activePickMode} point.`
-                                    : "Choose start and destination points, then build a route."}
+                                    : locationStatus === "denied"
+                                        ? locationStatusMessage || "Location access is blocked for this site."
+                                        : locationStatus === "error"
+                                            ? locationStatusMessage || "Location access is available, but your device has not returned a fix yet."
+                                            : "Choose start and destination points, then build a route."}
                             </div>
                         )}
                     </div>
@@ -481,6 +544,10 @@ export default function MapPage() {
                         wellLitPaths={wellLitPaths}
                         showWellLitPaths={showWellLitPaths}
                         onUserLocation={setUserLocation}
+                        onLocationStatusChange={({ state, message }) => {
+                            setLocationStatus(state);
+                            setLocationStatusMessage(message);
+                        }}
                         onMapPick={handleMapPick}
                         activePickMode={activePickMode}
                         followUser={followUser}
